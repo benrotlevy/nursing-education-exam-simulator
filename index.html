@@ -1,0 +1,2013 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>סימולטור מבחן בהדרכה קלינית בסיעוד</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Assistant:wght@300;400;600;700;800&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --primary: #0284c7;
+      --primary-dark: #0369a1;
+      --primary-light: #e0f2fe;
+      --secondary: #0d9488;
+      --secondary-light: #ccfbf1;
+      --bg: #f8fafc;
+      --card-bg: #ffffff;
+      --text-main: #0f172a;
+      --text-muted: #64748b;
+      --border: #e2e8f0;
+      --success: #10b981;
+      --success-light: #d1fae5;
+      --danger: #ef4444;
+      --danger-light: #fee2e2;
+      --warning: #f59e0b;
+      --warning-light: #fef3c7;
+      --radius-sm: 8px;
+      --radius-md: 14px;
+      --radius-lg: 20px;
+      --shadow-sm: 0 1px 3px rgba(0,0,0,0.05);
+      --shadow-md: 0 4px 12px rgba(0,0,0,0.07);
+      --shadow-lg: 0 10px 25px rgba(0,0,0,0.1);
+      --font-family: 'Assistant', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      font-family: var(--font-family);
+    }
+
+    body {
+      background-color: var(--bg);
+      color: var(--text-main);
+      line-height: 1.6;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+    }
+
+    /* Top Navigation Header */
+    header {
+      background: white;
+      border-bottom: 1px solid var(--border);
+      position: sticky;
+      top: 0;
+      z-index: 50;
+      box-shadow: var(--shadow-sm);
+    }
+
+    .header-inner {
+      max-width: 1100px;
+      margin: 0 auto;
+      padding: 12px 20px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 16px;
+      flex-wrap: wrap;
+    }
+
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .brand-icon {
+      width: 44px;
+      height: 44px;
+      background: linear-gradient(135deg, var(--primary), var(--secondary));
+      color: white;
+      border-radius: var(--radius-md);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 22px;
+      box-shadow: 0 2px 8px rgba(2, 132, 199, 0.3);
+    }
+
+    .brand-title h1 {
+      font-size: 1.25rem;
+      font-weight: 800;
+      color: #0f172a;
+    }
+
+    .brand-title p {
+      font-size: 0.82rem;
+      color: var(--text-muted);
+    }
+
+    .nav-tabs {
+      display: flex;
+      gap: 8px;
+      background: #f1f5f9;
+      padding: 4px;
+      border-radius: var(--radius-md);
+    }
+
+    .tab-btn {
+      border: none;
+      background: transparent;
+      padding: 8px 18px;
+      font-size: 0.95rem;
+      font-weight: 700;
+      color: var(--text-muted);
+      cursor: pointer;
+      border-radius: 10px;
+      transition: all 0.2s ease;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .tab-btn:hover {
+      color: var(--text-main);
+    }
+
+    .tab-btn.active {
+      background: white;
+      color: var(--primary);
+      box-shadow: var(--shadow-sm);
+    }
+
+    .mistakes-counter-badge {
+      background: var(--danger-light);
+      color: var(--danger);
+      font-size: 0.75rem;
+      padding: 2px 8px;
+      border-radius: 12px;
+      font-weight: 800;
+      margin-inline-start: 4px;
+    }
+
+    /* Container */
+    main {
+      max-width: 900px;
+      width: 100%;
+      margin: 24px auto;
+      padding: 0 16px;
+      flex: 1;
+    }
+
+    .screen {
+      display: none;
+    }
+
+    .screen.active {
+      display: block;
+      animation: fadeIn 0.25s ease-in-out;
+    }
+
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(6px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    /* Card styling */
+    .card {
+      background: var(--card-bg);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-lg);
+      padding: 28px;
+      box-shadow: var(--shadow-sm);
+      margin-bottom: 24px;
+    }
+
+    .card-title {
+      font-size: 1.35rem;
+      font-weight: 800;
+      margin-bottom: 8px;
+      color: #0f172a;
+    }
+
+    .card-subtitle {
+      font-size: 0.95rem;
+      color: var(--text-muted);
+      margin-bottom: 20px;
+    }
+
+    /* Form & Controls */
+    .form-group {
+      margin-bottom: 20px;
+    }
+
+    .form-label {
+      display: block;
+      font-weight: 700;
+      font-size: 0.95rem;
+      margin-bottom: 8px;
+      color: #334155;
+    }
+
+    .form-select, .form-input {
+      width: 100%;
+      padding: 12px 14px;
+      border: 1px solid var(--border);
+      border-radius: var(--radius-sm);
+      font-size: 1rem;
+      background: white;
+      color: var(--text-main);
+      outline: none;
+      transition: border-color 0.2s;
+    }
+
+    .form-select:focus, .form-input:focus {
+      border-color: var(--primary);
+      box-shadow: 0 0 0 3px var(--primary-light);
+    }
+
+    .pill-group {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+    }
+
+    .pill-option {
+      cursor: pointer;
+    }
+
+    .pill-option input {
+      display: none;
+    }
+
+    .pill-badge {
+      display: inline-block;
+      padding: 10px 18px;
+      border: 1px solid var(--border);
+      border-radius: var(--radius-md);
+      font-size: 0.95rem;
+      font-weight: 700;
+      color: #475569;
+      background: #f8fafc;
+      transition: all 0.2s ease;
+      user-select: none;
+    }
+
+    .pill-option input:checked + .pill-badge {
+      background: var(--primary-light);
+      border-color: var(--primary);
+      color: var(--primary-dark);
+    }
+
+    /* Buttons */
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      padding: 12px 24px;
+      font-size: 1rem;
+      font-weight: 700;
+      border-radius: var(--radius-md);
+      border: none;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      text-decoration: none;
+    }
+
+    .btn-primary {
+      background: var(--primary);
+      color: white;
+      box-shadow: 0 2px 8px rgba(2, 132, 199, 0.25);
+    }
+
+    .btn-primary:hover {
+      background: var(--primary-dark);
+      transform: translateY(-1px);
+    }
+
+    .btn-secondary {
+      background: #e2e8f0;
+      color: #334155;
+    }
+
+    .btn-secondary:hover {
+      background: #cbd5e1;
+    }
+
+    .btn-outline {
+      background: transparent;
+      border: 1.5px solid var(--border);
+      color: #475569;
+    }
+
+    .btn-outline:hover {
+      background: #f1f5f9;
+      border-color: #cbd5e1;
+    }
+
+    .btn-danger {
+      background: var(--danger);
+      color: white;
+    }
+
+    .btn-block {
+      width: 100%;
+    }
+
+    /* Question Card UI */
+    .q-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      margin-bottom: 16px;
+      flex-wrap: wrap;
+    }
+
+    .q-meta {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      flex-wrap: wrap;
+    }
+
+    .badge {
+      font-size: 0.8rem;
+      font-weight: 700;
+      padding: 4px 10px;
+      border-radius: 20px;
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+    }
+
+    .badge-category {
+      background: #e0f2fe;
+      color: #0369a1;
+    }
+
+    .badge-source {
+      background: #f1f5f9;
+      color: #475569;
+    }
+
+    .badge-unverified {
+      background: #fef3c7;
+      color: #92400e;
+      border: 1px solid #fde68a;
+    }
+
+    .q-text {
+      font-size: 1.25rem;
+      font-weight: 700;
+      color: #0f172a;
+      line-height: 1.6;
+      margin-bottom: 24px;
+    }
+
+    /* Options List */
+    .options-list {
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+      margin-bottom: 24px;
+    }
+
+    .option-item {
+      display: flex;
+      align-items: flex-start;
+      gap: 14px;
+      padding: 16px 18px;
+      background: #f8fafc;
+      border: 2px solid var(--border);
+      border-radius: var(--radius-md);
+      cursor: pointer;
+      transition: all 0.2s ease;
+      position: relative;
+      user-select: none;
+    }
+
+    .option-item:hover {
+      background: #f1f5f9;
+      border-color: #cbd5e1;
+    }
+
+    .option-letter {
+      width: 32px;
+      height: 32px;
+      background: white;
+      border: 1px solid #cbd5e1;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: 800;
+      font-size: 0.95rem;
+      color: #475569;
+      flex-shrink: 0;
+      transition: all 0.2s ease;
+    }
+
+    .option-content {
+      font-size: 1.05rem;
+      font-weight: 600;
+      color: #1e293b;
+      flex: 1;
+      padding-top: 2px;
+    }
+
+    /* Selected in Exam Mode */
+    .option-item.selected {
+      background: var(--primary-light);
+      border-color: var(--primary);
+    }
+
+    .option-item.selected .option-letter {
+      background: var(--primary);
+      color: white;
+      border-color: var(--primary);
+    }
+
+    /* Study Mode / Feedback states */
+    .option-item.correct {
+      background: var(--success-light) !important;
+      border-color: var(--success) !important;
+    }
+
+    .option-item.correct .option-letter {
+      background: var(--success) !important;
+      color: white !important;
+      border-color: var(--success) !important;
+    }
+
+    .option-item.wrong {
+      background: var(--danger-light) !important;
+      border-color: var(--danger) !important;
+    }
+
+    .option-item.wrong .option-letter {
+      background: var(--danger) !important;
+      color: white !important;
+      border-color: var(--danger) !important;
+    }
+
+    .option-item.disabled {
+      cursor: default;
+    }
+
+    /* Explanation Box */
+    .explanation-box {
+      margin-top: 20px;
+      background: #f0fdf4;
+      border: 1px solid #bbf7d0;
+      border-radius: var(--radius-md);
+      padding: 20px;
+      display: none;
+      animation: fadeIn 0.3s ease;
+    }
+
+    .explanation-box.visible {
+      display: block;
+    }
+
+    .explanation-header {
+      font-weight: 800;
+      font-size: 1.05rem;
+      color: #166534;
+      margin-bottom: 8px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .explanation-body {
+      font-size: 0.98rem;
+      line-height: 1.6;
+    }
+
+    /* Distinct Original vs AI Explanation Blocks */
+    .expl-sections-container {
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+      margin-top: 10px;
+    }
+
+    .expl-section {
+      border-radius: var(--radius-md);
+      padding: 14px 16px;
+      line-height: 1.6;
+    }
+
+    .expl-original {
+      background: #f8fafc;
+      border: 1px solid #cbd5e1;
+      border-right: 4px solid #64748b;
+    }
+
+    .expl-ai {
+      background: #f0fdf4;
+      border: 1px solid #bbf7d0;
+      border-right: 4px solid var(--success);
+    }
+
+    .expl-section-title {
+      margin-bottom: 6px;
+    }
+
+    .expl-pill {
+      font-size: 0.8rem;
+      font-weight: 800;
+      padding: 3px 10px;
+      border-radius: 12px;
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+    }
+
+    .pill-orig {
+      background: #e2e8f0;
+      color: #334155;
+    }
+
+    .pill-ai {
+      background: #dcfce7;
+      color: #166534;
+    }
+
+    .expl-section-content {
+      font-size: 0.96rem;
+      color: #1e293b;
+    }
+
+    /* Navigation Bar */
+    .q-footer {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      padding-top: 16px;
+      border-top: 1px solid var(--border);
+    }
+
+    /* Progress bar */
+    .progress-wrapper {
+      margin-bottom: 20px;
+    }
+
+    .progress-bar-bg {
+      height: 8px;
+      background: #e2e8f0;
+      border-radius: 4px;
+      overflow: hidden;
+    }
+
+    .progress-bar-fill {
+      height: 100%;
+      background: var(--primary);
+      width: 0%;
+      transition: width 0.3s ease;
+    }
+
+    .progress-text {
+      display: flex;
+      justify-content: space-between;
+      font-size: 0.85rem;
+      font-weight: 700;
+      color: var(--text-muted);
+      margin-bottom: 6px;
+    }
+
+    /* Quick Grid */
+    .quick-grid {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+      margin-top: 20px;
+      padding-top: 16px;
+      border-top: 1px solid var(--border);
+    }
+
+    .grid-cell {
+      width: 34px;
+      height: 34px;
+      border-radius: var(--radius-sm);
+      border: 1px solid var(--border);
+      background: white;
+      font-size: 0.85rem;
+      font-weight: 700;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      color: #475569;
+      transition: all 0.15s;
+    }
+
+    .grid-cell:hover {
+      border-color: var(--primary);
+    }
+
+    .grid-cell.active {
+      border-color: var(--primary);
+      box-shadow: 0 0 0 2px var(--primary);
+    }
+
+    .grid-cell.answered {
+      background: var(--primary-light);
+      color: var(--primary-dark);
+      border-color: #7dd3fc;
+    }
+
+    .grid-cell.flagged {
+      position: relative;
+    }
+
+    .grid-cell.flagged::after {
+      content: "★";
+      position: absolute;
+      top: -3px;
+      right: 2px;
+      font-size: 10px;
+      color: var(--warning);
+    }
+
+    /* Flag toggle button */
+    .flag-btn {
+      background: none;
+      border: 1px solid var(--border);
+      padding: 6px 12px;
+      border-radius: 20px;
+      font-size: 0.85rem;
+      font-weight: 700;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      color: #64748b;
+      transition: all 0.2s;
+    }
+
+    .flag-btn.flagged {
+      background: var(--warning-light);
+      border-color: var(--warning);
+      color: #b45309;
+    }
+
+    /* Score and Results Screen */
+    .results-hero {
+      text-align: center;
+      padding: 24px 0 32px;
+    }
+
+    .score-circle {
+      width: 140px;
+      height: 140px;
+      border-radius: 50%;
+      background: linear-gradient(135deg, var(--primary), var(--secondary));
+      color: white;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      margin: 0 auto 20px;
+      box-shadow: 0 8px 24px rgba(2, 132, 199, 0.25);
+    }
+
+    .score-value {
+      font-size: 2.8rem;
+      font-weight: 800;
+      line-height: 1;
+    }
+
+    .score-label {
+      font-size: 0.85rem;
+      font-weight: 700;
+      opacity: 0.9;
+    }
+
+    .stats-summary-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+      gap: 16px;
+      margin-bottom: 28px;
+    }
+
+    .stat-metric-card {
+      background: #f8fafc;
+      border: 1px solid var(--border);
+      border-radius: var(--radius-md);
+      padding: 16px;
+      text-align: center;
+    }
+
+    .stat-metric-val {
+      font-size: 1.8rem;
+      font-weight: 800;
+      color: var(--primary);
+      margin-bottom: 4px;
+    }
+
+    .stat-metric-label {
+      font-size: 0.85rem;
+      font-weight: 700;
+      color: var(--text-muted);
+    }
+
+    /* Category bar */
+    .cat-bar-item {
+      margin-bottom: 16px;
+    }
+
+    .cat-bar-header {
+      display: flex;
+      justify-content: space-between;
+      font-size: 0.95rem;
+      font-weight: 700;
+      margin-bottom: 6px;
+    }
+
+    .cat-bar-bg {
+      height: 10px;
+      background: #e2e8f0;
+      border-radius: 5px;
+      overflow: hidden;
+    }
+
+    .cat-bar-fill {
+      height: 100%;
+      border-radius: 5px;
+      transition: width 0.4s ease;
+    }
+
+    /* Insights Banner */
+    .insight-banner {
+      background: #eff6ff;
+      border: 1px solid #bfdbfe;
+      border-radius: var(--radius-md);
+      padding: 16px 20px;
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      margin-bottom: 24px;
+    }
+
+    .insight-icon {
+      font-size: 24px;
+      flex-shrink: 0;
+    }
+
+    .insight-text h4 {
+      font-size: 1rem;
+      font-weight: 800;
+      color: #1e40af;
+      margin-bottom: 2px;
+    }
+
+    .insight-text p {
+      font-size: 0.88rem;
+      color: #3b82f6;
+    }
+
+    /* Review question item */
+    .review-item {
+      border: 1px solid var(--border);
+      border-radius: var(--radius-md);
+      padding: 20px;
+      margin-bottom: 16px;
+      background: white;
+    }
+
+    .review-item.was-correct {
+      border-right: 6px solid var(--success);
+    }
+
+    .review-item.was-wrong {
+      border-right: 6px solid var(--danger);
+    }
+
+    /* Empty state */
+    .empty-state {
+      text-align: center;
+      padding: 48px 20px;
+      color: var(--text-muted);
+    }
+
+    .empty-state-icon {
+      font-size: 48px;
+      margin-bottom: 12px;
+    }
+
+    /* Footer */
+    footer {
+      text-align: center;
+      padding: 24px;
+      font-size: 0.85rem;
+      color: var(--text-muted);
+      border-top: 1px solid var(--border);
+      background: white;
+      margin-top: auto;
+    }
+
+    @media (max-width: 640px) {
+      .header-inner {
+        flex-direction: column;
+        align-items: stretch;
+      }
+      .nav-tabs {
+        width: 100%;
+        justify-content: center;
+      }
+      .tab-btn {
+        flex: 1;
+        justify-content: center;
+        padding: 8px 10px;
+        font-size: 0.88rem;
+      }
+      .card {
+        padding: 20px 16px;
+      }
+      .q-text {
+        font-size: 1.15rem;
+      }
+      .option-item {
+        padding: 12px 14px;
+      }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Top Header -->
+  <header>
+    <div class="header-inner">
+      <div class="brand">
+        <div class="brand-icon">🩺</div>
+        <div class="brand-title">
+          <h1>מבחן הדרכה קלינית בסיעוד</h1>
+          <p id="totalQuestionsHeader">טוען מאגר שאלות...</p>
+        </div>
+      </div>
+
+      <nav class="nav-tabs">
+        <button class="tab-btn active" id="tabExam" onclick="switchTab('exam')">
+          📝 מצב מבחן
+        </button>
+        <button class="tab-btn" id="tabStudy" onclick="switchTab('study')">
+          💡 מצב למידה
+        </button>
+        <button class="tab-btn" id="tabStats" onclick="switchTab('stats')">
+          📊 סטטיסטיקה
+          <span class="mistakes-counter-badge" id="navMistakesBadge" style="display:none;">0 טעויות</span>
+        </button>
+      </nav>
+    </div>
+  </header>
+
+  <main>
+    <!-- SCREEN 1: EXAM SETUP -->
+    <section id="screenExamSetup" class="screen active">
+      <div class="card">
+        <h2 class="card-title">הגדרת מבחן תרגול</h2>
+        <p class="card-subtitle">בחר את תנאי המבחן. השאלות והמסיחים יתערבבו באופן רנדומלי לחלוטין בכל פעם.</p>
+
+        <div class="form-group">
+          <label class="form-label">מקור השאלות:</label>
+          <select id="examSourceSelect" class="form-select">
+            <option value="ALL">כל המאגר מעורבב (מומלץ ביותר)</option>
+            <!-- Dynamic sources added via JS -->
+          </select>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">סינון לפי נושא / קטגוריה:</label>
+          <select id="examCategorySelect" class="form-select">
+            <option value="ALL">כל הנושאים</option>
+            <!-- Dynamic categories added via JS -->
+          </select>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">כמות שאלות במבחן:</label>
+          <div class="pill-group">
+            <label class="pill-option">
+              <input type="radio" name="examCount" value="10" checked>
+              <span class="pill-badge">10 שאלות (מהיר)</span>
+            </label>
+            <label class="pill-option">
+              <input type="radio" name="examCount" value="25">
+              <span class="pill-badge">25 שאלות</span>
+            </label>
+            <label class="pill-option">
+              <input type="radio" name="examCount" value="50">
+              <span class="pill-badge">50 שאלות (חצי מבחן)</span>
+            </label>
+            <label class="pill-option">
+              <input type="radio" name="examCount" value="100">
+              <span class="pill-badge">100 שאלות (מבחן מלא)</span>
+            </label>
+            <label class="pill-option">
+              <input type="radio" name="examCount" value="MISTAKES_ONLY" id="examMistakesOption">
+              <span class="pill-badge" id="examMistakesPill">מאגר טעויות בלבד (0)</span>
+            </label>
+          </div>
+        </div>
+
+        <button class="btn btn-primary btn-block" onclick="startExam()">
+          🚀 התחל מבחן עכשיו
+        </button>
+      </div>
+    </section>
+
+    <!-- SCREEN 2: ACTIVE EXAM -->
+    <section id="screenActiveExam" class="screen">
+      <div class="card">
+        <!-- Progress Bar -->
+        <div class="progress-wrapper">
+          <div class="progress-text">
+            <span id="examProgressCount">שאלה 1 מתוך 25</span>
+            <span id="examAnsweredCount">נענו: 0</span>
+          </div>
+          <div class="progress-bar-bg">
+            <div id="examProgressBar" class="progress-bar-fill"></div>
+          </div>
+        </div>
+
+        <!-- Question Header -->
+        <div class="q-header">
+          <div class="q-meta">
+            <span class="badge badge-category" id="examQCategory">קטגוריה</span>
+            <span class="badge badge-source" id="examQSource">מקור</span>
+            <span class="badge badge-unverified" id="examQUnverified" style="display:none;">פתרון משוער</span>
+          </div>
+          <button class="flag-btn" id="examFlagBtn" onclick="toggleExamFlag()">
+            <span>★</span> סימון לעיון חוזר
+          </button>
+        </div>
+
+        <!-- Question Text -->
+        <div class="q-text" id="examQText">
+          טוען שאלה...
+        </div>
+
+        <!-- Options Container -->
+        <div class="options-list" id="examOptionsContainer">
+          <!-- Dynamically populated -->
+        </div>
+
+        <!-- Footer Navigation -->
+        <div class="q-footer">
+          <button class="btn btn-secondary" id="btnPrevExam" onclick="prevExamQuestion()">
+            ➡ לשאלה הקודמת
+          </button>
+
+          <button class="btn btn-danger" id="btnSubmitExam" onclick="confirmSubmitExam()" style="display:none;">
+            ✔ הגש מבחן
+          </button>
+
+          <button class="btn btn-primary" id="btnNextExam" onclick="nextExamQuestion()">
+            לשאלה הבאה ⬅
+          </button>
+        </div>
+
+        <!-- Quick Question Grid Navigation -->
+        <div class="quick-grid" id="examQuickGrid">
+          <!-- Dynamically populated -->
+        </div>
+      </div>
+    </section>
+
+    <!-- SCREEN 3: EXAM RESULTS -->
+    <section id="screenExamResults" class="screen">
+      <div class="card">
+        <div class="results-hero">
+          <div class="score-circle">
+            <span class="score-value" id="resScoreVal">0%</span>
+            <span class="score-label">ציון סופי</span>
+          </div>
+          <h2 class="card-title" id="resTitleMsg">כל הכבוד!</h2>
+          <p class="card-subtitle" id="resSubtitleMsg">להלן סיכום התוצאות והשאלות שטעית בהן:</p>
+        </div>
+
+        <div class="stats-summary-grid">
+          <div class="stat-metric-card">
+            <div class="stat-metric-val" id="resCorrectCount" style="color:var(--success)">0</div>
+            <div class="stat-metric-label">תשובות נכונות</div>
+          </div>
+          <div class="stat-metric-card">
+            <div class="stat-metric-val" id="resWrongCount" style="color:var(--danger)">0</div>
+            <div class="stat-metric-label">שגיאות (נוספו למאגר)</div>
+          </div>
+          <div class="stat-metric-card">
+            <div class="stat-metric-val" id="resTotalCount">0</div>
+            <div class="stat-metric-label">סך הכל שאלות</div>
+          </div>
+        </div>
+
+        <div style="display:flex; gap:12px; margin-bottom: 28px; flex-wrap:wrap;">
+          <button class="btn btn-primary" id="btnRetryWrong" onclick="retryWrongExamQuestions()" style="flex:1;">
+            🔁 תרגל עכשיו רק את השגיאות
+          </button>
+          <button class="btn btn-outline" onclick="switchTab('exam')" style="flex:1;">
+            📝 מבחן חדש
+          </button>
+          <button class="btn btn-outline" onclick="switchTab('stats')" style="flex:1;">
+            📊 צפה בסטטיסטיקה המלאה
+          </button>
+        </div>
+
+        <h3 class="card-title" style="font-size:1.15rem; margin-bottom:16px;">פירוט והסברים לשאלות המבחן:</h3>
+        <div id="examReviewList">
+          <!-- Dynamically populated review questions -->
+        </div>
+      </div>
+    </section>
+
+    <!-- SCREEN 4: STUDY / PRACTICE MODE -->
+    <section id="screenStudyMode" class="screen">
+      <div class="card">
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:16px; flex-wrap:wrap; gap:12px;">
+          <div>
+            <h2 class="card-title" style="margin-bottom:2px;">מצב למידה ואימון</h2>
+            <p class="card-subtitle" style="margin-bottom:0;">משוב מיידי והסבר מפורט על כל שאלה מיד בעת הבחירה.</p>
+          </div>
+          <div style="display:flex; gap:8px;">
+            <select id="studyCategoryFilter" class="form-select" style="width:auto; padding:8px 12px; font-size:0.9rem;" onchange="onStudyFilterChange()">
+              <option value="ALL">כל הנושאים</option>
+              <!-- Populated via JS -->
+            </select>
+            <button class="btn btn-outline" id="btnStudyMistakesOnly" onclick="toggleStudyMistakesOnly()" style="padding:8px 14px; font-size:0.9rem;">
+              🎯 מאגר טעויות (<span id="studyMistakesCount">0</span>)
+            </button>
+          </div>
+        </div>
+
+        <!-- Question Box -->
+        <div class="q-header">
+          <div class="q-meta">
+            <span class="badge badge-category" id="studyQCategory">קטגוריה</span>
+            <span class="badge badge-source" id="studyQSource">מקור</span>
+            <span class="badge badge-unverified" id="studyQUnverified" style="display:none;">פתרון משוער</span>
+          </div>
+          <div style="font-size:0.9rem; font-weight:700; color:var(--text-muted);">
+            שאלה <span id="studyCurrentIndex">1</span> מתוך <span id="studyTotalCount">0</span>
+          </div>
+        </div>
+
+        <div class="q-text" id="studyQText">
+          טוען שאלה לתרגול...
+        </div>
+
+        <div class="options-list" id="studyOptionsContainer">
+          <!-- Populated dynamically -->
+        </div>
+
+        <!-- Immediate Explanation Box -->
+        <div class="explanation-box" id="studyExplanationBox">
+          <div class="explanation-header" id="studyExplanationHeader">
+            💡 הסבר ונימוק פדגוגי:
+          </div>
+          <div class="explanation-body" id="studyExplanationText">
+            נימוק...
+          </div>
+        </div>
+
+        <!-- Footer -->
+        <div class="q-footer" style="margin-top:20px;">
+          <button class="btn btn-secondary" onclick="prevStudyQuestion()">
+            ➡ לשאלה הקודמת
+          </button>
+          <button class="btn btn-primary" onclick="nextStudyQuestion()">
+            לשאלה הבאה ⬅
+          </button>
+        </div>
+      </div>
+    </section>
+
+    <!-- SCREEN 5: STATISTICS & ANALYTICS -->
+    <section id="screenStats" class="screen">
+      <div class="card">
+        <h2 class="card-title">דשבורד סטטיסטיקה והתקדמות</h2>
+        <p class="card-subtitle">מעקב ביצועים וניתוח נקודות תורפה לפי 6 קטגוריות הליבה של הקורס.</p>
+
+        <!-- Insights Banner -->
+        <div class="insight-banner" id="statsInsightBanner">
+          <div class="insight-icon">💡</div>
+          <div class="insight-text">
+            <h4 id="statsInsightTitle">ניתוח מוכנות:</h4>
+            <p id="statsInsightDesc">תרגל מבחנים ושאלות כדי לקבל ניתוח נקודות לחיזוק.</p>
+          </div>
+        </div>
+
+        <!-- Global Metrics Grid -->
+        <div class="stats-summary-grid">
+          <div class="stat-metric-card">
+            <div class="stat-metric-val" id="statAccuracyVal">0%</div>
+            <div class="stat-metric-label">אחוז הצלחה מצטבר</div>
+          </div>
+          <div class="stat-metric-card">
+            <div class="stat-metric-val" id="statTotalAnswered">0</div>
+            <div class="stat-metric-label">שאלות שנענו</div>
+          </div>
+          <div class="stat-metric-card">
+            <div class="stat-metric-val" id="statMistakesActive" style="color:var(--danger)">0</div>
+            <div class="stat-metric-label">שאלות במאגר הטעויות</div>
+          </div>
+          <div class="stat-metric-card">
+            <div class="stat-metric-val" id="statExamsCompleted">0</div>
+            <div class="stat-metric-label">מבחנים שהוגשו</div>
+          </div>
+        </div>
+
+        <h3 class="card-title" style="font-size:1.15rem; margin-bottom:18px;">שליטה לפי נושאי לימוד (קטגוריות):</h3>
+        <div id="categoryStatsBars">
+          <!-- Dynamically populated category progress bars -->
+        </div>
+
+        <div style="margin-top:32px; padding-top:20px; border-top:1px solid var(--border); display:flex; justify-content:space-between; align-items:center;">
+          <button class="btn btn-outline" style="color:var(--danger); border-color:#fca5a5;" onclick="confirmResetStats()">
+            🗑️ איפוס כל נתוני הסטטיסטיקה
+          </button>
+          <button class="btn btn-primary" onclick="practiceWeakestCategory()">
+            🎯 תרגל עכשיו את הנושא החלש ביותר
+          </button>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <footer>
+    מערכת סימולציה ותרגול לקורס הדרכה קלינית בסיעוד &bull; נבנה בהתאמה אישית &bull; כל הנתונים נשמרים מקומית בדפדפן
+  </footer>
+
+  <!-- Include Questions Database -->
+  <script src="questions.js"></script>
+
+  <!-- Application Logic -->
+  <script>
+    /* ========================================================
+       STATE MANAGEMENT & LOCAL STORAGE
+       ======================================================== */
+    const STORAGE_KEY_MISTAKES = "nursing_exam_mistakes_v1";
+    const STORAGE_KEY_STATS = "nursing_exam_stats_v1";
+
+    let state = {
+      allQuestions: [],
+      sources: [],
+      categories: [
+        "תיאוריות למידה ולמידת מבוגרים",
+        "מיומנויות פסיכומוטוריות וסימולציה",
+        "משוב, הערכה ורפלקציה",
+        "תפקיד המדריך ויחסי מדריך-סטודנט",
+        "הסטודנט המתקשה ותוכניות התערבות",
+        "אתיקה, חוק ובטיחות המטופל"
+      ],
+      mistakes: new Set(), // Set of question IDs
+      userStats: {
+        totalAnswered: 0,
+        totalCorrect: 0,
+        examsCompleted: 0,
+        categoryStats: {} // { catName: { correct: 0, total: 0 } }
+      },
+      // Active Exam
+      currentExam: {
+        questions: [],
+        currentIndex: 0,
+        userAnswers: {}, // { qIndex: selectedShuffledIndex }
+        flagged: new Set(),
+        shuffledOptionsCache: {} // { qIndex: { options: [], correctIndex: 0 } }
+      },
+      // Active Study
+      currentStudy: {
+        questions: [],
+        currentIndex: 0,
+        mistakesOnly: false,
+        selectedCategory: "ALL",
+        shuffledOptionsCache: {}
+      }
+    };
+
+    /* ========================================================
+       SHUFFLE ENGINE (FISHER-YATES)
+       ======================================================== */
+    function shuffleArray(arr) {
+      const copy = [...arr];
+      for (let i = copy.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [copy[i], copy[j]] = [copy[j], copy[i]];
+      }
+      return copy;
+    }
+
+    /**
+     * Shuffles options of a question dynamically, keeping track of the new correct index.
+     * Guarantees that the options order is randomized every single time!
+     */
+    function getShuffledQuestionOptions(q) {
+      const indexedOptions = q.options.map((optText, origIndex) => ({
+        text: optText,
+        isCorrect: origIndex === q.correctIndex
+      }));
+
+      const shuffled = shuffleArray(indexedOptions);
+      const newCorrectIndex = shuffled.findIndex(item => item.isCorrect);
+
+      return {
+        options: shuffled.map(item => item.text),
+        correctIndex: newCorrectIndex
+      };
+    }
+
+    /* ========================================================
+       INITIALIZATION
+       ======================================================== */
+    window.addEventListener("DOMContentLoaded", () => {
+      loadStorage();
+      initQuestions();
+      renderStats();
+    });
+
+    function loadStorage() {
+      try {
+        const savedMistakes = localStorage.getItem(STORAGE_KEY_MISTAKES);
+        if (savedMistakes) {
+          state.mistakes = new Set(JSON.parse(savedMistakes));
+        }
+        const savedStats = localStorage.getItem(STORAGE_KEY_STATS);
+        if (savedStats) {
+          state.userStats = JSON.parse(savedStats);
+        }
+      } catch (e) {
+        console.error("Failed to load local storage:", e);
+      }
+      updateMistakesUI();
+    }
+
+    function saveMistakes() {
+      try {
+        localStorage.setItem(STORAGE_KEY_MISTAKES, JSON.stringify(Array.from(state.mistakes)));
+        updateMistakesUI();
+      } catch (e) {
+        console.error("Failed to save mistakes:", e);
+      }
+    }
+
+    function saveStats() {
+      try {
+        localStorage.setItem(STORAGE_KEY_STATS, JSON.stringify(state.userStats));
+      } catch (e) {
+        console.error("Failed to save stats:", e);
+      }
+    }
+
+    function updateMistakesUI() {
+      const count = state.mistakes.size;
+      const navBadge = document.getElementById("navMistakesBadge");
+      const pillCount = document.getElementById("examMistakesPill");
+      const studyCount = document.getElementById("studyMistakesCount");
+
+      if (navBadge) {
+        navBadge.textContent = `${count} טעויות לחיזוק`;
+        navBadge.style.display = count > 0 ? "inline-block" : "none";
+      }
+      if (pillCount) {
+        pillCount.textContent = `מאגר טעויות בלבד (${count})`;
+      }
+      if (studyCount) {
+        studyCount.textContent = count;
+      }
+    }
+
+    function initQuestions() {
+      if (window.EXAM_QUESTIONS && Array.isArray(window.EXAM_QUESTIONS)) {
+        state.allQuestions = window.EXAM_QUESTIONS;
+      } else {
+        console.warn("window.EXAM_QUESTIONS not found! Falling back to empty.");
+        state.allQuestions = [];
+      }
+
+      document.getElementById("totalQuestionsHeader").textContent = 
+        `מאגר פעיל: ${state.allQuestions.length} שאלות מאומתות`;
+
+      // Extract sources
+      const sourcesSet = new Set(state.allQuestions.map(q => q.source).filter(Boolean));
+      state.sources = Array.from(sourcesSet);
+
+      // Populate source selector
+      const sourceSelect = document.getElementById("examSourceSelect");
+      state.sources.forEach(src => {
+        const opt = document.createElement("option");
+        opt.value = src;
+        opt.textContent = src;
+        sourceSelect.appendChild(opt);
+      });
+
+      // Populate category selectors
+      const examCatSelect = document.getElementById("examCategorySelect");
+      const studyCatSelect = document.getElementById("studyCategoryFilter");
+
+      state.categories.forEach(cat => {
+        const opt1 = document.createElement("option");
+        opt1.value = cat;
+        opt1.textContent = cat;
+        examCatSelect.appendChild(opt1);
+
+        const opt2 = document.createElement("option");
+        opt2.value = cat;
+        opt2.textContent = cat;
+        studyCatSelect.appendChild(opt2);
+      });
+
+      // Setup initial study questions
+      initStudyMode();
+    }
+
+    /* ========================================================
+       TAB NAVIGATION
+       ======================================================== */
+    function switchTab(tabId) {
+      document.querySelectorAll(".tab-btn").forEach(b => b.classList.remove("active"));
+      document.querySelectorAll(".screen").forEach(s => s.classList.remove("active"));
+
+      if (tabId === 'exam') {
+        document.getElementById("tabExam").classList.add("active");
+        document.getElementById("screenExamSetup").classList.add("active");
+      } else if (tabId === 'study') {
+        document.getElementById("tabStudy").classList.add("active");
+        document.getElementById("screenStudyMode").classList.add("active");
+        renderCurrentStudyQuestion();
+      } else if (tabId === 'stats') {
+        document.getElementById("tabStats").classList.add("active");
+        document.getElementById("screenStats").classList.add("active");
+        renderStats();
+      }
+    }
+
+    /* ========================================================
+       EXAM MODE LOGIC
+       ======================================================== */
+    function startExam() {
+      const sourceVal = document.getElementById("examSourceSelect").value;
+      const catVal = document.getElementById("examCategorySelect").value;
+      const countVal = document.querySelector('input[name="examCount"]:checked').value;
+
+      let pool = [...state.allQuestions];
+
+      // Filter by source
+      if (sourceVal !== 'ALL') {
+        pool = pool.filter(q => q.source === sourceVal);
+      }
+
+      // Filter by category
+      if (catVal !== 'ALL') {
+        pool = pool.filter(q => q.category === catVal);
+      }
+
+      // Filter by mistakes if selected
+      if (countVal === 'MISTAKES_ONLY') {
+        pool = pool.filter(q => state.mistakes.has(q.id));
+        if (pool.length === 0) {
+          alert("מאגר הטעויות שלך ריק כרגע! כל הכבוד, נסה מבחן רגיל.");
+          return;
+        }
+      }
+
+      if (pool.length === 0) {
+        alert("לא נמצאו שאלות התואמות לסינון זה. אנא בחר סינון רחב יותר.");
+        return;
+      }
+
+      // Shuffle question order
+      let shuffledQuestions = shuffleArray(pool);
+
+      // Slice to selected count
+      let finalCount = countVal === 'MISTAKES_ONLY' ? shuffledQuestions.length : parseInt(countVal, 10);
+      if (shuffledQuestions.length > finalCount) {
+        shuffledQuestions = shuffledQuestions.slice(0, finalCount);
+      }
+
+      state.currentExam = {
+        questions: shuffledQuestions,
+        currentIndex: 0,
+        userAnswers: {},
+        flagged: new Set(),
+        shuffledOptionsCache: {} // Will generate shuffled options for each on the fly
+      };
+
+      document.querySelectorAll(".screen").forEach(s => s.classList.remove("active"));
+      document.getElementById("screenActiveExam").classList.add("active");
+
+      renderExamQuickGrid();
+      renderCurrentExamQuestion();
+    }
+
+    function renderCurrentExamQuestion() {
+      const exam = state.currentExam;
+      const q = exam.questions[exam.currentIndex];
+      if (!q) return;
+
+      // Update progress
+      const total = exam.questions.length;
+      const curNum = exam.currentIndex + 1;
+      document.getElementById("examProgressCount").textContent = `שאלה ${curNum} מתוך ${total}`;
+      const answeredCount = Object.keys(exam.userAnswers).length;
+      document.getElementById("examAnsweredCount").textContent = `נענו: ${answeredCount} מתוך ${total}`;
+      document.getElementById("examProgressBar").style.width = `${(answeredCount / total) * 100}%`;
+
+      // Update metadata
+      document.getElementById("examQCategory").textContent = q.category || "כללי";
+      document.getElementById("examQSource").textContent = q.source || "שחזור מבחן";
+      document.getElementById("examQUnverified").style.display = q.verified === false ? "inline-flex" : "none";
+
+      // Flag state
+      const flagBtn = document.getElementById("examFlagBtn");
+      if (exam.flagged.has(exam.currentIndex)) {
+        flagBtn.classList.add("flagged");
+        flagBtn.innerHTML = "<span>★</span> מסומן לעיון";
+      } else {
+        flagBtn.classList.remove("flagged");
+        flagBtn.innerHTML = "<span>☆</span> סימון לעיון חוזר";
+      }
+
+      // Question text
+      document.getElementById("examQText").textContent = q.question;
+
+      // Get / Cache Shuffled Options
+      if (!exam.shuffledOptionsCache[exam.currentIndex]) {
+        exam.shuffledOptionsCache[exam.currentIndex] = getShuffledQuestionOptions(q);
+      }
+      const shuffledData = exam.shuffledOptionsCache[exam.currentIndex];
+
+      // Render Options
+      const container = document.getElementById("examOptionsContainer");
+      container.innerHTML = "";
+      const letters = ["א", "ב", "ג", "ד", "ה"];
+
+      shuffledData.options.forEach((optText, optIdx) => {
+        const item = document.createElement("div");
+        item.className = "option-item";
+        if (exam.userAnswers[exam.currentIndex] === optIdx) {
+          item.classList.add("selected");
+        }
+
+        item.innerHTML = `
+          <div class="option-letter">${letters[optIdx] || optIdx + 1}</div>
+          <div class="option-content">${optText}</div>
+        `;
+
+        item.onclick = () => selectExamOption(optIdx);
+        container.appendChild(item);
+      });
+
+      // Navigation buttons
+      document.getElementById("btnPrevExam").style.visibility = exam.currentIndex === 0 ? "hidden" : "visible";
+      const isLast = exam.currentIndex === total - 1;
+      document.getElementById("btnNextExam").style.display = isLast ? "none" : "inline-flex";
+      document.getElementById("btnSubmitExam").style.display = isLast ? "inline-flex" : "none";
+
+      updateQuickGridActive();
+    }
+
+    function selectExamOption(shuffledOptIdx) {
+      state.currentExam.userAnswers[state.currentExam.currentIndex] = shuffledOptIdx;
+      renderCurrentExamQuestion();
+      renderExamQuickGrid();
+    }
+
+    function toggleExamFlag() {
+      const idx = state.currentExam.currentIndex;
+      if (state.currentExam.flagged.has(idx)) {
+        state.currentExam.flagged.delete(idx);
+      } else {
+        state.currentExam.flagged.add(idx);
+      }
+      renderCurrentExamQuestion();
+      renderExamQuickGrid();
+    }
+
+    function prevExamQuestion() {
+      if (state.currentExam.currentIndex > 0) {
+        state.currentExam.currentIndex--;
+        renderCurrentExamQuestion();
+      }
+    }
+
+    function nextExamQuestion() {
+      if (state.currentExam.currentIndex < state.currentExam.questions.length - 1) {
+        state.currentExam.currentIndex++;
+        renderCurrentExamQuestion();
+      }
+    }
+
+    function jumpToExamQuestion(index) {
+      state.currentExam.currentIndex = index;
+      renderCurrentExamQuestion();
+    }
+
+    function renderExamQuickGrid() {
+      const grid = document.getElementById("examQuickGrid");
+      grid.innerHTML = "";
+      const exam = state.currentExam;
+
+      exam.questions.forEach((_, idx) => {
+        const cell = document.createElement("div");
+        cell.className = "grid-cell";
+        cell.textContent = idx + 1;
+
+        if (exam.userAnswers.hasOwnProperty(idx)) {
+          cell.classList.add("answered");
+        }
+        if (exam.flagged.has(idx)) {
+          cell.classList.add("flagged");
+        }
+        if (idx === exam.currentIndex) {
+          cell.classList.add("active");
+        }
+
+        cell.onclick = () => jumpToExamQuestion(idx);
+        grid.appendChild(cell);
+      });
+    }
+
+    function updateQuickGridActive() {
+      const cells = document.querySelectorAll(".grid-cell");
+      cells.forEach((cell, idx) => {
+        if (idx === state.currentExam.currentIndex) {
+          cell.classList.add("active");
+        } else {
+          cell.classList.remove("active");
+        }
+      });
+    }
+
+    function confirmSubmitExam() {
+      const total = state.currentExam.questions.length;
+      const answered = Object.keys(state.currentExam.userAnswers).length;
+      if (answered < total) {
+        const proceed = confirm(`שים לב: ענית על ${answered} מתוך ${total} שאלות בלבד.\nהאם ברצונך להגיש את המבחן כעת?`);
+        if (!proceed) return;
+      }
+      submitExam();
+    }
+
+    function submitExam() {
+      const exam = state.currentExam;
+      let correctCount = 0;
+      let wrongQuestions = [];
+      const total = exam.questions.length;
+
+      exam.questions.forEach((q, idx) => {
+        const userChoice = exam.userAnswers[idx];
+        const shuffledData = exam.shuffledOptionsCache[idx] || getShuffledQuestionOptions(q);
+        const isCorrect = userChoice !== undefined && userChoice === shuffledData.correctIndex;
+
+        // Update statistics
+        state.userStats.totalAnswered++;
+        const cat = q.category || "כללי";
+        if (!state.userStats.categoryStats[cat]) {
+          state.userStats.categoryStats[cat] = { correct: 0, total: 0 };
+        }
+        state.userStats.categoryStats[cat].total++;
+
+        if (isCorrect) {
+          correctCount++;
+          state.userStats.totalCorrect++;
+          state.userStats.categoryStats[cat].correct++;
+          // If in mistake bank, remove!
+          if (state.mistakes.has(q.id)) {
+            state.mistakes.delete(q.id);
+          }
+        } else {
+          wrongQuestions.push({ question: q, userChoice, shuffledData });
+          // Add to mistake bank!
+          state.mistakes.add(q.id);
+        }
+      });
+
+      state.userStats.examsCompleted++;
+      saveMistakes();
+      saveStats();
+
+      // Render Results Screen
+      const scorePct = Math.round((correctCount / total) * 100);
+      document.getElementById("resScoreVal").textContent = `${scorePct}%`;
+      document.getElementById("resCorrectCount").textContent = correctCount;
+      document.getElementById("resWrongCount").textContent = total - correctCount;
+      document.getElementById("resTotalCount").textContent = total;
+
+      if (scorePct >= 85) {
+        document.getElementById("resTitleMsg").textContent = "🌟 תוצאה מעולה! מוכנות גבוהה למבחן!";
+      } else if (scorePct >= 70) {
+        document.getElementById("resTitleMsg").textContent = "👍 עבודה טובה! עם עוד קצת תרגול זה יהיה מושלם.";
+      } else {
+        document.getElementById("resTitleMsg").textContent = "💪 התחלה טובה! כדאי לחזור על השאלות שטעית בהן.";
+      }
+
+      // Render Review List
+      renderExamReviewList(exam);
+
+      document.querySelectorAll(".screen").forEach(s => s.classList.remove("active"));
+      document.getElementById("screenExamResults").classList.add("active");
+    }
+
+    function renderExamReviewList(exam) {
+      const list = document.getElementById("examReviewList");
+      list.innerHTML = "";
+      const letters = ["א", "ב", "ג", "ד", "ה"];
+
+      exam.questions.forEach((q, idx) => {
+        const userChoice = exam.userAnswers[idx];
+        const shuffledData = exam.shuffledOptionsCache[idx];
+        const isCorrect = userChoice !== undefined && userChoice === shuffledData.correctIndex;
+
+        const card = document.createElement("div");
+        card.className = `review-item ${isCorrect ? 'was-correct' : 'was-wrong'}`;
+
+        let statusText = isCorrect 
+          ? `<span style="color:var(--success); font-weight:800;">✔ תשובה נכונה</span>` 
+          : `<span style="color:var(--danger); font-weight:800;">✖ שגיאה</span>`;
+
+        let optionsHtml = shuffledData.options.map((opt, oIdx) => {
+          let styleClass = "";
+          let prefix = "";
+          if (oIdx === shuffledData.correctIndex) {
+            styleClass = "style='color:#15803d; font-weight:800;'";
+            prefix = " (התשובה הנכונה)";
+          }
+          if (oIdx === userChoice && !isCorrect) {
+            styleClass = "style='color:#b91c1c; font-weight:800; text-decoration:line-through;'";
+            prefix = " (התשובה שבחרת)";
+          }
+          return `<div ${styleClass} style="margin-bottom:4px;">${letters[oIdx]}. ${opt}${prefix}</div>`;
+        }).join("");
+
+        card.innerHTML = `
+          <div style="display:flex; justify-content:space-between; margin-bottom:8px;">
+            <span style="font-weight:700; color:var(--text-muted);">שאלה ${idx + 1} &bull; ${q.category}</span>
+            ${statusText}
+          </div>
+          <div style="font-size:1.05rem; font-weight:700; margin-bottom:12px;">${q.question}</div>
+          <div style="background:#f8fafc; padding:12px; border-radius:8px; margin-bottom:12px; font-size:0.95rem;">
+            ${optionsHtml}
+          </div>
+          ${renderExplanationHTML(q)}
+        `;
+        list.appendChild(card);
+      });
+    }
+
+    function escapeHTML(str) {
+      if (!str) return '';
+      return String(str)
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;');
+    }
+
+    function renderExplanationHTML(q) {
+      let html = '<div class="expl-sections-container">';
+      let hasContent = false;
+
+      // 1. Original source explanation (if exists in PDF)
+      if (q.originalExplanation && q.originalExplanation.trim() && !q.originalExplanation.startsWith('התשובה הנכונה היא:')) {
+        hasContent = true;
+        html += `
+          <div class="expl-section expl-original">
+            <div class="expl-section-title">
+              <span class="expl-pill pill-orig">📖 מפתח והערת שחזור מקורית</span>
+            </div>
+            <div class="expl-section-content">${escapeHTML(q.originalExplanation)}</div>
+          </div>
+        `;
+      }
+
+      // 2. AI pedagogical explanation
+      if (q.aiExplanation && q.aiExplanation.trim()) {
+        hasContent = true;
+        html += `
+          <div class="expl-section expl-ai">
+            <div class="expl-section-title">
+              <span class="expl-pill pill-ai">💡 נימוק והסבר פדגוגי מורחב</span>
+            </div>
+            <div class="expl-section-content">${escapeHTML(q.aiExplanation)}</div>
+          </div>
+        `;
+      }
+
+      // 3. Fallback if neither is distinct
+      if (!hasContent) {
+        html += `
+          <div class="expl-section expl-original">
+            <div class="expl-section-content">${escapeHTML(q.explanation || 'אין הסבר נוסף לשאלה זו.')}</div>
+          </div>
+        `;
+      }
+
+      html += '</div>';
+      return html;
+    }
+
+    function retryWrongExamQuestions() {
+      const wrongList = state.currentExam.questions.filter((q, idx) => {
+        const userChoice = state.currentExam.userAnswers[idx];
+        const shuffled = state.currentExam.shuffledOptionsCache[idx];
+        return userChoice === undefined || userChoice !== shuffled.correctIndex;
+      });
+
+      if (wrongList.length === 0) {
+        alert("לא היו שגיאות במבחן זה! כל הכבוד!");
+        return;
+      }
+
+      state.currentExam = {
+        questions: shuffleArray(wrongList),
+        currentIndex: 0,
+        userAnswers: {},
+        flagged: new Set(),
+        shuffledOptionsCache: {}
+      };
+
+      document.querySelectorAll(".screen").forEach(s => s.classList.remove("active"));
+      document.getElementById("screenActiveExam").classList.add("active");
+      renderExamQuickGrid();
+      renderCurrentExamQuestion();
+    }
+
+    /* ========================================================
+       STUDY / PRACTICE MODE LOGIC
+       ======================================================== */
+    function initStudyMode() {
+      let pool = [...state.allQuestions];
+      if (state.currentStudy.mistakesOnly) {
+        pool = pool.filter(q => state.mistakes.has(q.id));
+      } else if (state.currentStudy.selectedCategory !== 'ALL') {
+        pool = pool.filter(q => q.category === state.currentStudy.selectedCategory);
+      }
+
+      state.currentStudy.questions = shuffleArray(pool);
+      state.currentStudy.currentIndex = 0;
+      state.currentStudy.shuffledOptionsCache = {};
+    }
+
+    function onStudyFilterChange() {
+      state.currentStudy.selectedCategory = document.getElementById("studyCategoryFilter").value;
+      state.currentStudy.mistakesOnly = false;
+      document.getElementById("btnStudyMistakesOnly").classList.remove("btn-primary");
+      document.getElementById("btnStudyMistakesOnly").classList.add("btn-outline");
+      initStudyMode();
+      renderCurrentStudyQuestion();
+    }
+
+    function toggleStudyMistakesOnly() {
+      state.currentStudy.mistakesOnly = !state.currentStudy.mistakesOnly;
+      const btn = document.getElementById("btnStudyMistakesOnly");
+      if (state.currentStudy.mistakesOnly) {
+        btn.classList.add("btn-primary");
+        btn.classList.remove("btn-outline");
+      } else {
+        btn.classList.remove("btn-primary");
+        btn.classList.add("btn-outline");
+      }
+      initStudyMode();
+      renderCurrentStudyQuestion();
+    }
+
+    function renderCurrentStudyQuestion() {
+      const study = state.currentStudy;
+      const total = study.questions.length;
+
+      document.getElementById("studyTotalCount").textContent = total;
+      const box = document.getElementById("studyExplanationBox");
+      box.classList.remove("visible");
+
+      if (total === 0) {
+        document.getElementById("studyCurrentIndex").textContent = "0";
+        document.getElementById("studyQText").textContent = 
+          study.mistakesOnly ? "מאגר הטעויות שלך ריק כרגע! כל הכבוד 🎉" : "אין שאלות בקטגוריה זו.";
+        document.getElementById("studyOptionsContainer").innerHTML = "";
+        return;
+      }
+
+      const q = study.questions[study.currentIndex];
+      document.getElementById("studyCurrentIndex").textContent = study.currentIndex + 1;
+      document.getElementById("studyQCategory").textContent = q.category || "כללי";
+      document.getElementById("studyQSource").textContent = q.source || "שחזור";
+      document.getElementById("studyQUnverified").style.display = q.verified === false ? "inline-flex" : "none";
+      document.getElementById("studyQText").textContent = q.question;
+
+      // Shuffled Options
+      if (!study.shuffledOptionsCache[study.currentIndex]) {
+        study.shuffledOptionsCache[study.currentIndex] = getShuffledQuestionOptions(q);
+      }
+      const shuffledData = study.shuffledOptionsCache[study.currentIndex];
+
+      const container = document.getElementById("studyOptionsContainer");
+      container.innerHTML = "";
+      const letters = ["א", "ב", "ג", "ד", "ה"];
+
+      shuffledData.options.forEach((optText, optIdx) => {
+        const item = document.createElement("div");
+        item.className = "option-item";
+        item.id = `studyOpt_${optIdx}`;
+
+        item.innerHTML = `
+          <div class="option-letter">${letters[optIdx] || optIdx + 1}</div>
+          <div class="option-content">${optText}</div>
+        `;
+
+        item.onclick = () => answerStudyQuestion(optIdx);
+        container.appendChild(item);
+      });
+    }
+
+    function answerStudyQuestion(selectedOptIdx) {
+      const study = state.currentStudy;
+      const q = study.questions[study.currentIndex];
+      const shuffledData = study.shuffledOptionsCache[study.currentIndex];
+      const isCorrect = selectedOptIdx === shuffledData.correctIndex;
+
+      // Disable other options to prevent multiple clicks
+      const options = document.querySelectorAll("#studyOptionsContainer .option-item");
+      options.forEach((opt, idx) => {
+        opt.onclick = null;
+        opt.classList.add("disabled");
+        if (idx === shuffledData.correctIndex) {
+          opt.classList.add("correct");
+        } else if (idx === selectedOptIdx && !isCorrect) {
+          opt.classList.add("wrong");
+        }
+      });
+
+      // Update statistics
+      state.userStats.totalAnswered++;
+      const cat = q.category || "כללי";
+      if (!state.userStats.categoryStats[cat]) {
+        state.userStats.categoryStats[cat] = { correct: 0, total: 0 };
+      }
+      state.userStats.categoryStats[cat].total++;
+
+      if (isCorrect) {
+        state.userStats.totalCorrect++;
+        state.userStats.categoryStats[cat].correct++;
+        // Remove from mistake bank if present
+        if (state.mistakes.has(q.id)) {
+          state.mistakes.delete(q.id);
+        }
+      } else {
+        // Add to mistake bank
+        state.mistakes.add(q.id);
+      }
+
+      saveMistakes();
+      saveStats();
+
+      // Show Explanation Box
+      const explBox = document.getElementById("studyExplanationBox");
+      const explHeader = document.getElementById("studyExplanationHeader");
+      const explText = document.getElementById("studyExplanationText");
+
+      if (isCorrect) {
+        explHeader.innerHTML = "✅ נכון מאוד! כל הכבוד:";
+        explHeader.style.color = "#166534";
+      } else {
+        explHeader.innerHTML = "❌ לא מדויק. להלן ההסבר המלא:";
+        explHeader.style.color = "#991b1b";
+      }
+
+      explText.innerHTML = renderExplanationHTML(q);
+      explBox.classList.add("visible");
+    }
+
+    function prevStudyQuestion() {
+      if (state.currentStudy.currentIndex > 0) {
+        state.currentStudy.currentIndex--;
+        renderCurrentStudyQuestion();
+      }
+    }
+
+    function nextStudyQuestion() {
+      if (state.currentStudy.currentIndex < state.currentStudy.questions.length - 1) {
+        state.currentStudy.currentIndex++;
+        renderCurrentStudyQuestion();
+      } else {
+        // Wrap around with new shuffle!
+        state.currentStudy.questions = shuffleArray(state.currentStudy.questions);
+        state.currentStudy.currentIndex = 0;
+        state.currentStudy.shuffledOptionsCache = {};
+        renderCurrentStudyQuestion();
+      }
+    }
+
+    /* ========================================================
+       STATISTICS & DASHBOARD
+       ======================================================== */
+    function renderStats() {
+      const stats = state.userStats;
+      const total = stats.totalAnswered;
+      const correct = stats.totalCorrect;
+      const pct = total > 0 ? Math.round((correct / total) * 100) : 0;
+
+      document.getElementById("statAccuracyVal").textContent = `${pct}%`;
+      document.getElementById("statTotalAnswered").textContent = total;
+      document.getElementById("statMistakesActive").textContent = state.mistakes.size;
+      document.getElementById("statExamsCompleted").textContent = stats.examsCompleted;
+
+      // Render Category Bars
+      const container = document.getElementById("categoryStatsBars");
+      container.innerHTML = "";
+
+      let weakestCat = null;
+      let minPct = 101;
+
+      state.categories.forEach(catName => {
+        const catData = stats.categoryStats[catName] || { correct: 0, total: 0 };
+        const catPct = catData.total > 0 ? Math.round((catData.correct / catData.total) * 100) : 0;
+        const totalInDb = state.allQuestions.filter(q => q.category === catName).length;
+
+        if (catData.total >= 3 && catPct < minPct) {
+          minPct = catPct;
+          weakestCat = catName;
+        }
+
+        let barColor = "var(--primary)";
+        if (catData.total > 0) {
+          if (catPct >= 80) barColor = "var(--success)";
+          else if (catPct >= 65) barColor = "var(--warning)";
+          else barColor = "var(--danger)";
+        }
+
+        const barItem = document.createElement("div");
+        barItem.className = "cat-bar-item";
+        barItem.innerHTML = `
+          <div class="cat-bar-header">
+            <span>${catName} <small style="color:var(--text-muted); font-weight:normal;">(${catData.correct}/${catData.total} שנענו &bull; מתוך ${totalInDb} שאלות במאגר)</small></span>
+            <span style="font-weight:800; color:${barColor}">${catData.total > 0 ? catPct + '%' : 'טרם נבחן'}</span>
+          </div>
+          <div class="cat-bar-bg">
+            <div class="cat-bar-fill" style="width:${catPct}%; background:${barColor}"></div>
+          </div>
+        `;
+        container.appendChild(barItem);
+      });
+
+      // Update Insights
+      const bannerTitle = document.getElementById("statsInsightTitle");
+      const bannerDesc = document.getElementById("statsInsightDesc");
+
+      if (total < 10) {
+        bannerTitle.textContent = "התחלת תרגול טרייה:";
+        bannerDesc.textContent = "פתור לפחות 15-20 שאלות כדי שהמערכת תזהה את תחומי החוזק והחולשה במדויק.";
+      } else if (weakestCat && minPct < 75) {
+        bannerTitle.textContent = `🚨 המלצה ממוקדת לחיזוק:`;
+        bannerDesc.textContent = `זוהה אחוז הצלחה נמוך יחסית (${minPct}%) בנושא: "${weakestCat}". מומלץ לתרגל נושא זה במצב למידה.`;
+      } else if (state.mistakes.size > 5) {
+        bannerTitle.textContent = `📌 מאגר טעויות ממתין לך:`;
+        bannerDesc.textContent = `יש לך ${state.mistakes.size} שאלות במאגר הטעויות. חזרה עליהן כעת תקבע את הידע לקראת המבחן!`;
+      } else {
+        bannerTitle.textContent = `🏆 שליטה גבוהה בחומר!`;
+        bannerDesc.textContent = `כל הכבוד! הישג מרשים בכל הנושאים. המשך לתרגל מבחנים שלמים לשמירה על חדות.`;
+      }
+    }
+
+    function practiceWeakestCategory() {
+      let weakestCat = null;
+      let minPct = 101;
+
+      state.categories.forEach(catName => {
+        const catData = state.userStats.categoryStats[catName];
+        if (catData && catData.total > 0) {
+          const p = Math.round((catData.correct / catData.total) * 100);
+          if (p < minPct) {
+            minPct = p;
+            weakestCat = catName;
+          }
+        }
+      });
+
+      if (!weakestCat) {
+        weakestCat = state.categories[0];
+      }
+
+      document.getElementById("studyCategoryFilter").value = weakestCat;
+      state.currentStudy.selectedCategory = weakestCat;
+      state.currentStudy.mistakesOnly = false;
+      initStudyMode();
+      switchTab('study');
+    }
+
+    function confirmResetStats() {
+      const confirmReset = confirm("האם אתה בטוח שברצונך לאפס את כל נתוני הסטטיסטיקה ומאגר הטעויות?");
+      if (confirmReset) {
+        localStorage.removeItem(STORAGE_KEY_MISTAKES);
+        localStorage.removeItem(STORAGE_KEY_STATS);
+        state.mistakes = new Set();
+        state.userStats = {
+          totalAnswered: 0,
+          totalCorrect: 0,
+          examsCompleted: 0,
+          categoryStats: {}
+        };
+        updateMistakesUI();
+        renderStats();
+        alert("הנתונים אופסו בהצלחה.");
+      }
+    }
+  </script>
+</body>
+</html>
