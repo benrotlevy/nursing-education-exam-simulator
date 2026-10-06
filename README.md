@@ -134,3 +134,17 @@ practice of Nursing Education/
 
 1. פתחו ישירות את הקובץ **`index.html`** בכל דפדפן מודרני (Chrome, Edge, Firefox, Safari).
 2. בחרו נושא, כמות שאלות ומצב עבודה (מבחן / למידה) – והתחילו לתרגל!
+3. לשימוש מלא ללא תלות בקבצים נוספים בסמארטפון/גלקסי, ניתן לפתוח ישירות את **`simulator_all_in_one.html`**.
+
+---
+
+## 🛠️ ניהול גרסאות, CI/CD ופריסה (Git & GitHub Best Practices)
+
+הפרויקט מנוהל ב-Git לפי הסטנדרטים המובילים בתעשייה:
+* **בקרת קבצים קפדנית (`.gitignore`):** סינון סביבות וירטואליות (`.venv/`), קבצי מערכת הפעלה, וקבצי ביניים זמניים.
+* **נרמול שורות (`.gitattributes`):** כפיית סיומות שורה אחידות (`LF`) למניעת שיבושי Windows/Linux.
+* **ולידציה אוטומטית (GitHub Actions CI):** קובץ `.github/workflows/ci.yml` מריץ אוטומטית אימות שלמות (`verify_database.py`) ובדיקת ערבוב (`test_shuffle_logic.js`) בכל Push ו-Pull Request.
+* **פריסה ל-GitHub Pages:**
+  1. הגדירו את מאגר ה-GitHub כ-Remote.
+  2. בהגדרות המאגר ב-GitHub: `Settings` ➔ `Pages` ➔ תחת `Source` בחרו ב-`Deploy from a branch` (ענף `main`, תיקיית `/root`).
+  3. האתר הופך לזמין אונליין מיידית כ-Web App לכל מכשיר!
