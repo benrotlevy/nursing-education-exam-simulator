@@ -252,9 +252,12 @@ async function main() {
     }
   }
 
-  // Launch 3 concurrent workers
+  // Launch 3 concurrent workers with staggered start
   console.log(`🚀 Starting ${CONCURRENCY} parallel workers...\n`);
-  const workerPromises = Array.from({ length: CONCURRENCY }, (_, i) => worker(i + 1));
+  const workerPromises = Array.from({ length: CONCURRENCY }, async (_, i) => {
+    if (i > 0) await new Promise(r => setTimeout(r, i * 800));
+    return worker(i + 1);
+  });
   await Promise.all(workerPromises);
 
   console.log('\n' + '='.repeat(70));
