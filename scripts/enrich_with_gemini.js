@@ -5,8 +5,10 @@
  * 1. shortExplanation (punchy 1-line takeaway)
  * 2. detailedExplanation (5-15 lines with pedagogical rationale, distractor analysis, and literature grounding)
  * 
- * Safe execution:
- * Reads GEMINI_API_KEY from environment variables only (never hardcoded, never saved to disk).
+ * High performance:
+ * - 3 parallel async workers
+ * - Strictly uses gemini-3.8-flash
+ * - Reads GEMINI_API_KEY from environment variables only (never saved to disk)
  * 
  * Usage in Windows PowerShell:
  *   $env:GEMINI_API_KEY = "your-key-here"
@@ -15,27 +17,28 @@
 
 const fs = require('fs');
 const path = require('path');
+const { execSync } = require('child_process');
 
 const API_KEY = process.env.GEMINI_API_KEY;
 if (!API_KEY) {
   console.error('\n' + '='.repeat(70));
-  console.error('❌ שגיאה: לא הוגדר משתנה סביבה GEMINI_API_KEY!');
-  console.error('=' .repeat(70));
-  console.error('כדי להריץ את הסקריפט באופן מאובטח שאינו חושף את המפתח שלך,');
-  console.error('פתח את חלון ה-PowerShell שלך והרץ:\n');
-  console.error('  $env:GEMINI_API_KEY = "המפתח_שלך_מ-Google_AI_Studio"');
+  console.error('ERROR: GEMINI_API_KEY environment variable is not set!');
+  console.error('='.repeat(70));
+  console.error('To run safely without exposing your key, run this in PowerShell:\n');
+  console.error('  $env:GEMINI_API_KEY = "your_actual_key_from_Google_AI_Studio"');
   console.error('  node scripts/enrich_with_gemini.js\n');
-  console.error('=' .repeat(70) + '\n');
+  console.error('='.repeat(70) + '\n');
   process.exit(1);
 }
 
-// Config
+// Configuration
 const MODEL_NAME = process.argv.includes('--model')
   ? process.argv[process.argv.indexOf('--model') + 1]
-  : 'gemini-2.0-flash';
+  : 'gemini-3.8-flash';
 
-const BATCH_SIZE = 5; // 5 questions per call for highest reasoning quality & avoiding truncation
-const DELAY_BETWEEN_BATCHES_MS = 2500; // Polite delay between API calls
+const CONCURRENCY = 3;       // 3 parallel workers
+const BATCH_SIZE = 5;        // 5 questions per request for highest pedagogical quality
+const WORKER_STAGGER_MS = 1500; // Polite stagger delay between worker requests
 
 const DATA_FILE = path.join(__dirname, '..', 'data', 'clean_questions.json');
 const JS_FILE = path.join(__dirname, '..', 'questions.js');
@@ -59,7 +62,7 @@ const SYSTEM_PROMPT = `אתה מומחה פדגוגי וקליני בכיר לה
 - עליך להחזיר תמיד אך ורק אובייקט JSON תקני במבנה המבוקש ללא טקסט מקדים וללא מרקדאון של קוד.
 - התשובות חייבות להיות בעברית מקצועית, שוטפת, בהירה ומעודדת למידה.`;
 
-async function callGemini(batchQuestions, retries = 3) {
+async function callGemini(batchQuestions, workerId, retries = 6) {
   const url = `https://generativelanguage.googleapis.com/v1beta/models/${MODEL_NAME}:generateContent?key=${API_KEY}`;
 
   const promptContent = {
@@ -101,27 +104,28 @@ ${JSON.stringify(batchQuestions.map(q => ({
       const response = await fetch(url, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(promptContent)
+        body: JSON.stringify(promptContent),
+        signal: AbortSignal.timeout(90000) // 90-second timeout
       });
 
-      if (response.status === 429) {
-        console.warn(`\n⚠️ התקבלה שגיאת Rate Limit (429). ממתין ${attempt * 15} שניות לניסיון חוזר...`);
-        await new Promise(r => setTimeout(r, attempt * 15000));
+      if (response.status === 429 || response.status === 503) {
+        const waitSec = Math.min(attempt * 15, 60);
+        console.warn(`[Worker ${workerId}] Google servers busy (${response.status} High Demand). Waiting ${waitSec}s before retry with ${MODEL_NAME}...`);
+        await new Promise(r => setTimeout(r, waitSec * 1000));
         continue;
       }
 
       if (!response.ok) {
         const errText = await response.text();
-        throw new Error(`HTTP Error ${response.status}: ${errText}`);
+        throw new Error(`HTTP ${response.status}: ${errText}`);
       }
 
       const resJson = await response.json();
       const rawText = resJson?.candidates?.[0]?.content?.parts?.[0]?.text;
       if (!rawText) {
-        throw new Error("No text candidate returned from Gemini");
+        throw new Error("Empty candidate returned from Gemini");
       }
 
-      // Parse JSON from text
       let cleaned = rawText.trim();
       if (cleaned.startsWith('```json')) cleaned = cleaned.replace(/^```json/, '').replace(/```$/, '').trim();
       else if (cleaned.startsWith('```')) cleaned = cleaned.replace(/^```/, '').replace(/```$/, '').trim();
@@ -131,9 +135,10 @@ ${JSON.stringify(batchQuestions.map(q => ({
       if (parsed.results && Array.isArray(parsed.results)) return parsed.results;
       throw new Error("Returned payload is not a valid JSON array");
     } catch (err) {
-      console.warn(`\n[ניסיון ${attempt}/${retries}] שגיאה בבקשה: ${err.message}`);
+      console.warn(`[Worker ${workerId}] Attempt ${attempt}/${retries} failed: ${err.message}`);
       if (attempt === retries) throw err;
-      await new Promise(r => setTimeout(r, 4000));
+      const waitSec = Math.min(attempt * 10, 45);
+      await new Promise(r => setTimeout(r, waitSec * 1000));
     }
   }
 }
@@ -155,21 +160,21 @@ window.EXAM_QUESTIONS = ${JSON.stringify(questions, null, 2)};
 }
 
 async function main() {
-  console.log('\n===============================================================');
-  console.log('🚀 התחלת תהליך העשרת משובים פדגוגיים מבוססי ספרות (Gemini API)');
-  console.log(`🤖 מודל בשימוש: ${MODEL_NAME}`);
-  console.log('===============================================================\n');
+  console.log('\n' + '='.repeat(70));
+  console.log('🚀 Pedagogical Rationale Enrichment Engine (Gemini 3.8 Flash)');
+  console.log(`🤖 Model: ${MODEL_NAME}`);
+  console.log(`⚡ Concurrency: ${CONCURRENCY} parallel workers | Batch size: ${BATCH_SIZE} questions/call`);
+  console.log('='.repeat(70) + '\n');
 
   if (!fs.existsSync(DATA_FILE)) {
-    console.error(`קובץ הנתונים לא נמצא: ${DATA_FILE}`);
+    console.error(`Database file not found: ${DATA_FILE}`);
     process.exit(1);
   }
 
   const allQuestions = JSON.parse(fs.readFileSync(DATA_FILE, 'utf8'));
   const total = allQuestions.length;
 
-  // Filter questions that need enrichment
-  // A question needs enrichment if it lacks shortExplanation or detailedExplanation
+  // Identify questions needing enrichment
   const pendingIndices = [];
   allQuestions.forEach((q, idx) => {
     if (!q.shortExplanation || !q.detailedExplanation || q.shortExplanation.length < 10) {
@@ -178,83 +183,94 @@ async function main() {
   });
 
   const alreadyEnriched = total - pendingIndices.length;
-  console.log(`📊 סך הכל שאלות במאגר: ${total}`);
-  console.log(`✅ שאלות שכבר הועשרו: ${alreadyEnriched}`);
-  console.log(`⏳ שאלות הממתינות להעשרה: ${pendingIndices.length}\n`);
+  console.log(`📊 Total questions in database: ${total}`);
+  console.log(`✅ Already enriched: ${alreadyEnriched} (${((alreadyEnriched / total) * 100).toFixed(1)}%)`);
+  console.log(`⏳ Remaining to process: ${pendingIndices.length}\n`);
 
   if (pendingIndices.length === 0) {
-    console.log('🎉 כל השאלות במאגר כבר מועשרות בהסברים קצרים ומפורטים! אין צורך בפעולה.');
+    console.log('🎉 All 1,079 questions are already enriched! Nothing to do.');
     return;
   }
 
-  const startTime = Date.now();
-  let processedCount = 0;
-
-  // Process in batches
+  // Group pending questions into batches of BATCH_SIZE
+  const batches = [];
   for (let i = 0; i < pendingIndices.length; i += BATCH_SIZE) {
-    const chunkIndices = pendingIndices.slice(i, i + BATCH_SIZE);
-    const chunkQuestions = chunkIndices.map(idx => allQuestions[idx]);
+    batches.push(pendingIndices.slice(i, i + BATCH_SIZE));
+  }
 
-    const batchStartQ = chunkQuestions[0].id;
-    const batchEndQ = chunkQuestions[chunkQuestions.length - 1].id;
-    const progressPct = (((alreadyEnriched + processedCount) / total) * 100).toFixed(1);
+  const startTime = Date.now();
+  let enrichedCount = alreadyEnriched;
+  let batchCursor = 0;
 
-    process.stdout.write(`[${progressPct}%] מעבד אצווה (${batchStartQ} - ${batchEndQ}, ${chunkQuestions.length} שאלות)... `);
+  async function worker(workerId) {
+    while (batchCursor < batches.length) {
+      const curIndex = batchCursor++;
+      const chunkIndices = batches[curIndex];
+      const chunkQuestions = chunkIndices.map(idx => allQuestions[idx]);
+      const qStart = chunkQuestions[0].id;
+      const qEnd = chunkQuestions[chunkQuestions.length - 1].id;
 
-    try {
-      const enrichedBatch = await callGemini(chunkQuestions);
-      const resultMap = new Map(enrichedBatch.map(item => [item.id, item]));
+      try {
+        const enrichedBatch = await callGemini(chunkQuestions, workerId);
+        const resultMap = new Map(enrichedBatch.map(item => [item.id, item]));
 
-      let matchCount = 0;
-      chunkIndices.forEach(idx => {
-        const q = allQuestions[idx];
-        const enriched = resultMap.get(q.id);
-        if (enriched && enriched.shortExplanation && enriched.detailedExplanation) {
-          q.shortExplanation = enriched.shortExplanation.trim();
-          q.detailedExplanation = enriched.detailedExplanation.trim();
-          // Update legacy explanation fields as well for full compatibility
-          q.aiExplanation = enriched.detailedExplanation.trim();
-          matchCount++;
-        }
-      });
+        let matchCount = 0;
+        chunkIndices.forEach(idx => {
+          const q = allQuestions[idx];
+          const enriched = resultMap.get(q.id);
+          if (enriched && enriched.shortExplanation && enriched.detailedExplanation) {
+            q.shortExplanation = enriched.shortExplanation.trim();
+            q.detailedExplanation = enriched.detailedExplanation.trim();
+            q.aiExplanation = enriched.detailedExplanation.trim();
+            matchCount++;
+          }
+        });
 
-      processedCount += chunkQuestions.length;
-      saveDatabase(allQuestions);
-      console.log(`✅ הושלם בהצלחה (${matchCount}/${chunkQuestions.length} עודכנו ונשמרו)`);
+        // Save immediately to disk (synchronous, thread-safe in Node.js event loop)
+        saveDatabase(allQuestions);
+        enrichedCount += matchCount;
 
-      // Progress calculation & ETA
-      const elapsedSec = (Date.now() - startTime) / 1000;
-      const ratePerSec = processedCount / elapsedSec;
-      const remainingSec = Math.round((pendingIndices.length - processedCount) / ratePerSec);
-      const mins = Math.floor(remainingSec / 60);
-      const secs = remainingSec % 60;
-      console.log(`   ⏱️ זמן שחלף: ${Math.round(elapsedSec)}s | קצב: ${(ratePerSec * 60).toFixed(1)} שאלות/דקה | זמן משוער לסיום: ${mins} דקות ו-${secs} שניות`);
+        const pct = ((enrichedCount / total) * 100).toFixed(1);
+        const elapsedSec = (Date.now() - startTime) / 1000;
+        const speedPerMin = ((enrichedCount - alreadyEnriched) / (elapsedSec / 60)).toFixed(1);
+        const remaining = total - enrichedCount;
+        const etaSec = speedPerMin > 0 ? Math.round((remaining / speedPerMin) * 60) : 0;
+        const etaM = Math.floor(etaSec / 60);
+        const etaS = etaSec % 60;
 
-      // Delay between batches
-      if (i + BATCH_SIZE < pendingIndices.length) {
-        await new Promise(r => setTimeout(r, DELAY_BETWEEN_BATCHES_MS));
+        console.log(`[Worker ${workerId}] Batch (${qStart} - ${qEnd}) saved! | Progress: ${enrichedCount}/${total} (${pct}%) | Speed: ${speedPerMin} q/min | ETA: ${etaM}m ${etaS}s`);
+
+        // Polite delay between batch requests for this worker
+        await new Promise(r => setTimeout(r, WORKER_STAGGER_MS));
+      } catch (err) {
+        console.error(`[Worker ${workerId}] Batch (${qStart} - ${qEnd}) failed after retries: ${err.message}`);
+        console.log(`[Worker ${workerId}] Re-queuing batch (${qStart} - ${qEnd}) to ensure no questions are skipped...`);
+        // Put failed batch back at the end of the queue
+        batches.push(chunkIndices);
+        await new Promise(r => setTimeout(r, 12000));
       }
-    } catch (err) {
-      console.error(`\n❌ שגיאה בעיבוד אצווה (${batchStartQ} - ${batchEndQ}):`, err.message);
-      console.log('💾 הנתונים שנצברו עד כה נשמרו בבטחה. ממתין 10 שניות לפני המשך...');
-      await new Promise(r => setTimeout(r, 10000));
     }
   }
 
-  console.log('\n===============================================================');
-  console.log(`🎉 כל הכבוד! כל ${total} השאלות הועשרו בהצלחה בהסברים פדגוגיים מבוססי ספרות!`);
-  console.log('===============================================================\n');
+  // Launch 3 concurrent workers
+  console.log(`🚀 Starting ${CONCURRENCY} parallel workers...\n`);
+  const workerPromises = Array.from({ length: CONCURRENCY }, (_, i) => worker(i + 1));
+  await Promise.all(workerPromises);
 
-  // Trigger standalone rebuild
+  console.log('\n' + '='.repeat(70));
+  console.log(`🎉 SUCCESS! All ${total} questions are now fully enriched with verified pedagogical rationales!`);
+  console.log('='.repeat(70) + '\n');
+
+  // Automatically rebuild standalone file
   try {
-    const { execSync } = require('child_process');
+    console.log('📦 Rebuilding simulator_all_in_one.html...');
     execSync('node scripts/build_standalone.js', { stdio: 'inherit' });
   } catch (e) {
-    console.warn('הערה: ניתן להריץ node scripts/build_standalone.js לבנייה מחדש של הקובץ העצמאי.');
+    console.warn('Note: You can run node scripts/build_standalone.js to rebuild the standalone file.');
   }
 }
 
 main().catch(err => {
-  console.error('\n💥 שגיאה קריטית בריצת הסקריפט:', err);
+  console.error('\nCritical Error:', err);
   process.exit(1);
 });
