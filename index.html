@@ -622,12 +622,124 @@
       line-height: 1.6;
     }
 
-    /* Distinct Original vs AI Explanation Blocks */
+    /* Tiered Explanation Components */
     .expl-sections-container {
       display: flex;
       flex-direction: column;
       gap: 12px;
       margin-top: 10px;
+    }
+
+    /* 1. One-Liner Quick Insight Card */
+    .expl-short-card {
+      background: #f0fdf4;
+      border: 1px solid #bbf7d0;
+      border-right: 4px solid #16a34a;
+      border-radius: var(--radius-md);
+      padding: 12px 16px;
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+
+    .expl-short-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 0.82rem;
+      font-weight: 800;
+      color: #15803d;
+    }
+
+    .expl-short-text {
+      font-size: 0.98rem;
+      font-weight: 600;
+      color: #14532d;
+      line-height: 1.5;
+    }
+
+    /* 2. Interactive Accordion for Detailed Explanation */
+    .expl-details-accordion {
+      background: #ffffff;
+      border: 1px solid #e2e8f0;
+      border-radius: var(--radius-md);
+      overflow: hidden;
+      transition: all 0.2s ease;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+    }
+
+    .expl-details-accordion[open] {
+      border-color: #cbd5e1;
+      box-shadow: 0 4px 6px -1px rgba(0,0,0,0.07);
+    }
+
+    .expl-accordion-summary {
+      padding: 10px 14px;
+      background: #f8fafc;
+      font-size: 0.88rem;
+      font-weight: 700;
+      color: var(--primary);
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      user-select: none;
+      transition: background 0.15s ease;
+    }
+
+    .expl-accordion-summary:hover {
+      background: #f1f5f9;
+      color: var(--primary-hover);
+    }
+
+    .expl-accordion-summary::-webkit-details-marker {
+      display: none;
+    }
+
+    .summary-left {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .summary-arrow {
+      font-size: 0.75rem;
+      transition: transform 0.2s ease;
+    }
+
+    .expl-details-accordion[open] .summary-arrow {
+      transform: rotate(180deg);
+    }
+
+    .expl-details-content {
+      padding: 14px 16px;
+      border-top: 1px solid #f1f5f9;
+      background: #ffffff;
+      font-size: 0.94rem;
+      color: #334155;
+      line-height: 1.65;
+    }
+
+    .expl-details-content p {
+      margin-bottom: 8px;
+    }
+
+    .expl-details-content p:last-child {
+      margin-bottom: 0;
+    }
+
+    /* 3. Original source note */
+    .expl-original-tag {
+      background: #f8fafc;
+      border: 1px solid #e2e8f0;
+      border-radius: var(--radius-sm);
+      padding: 8px 12px;
+      font-size: 0.82rem;
+      color: #64748b;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      flex-wrap: wrap;
     }
 
     .expl-section {
@@ -2049,40 +2161,49 @@
     }
 
     function renderExplanationHTML(q) {
+      const shortText = q.shortExplanation || (q.aiExplanation ? q.aiExplanation.split('\n')[0] : q.explanation) || 'התשובה המסומנת היא התשובה הנכונה.';
+      const detailedText = q.detailedExplanation || q.aiExplanation || q.explanation || '';
+      const origText = q.originalExplanation && q.originalExplanation.trim() && !q.originalExplanation.startsWith('התשובה הנכונה היא:') ? q.originalExplanation.trim() : null;
+
       let html = '<div class="expl-sections-container">';
-      let hasContent = false;
 
-      // 1. Original source explanation (if exists in PDF)
-      if (q.originalExplanation && q.originalExplanation.trim() && !q.originalExplanation.startsWith('התשובה הנכונה היא:')) {
-        hasContent = true;
+      // 1. One-Liner Quick Insight (Always visible immediately)
+      html += `
+        <div class="expl-short-card">
+          <div class="expl-short-badge">💡 בשורה אחת:</div>
+          <div class="expl-short-text">${escapeHTML(shortText)}</div>
+        </div>
+      `;
+
+      // 2. Interactive Accordion for Detailed Explanation (5-15 lines)
+      if (detailedText && detailedText.trim() !== shortText.trim()) {
+        const formattedDetailed = escapeHTML(detailedText)
+          .replace(/\n\n/g, '<br><br>')
+          .replace(/\n/g, '<br>')
+          .replace(/(•|\-|\*)\s*([^\<]+)/g, '<div style="margin-right:12px; margin-bottom:4px;">• $2</div>');
+
         html += `
-          <div class="expl-section expl-original">
-            <div class="expl-section-title">
-              <span class="expl-pill pill-orig">📖 מפתח והערת שחזור מקורית</span>
+          <details class="expl-details-accordion">
+            <summary class="expl-accordion-summary">
+              <span class="summary-left">
+                <span>📖</span>
+                <span>הסבר פדגוגי מפורט, ניתוח מסיחים ומקורות ספרות</span>
+              </span>
+              <span class="summary-arrow">▼</span>
+            </summary>
+            <div class="expl-details-content">
+              ${formattedDetailed}
             </div>
-            <div class="expl-section-content">${escapeHTML(q.originalExplanation)}</div>
-          </div>
+          </details>
         `;
       }
 
-      // 2. AI pedagogical explanation
-      if (q.aiExplanation && q.aiExplanation.trim()) {
-        hasContent = true;
+      // 3. Original recovery note (if present)
+      if (origText) {
         html += `
-          <div class="expl-section expl-ai">
-            <div class="expl-section-title">
-              <span class="expl-pill pill-ai">💡 נימוק והסבר פדגוגי מורחב</span>
-            </div>
-            <div class="expl-section-content">${escapeHTML(q.aiExplanation)}</div>
-          </div>
-        `;
-      }
-
-      // 3. Fallback if neither is distinct
-      if (!hasContent) {
-        html += `
-          <div class="expl-section expl-original">
-            <div class="expl-section-content">${escapeHTML(q.explanation || 'אין הסבר נוסף לשאלה זו.')}</div>
+          <div class="expl-original-tag">
+            <span class="expl-pill pill-orig">🏷️ הערת שחזור מקורית:</span>
+            <span>${escapeHTML(origText)}</span>
           </div>
         `;
       }
