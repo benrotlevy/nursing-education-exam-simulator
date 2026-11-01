@@ -39,7 +39,7 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 DATA_FILE = BASE_DIR / "data" / "clean_questions.json"
 JS_FILE = BASE_DIR / "questions.js"
 
-MODEL_NAME = "gemini-2.0-flash"
+MODEL_NAME = "gemini-3.8-flash"
 if "--model" in sys.argv:
     idx = sys.argv.index("--model")
     if idx + 1 < len(sys.argv):
