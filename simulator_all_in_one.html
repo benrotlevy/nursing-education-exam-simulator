@@ -61,7 +61,7 @@
     }
 
     .header-inner {
-      max-width: 1100px;
+      max-width: 960px;
       margin: 0 auto;
       padding: 12px 20px;
       display: flex;
@@ -245,45 +245,62 @@
 
     .nav-tabs {
       display: flex;
-      gap: 8px;
+      align-items: center;
+      justify-content: center;
+      max-width: 560px;
+      width: 100%;
+      margin: 0 auto;
       background: #f1f5f9;
-      padding: 4px;
-      border-radius: var(--radius-md);
+      border: 1px solid #e2e8f0;
+      padding: 5px;
+      border-radius: 9999px;
+      box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.04);
+      gap: 4px;
     }
 
     .tab-btn {
+      flex: 1;
       border: none;
       background: transparent;
-      padding: 8px 18px;
+      padding: 9px 16px;
       font-size: 0.95rem;
       font-weight: 700;
-      color: var(--text-muted);
+      color: #64748b;
       cursor: pointer;
-      border-radius: 10px;
-      transition: all 0.2s ease;
-      display: flex;
+      border-radius: 9999px;
+      transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+      display: inline-flex;
       align-items: center;
+      justify-content: center;
       gap: 6px;
+      white-space: nowrap;
+      user-select: none;
+      -webkit-tap-highlight-color: transparent;
     }
 
     .tab-btn:hover {
       color: var(--text-main);
+      background: rgba(255, 255, 255, 0.6);
     }
 
     .tab-btn.active {
-      background: white;
+      background: #ffffff;
       color: var(--primary);
-      box-shadow: var(--shadow-sm);
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08), 0 1px 2px rgba(0, 0, 0, 0.04);
+      font-weight: 800;
     }
 
     .mistakes-counter-badge {
       background: var(--danger-light);
       color: var(--danger);
-      font-size: 0.75rem;
-      padding: 2px 8px;
-      border-radius: 12px;
+      font-size: 0.74rem;
+      padding: 2px 7px;
+      border-radius: 9999px;
       font-weight: 800;
       margin-inline-start: 4px;
+      display: inline-flex;
+      align-items: center;
+      line-height: 1;
     }
 
     /* Container */
@@ -363,13 +380,14 @@
     }
 
     .pill-group {
-      display: flex;
-      flex-wrap: wrap;
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
       gap: 10px;
     }
 
     .pill-option {
       cursor: pointer;
+      display: block;
     }
 
     .pill-option input {
@@ -377,22 +395,34 @@
     }
 
     .pill-badge {
-      display: inline-block;
-      padding: 10px 18px;
-      border: 1px solid var(--border);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      width: 100%;
+      min-height: 44px;
+      padding: 10px 14px;
+      border: 1.5px solid var(--border);
       border-radius: var(--radius-md);
-      font-size: 0.95rem;
+      font-size: 0.92rem;
       font-weight: 700;
       color: #475569;
       background: #f8fafc;
       transition: all 0.2s ease;
       user-select: none;
+      text-align: center;
+      box-sizing: border-box;
+    }
+
+    .pill-option:hover .pill-badge {
+      background: #f1f5f9;
+      border-color: #cbd5e1;
     }
 
     .pill-option input:checked + .pill-badge {
       background: var(--primary-light);
       border-color: var(--primary);
       color: var(--primary-dark);
+      box-shadow: 0 2px 6px rgba(2, 132, 199, 0.18);
     }
 
     /* Buttons */
@@ -1058,9 +1088,71 @@
       margin-top: auto;
     }
 
+    /* Action & Controls Groups */
+    .results-actions {
+      display: flex;
+      gap: 12px;
+      margin-bottom: 28px;
+      flex-wrap: wrap;
+    }
+
+    .results-actions .btn {
+      flex: 1;
+      min-width: 180px;
+    }
+
+    .study-header-bar {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 16px;
+      flex-wrap: wrap;
+      gap: 12px;
+    }
+
+    .study-filters {
+      display: flex;
+      gap: 8px;
+      align-items: center;
+      flex-wrap: wrap;
+    }
+
+    .stats-footer-actions {
+      padding-top: 16px;
+      border-top: 1px solid var(--border);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 12px;
+    }
+
+    /* ========================================================
+       RESPONSIVE DESIGN: TABLETS & MID-SIZE SCREENS (<=768px)
+       ======================================================== */
+    @media (max-width: 768px) {
+      .header-inner {
+        padding: 10px 16px;
+      }
+      main {
+        padding: 0 12px;
+        margin: 16px auto;
+      }
+      .card {
+        padding: 22px 18px;
+      }
+      .nav-tabs {
+        max-width: 500px;
+      }
+    }
+
+    /* ========================================================
+       RESPONSIVE DESIGN: SMARTPHONES (<=640px)
+       (e.g., Google Pixel 10 Pro XL, Samsung Galaxy S25 / S24)
+       ======================================================== */
     @media (max-width: 640px) {
       .header-inner {
-        padding: 10px 14px;
+        padding: 10px 12px;
         gap: 10px;
       }
       .header-top {
@@ -1076,6 +1168,7 @@
         width: 36px;
         height: 36px;
         font-size: 18px;
+        border-radius: 10px;
       }
       .btn-google-auth {
         padding: 6px 10px;
@@ -1099,23 +1192,143 @@
         font-size: 0.76rem;
       }
       .nav-tabs {
+        max-width: 100%;
         width: 100%;
-        justify-content: center;
+        border-radius: 12px;
+        padding: 3px;
+        gap: 3px;
       }
       .tab-btn {
         flex: 1;
         justify-content: center;
-        padding: 8px 6px;
-        font-size: 0.85rem;
+        padding: 8px 4px;
+        font-size: 0.84rem;
+        border-radius: 9px;
+        min-height: 42px;
+      }
+      .mistakes-counter-badge {
+        font-size: 0.68rem;
+        padding: 1px 5px;
+        margin-inline-start: 2px;
       }
       .card {
-        padding: 20px 16px;
+        padding: 18px 14px;
+        border-radius: var(--radius-md);
+        margin-bottom: 16px;
       }
       .q-text {
-        font-size: 1.15rem;
+        font-size: 1.12rem;
+        line-height: 1.55;
+        margin-bottom: 18px;
       }
       .option-item {
         padding: 12px 14px;
+        gap: 10px;
+      }
+      .option-letter {
+        width: 28px;
+        height: 28px;
+        font-size: 0.88rem;
+      }
+      .option-content {
+        font-size: 0.98rem;
+      }
+      .pill-group {
+        grid-template-columns: repeat(2, 1fr);
+        gap: 8px;
+      }
+      .pill-option:last-child {
+        grid-column: span 2;
+      }
+      .pill-badge {
+        padding: 10px 8px;
+        font-size: 0.86rem;
+        min-height: 42px;
+      }
+      .q-footer {
+        flex-direction: column-reverse;
+        gap: 8px;
+      }
+      .q-footer .btn {
+        width: 100%;
+      }
+      .expl-details-content {
+        padding: 12px 14px;
+        font-size: 0.90rem;
+      }
+      .results-actions {
+        flex-direction: column;
+        gap: 10px;
+      }
+      .results-actions .btn {
+        width: 100%;
+        min-height: 46px;
+      }
+      .study-header-bar {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 12px;
+      }
+      .study-filters {
+        width: 100%;
+      }
+      .study-filters .form-select {
+        flex: 1;
+      }
+      .study-filters .btn {
+        white-space: nowrap;
+      }
+      .stats-footer-actions {
+        flex-direction: column-reverse;
+      }
+      .stats-footer-actions .btn {
+        width: 100%;
+        min-height: 44px;
+      }
+    }
+
+    /* ========================================================
+       RESPONSIVE DESIGN: ULTRA-COMPACT SMARTPHONES (<=420px)
+       (e.g., standard Galaxy S25 / S24 portrait width)
+       ======================================================== */
+    @media (max-width: 420px) {
+      .header-inner {
+        padding: 8px 10px;
+      }
+      .brand-title h1 {
+        font-size: 0.96rem;
+      }
+      .brand-title p {
+        font-size: 0.68rem;
+      }
+      .brand-icon {
+        width: 32px;
+        height: 32px;
+        font-size: 16px;
+      }
+      .btn-google-auth {
+        padding: 5px 8px;
+        font-size: 0.74rem;
+        gap: 4px;
+      }
+      .tab-btn {
+        font-size: 0.78rem;
+        padding: 8px 2px;
+        gap: 2px;
+      }
+      .mistakes-counter-badge {
+        font-size: 0.64rem;
+        padding: 1px 4px;
+      }
+      .card-title {
+        font-size: 1.18rem;
+      }
+      .card-subtitle {
+        font-size: 0.86rem;
+      }
+      .pill-badge {
+        font-size: 0.82rem;
+        padding: 9px 4px;
       }
     }
   </style>
@@ -1315,14 +1528,14 @@
           </div>
         </div>
 
-        <div style="display:flex; gap:12px; margin-bottom: 28px; flex-wrap:wrap;">
-          <button class="btn btn-primary" id="btnRetryWrong" onclick="retryWrongExamQuestions()" style="flex:1;">
+        <div class="results-actions">
+          <button class="btn btn-primary" id="btnRetryWrong" onclick="retryWrongExamQuestions()">
             🔁 תרגל עכשיו רק את השגיאות
           </button>
-          <button class="btn btn-outline" onclick="resetExamToSetup()" style="flex:1;">
+          <button class="btn btn-outline" onclick="resetExamToSetup()">
             📝 מבחן חדש
           </button>
-          <button class="btn btn-outline" onclick="switchTab('stats')" style="flex:1;">
+          <button class="btn btn-outline" onclick="switchTab('stats')">
             📊 צפה בסטטיסטיקה המלאה
           </button>
         </div>
@@ -1337,17 +1550,17 @@
     <!-- SCREEN 4: STUDY / PRACTICE MODE -->
     <section id="screenStudyMode" class="screen">
       <div class="card">
-        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:16px; flex-wrap:wrap; gap:12px;">
+        <div class="study-header-bar">
           <div>
             <h2 class="card-title" style="margin-bottom:2px;">מצב למידה ואימון</h2>
             <p class="card-subtitle" style="margin-bottom:0;">משוב מיידי והסבר מפורט על כל שאלה מיד בעת הבחירה.</p>
           </div>
-          <div style="display:flex; gap:8px;">
-            <select id="studyCategoryFilter" class="form-select" style="width:auto; padding:8px 12px; font-size:0.9rem;" onchange="onStudyFilterChange()">
+          <div class="study-filters">
+            <select id="studyCategoryFilter" class="form-select" onchange="onStudyFilterChange()">
               <option value="ALL">כל הנושאים</option>
               <!-- Populated via JS -->
             </select>
-            <button class="btn btn-outline" id="btnStudyMistakesOnly" onclick="toggleStudyMistakesOnly()" style="padding:8px 14px; font-size:0.9rem;">
+            <button class="btn btn-outline" id="btnStudyMistakesOnly" onclick="toggleStudyMistakesOnly()">
               🎯 מאגר טעויות (<span id="studyMistakesCount">0</span>)
             </button>
           </div>
@@ -1438,7 +1651,7 @@
         <div id="statsCloudSyncInfo" style="margin-top:28px; margin-bottom:16px; font-size:0.9rem; padding:10px 14px; background:#f8fafc; border-radius:var(--radius-sm); border:1px solid var(--border);">
           <span style="color:var(--text-muted);">💾 הנתונים נשמרים מקומית בדפדפן. לחץ למעלה על 'סנכרון ענן' כדי לסנכרן בין מכשירים.</span>
         </div>
-        <div style="padding-top:16px; border-top:1px solid var(--border); display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:12px;">
+        <div class="stats-footer-actions">
           <button class="btn btn-outline" style="color:var(--danger); border-color:#fca5a5;" onclick="confirmResetStats()">
             🗑️ איפוס כל נתוני הסטטיסטיקה
           </button>
