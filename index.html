@@ -247,7 +247,7 @@
       display: flex;
       align-items: center;
       justify-content: center;
-      max-width: 560px;
+      max-width: 720px;
       width: 100%;
       margin: 0 auto;
       background: #f1f5f9;
@@ -262,8 +262,8 @@
       flex: 1;
       border: none;
       background: transparent;
-      padding: 9px 16px;
-      font-size: 0.95rem;
+      padding: 9px 14px;
+      font-size: 0.92rem;
       font-weight: 700;
       color: #64748b;
       cursor: pointer;
@@ -272,7 +272,7 @@
       display: inline-flex;
       align-items: center;
       justify-content: center;
-      gap: 6px;
+      gap: 5px;
       white-space: nowrap;
       user-select: none;
       -webkit-tap-highlight-color: transparent;
@@ -293,6 +293,19 @@
     .mistakes-counter-badge {
       background: var(--danger-light);
       color: var(--danger);
+      font-size: 0.74rem;
+      padding: 2px 7px;
+      border-radius: 9999px;
+      font-weight: 800;
+      margin-inline-start: 4px;
+      display: inline-flex;
+      align-items: center;
+      line-height: 1;
+    }
+
+    .saved-counter-badge {
+      background: #e0f2fe;
+      color: #0369a1;
       font-size: 0.74rem;
       padding: 2px 7px;
       border-radius: 9999px;
@@ -1127,6 +1140,123 @@
       gap: 12px;
     }
 
+    /* Saved Exams Zone Styles */
+    .saved-metrics-bar {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+      gap: 12px;
+      margin-bottom: 24px;
+    }
+
+    .saved-metric-chip {
+      background: #f8fafc;
+      border: 1px solid var(--border);
+      border-radius: var(--radius-md);
+      padding: 14px 16px;
+      text-align: center;
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+    }
+
+    .saved-metric-num {
+      font-size: 1.6rem;
+      font-weight: 800;
+      color: #0f172a;
+    }
+
+    .saved-metric-lbl {
+      font-size: 0.82rem;
+      font-weight: 700;
+      color: var(--text-muted);
+    }
+
+    .saved-add-card {
+      background: #f8fafc;
+      border: 1px solid var(--border);
+      border-radius: var(--radius-md);
+      padding: 20px;
+      margin-bottom: 24px;
+    }
+
+    .saved-add-controls {
+      display: flex;
+      gap: 12px;
+      align-items: center;
+      flex-wrap: wrap;
+    }
+
+    .saved-slots-grid {
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+      margin-bottom: 24px;
+    }
+
+    .saved-slot-card {
+      background: #ffffff;
+      border: 1.5px solid var(--border);
+      border-radius: var(--radius-md);
+      padding: 18px 20px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 14px;
+      transition: all 0.2s ease;
+    }
+
+    .saved-slot-card:hover {
+      border-color: #cbd5e1;
+      box-shadow: var(--shadow-sm);
+    }
+
+    .saved-slot-info {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+      flex: 1;
+      min-width: 240px;
+    }
+
+    .saved-slot-title {
+      font-size: 1.05rem;
+      font-weight: 800;
+      color: #0f172a;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      flex-wrap: wrap;
+    }
+
+    .saved-slot-meta {
+      font-size: 0.82rem;
+      color: var(--text-muted);
+      display: flex;
+      gap: 12px;
+      flex-wrap: wrap;
+    }
+
+    .saved-slot-actions {
+      display: flex;
+      gap: 10px;
+      align-items: center;
+      flex-wrap: wrap;
+    }
+
+    .saved-results-banner {
+      background: #ecfdf5;
+      border: 1.5px solid #a7f3d0;
+      border-radius: var(--radius-md);
+      padding: 16px 20px;
+      margin-bottom: 22px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 14px;
+      flex-wrap: wrap;
+    }
+
     /* ========================================================
        RESPONSIVE DESIGN: TABLETS & MID-SIZE SCREENS (<=768px)
        ======================================================== */
@@ -1142,7 +1272,7 @@
         padding: 22px 18px;
       }
       .nav-tabs {
-        max-width: 500px;
+        max-width: 600px;
       }
     }
 
@@ -1196,19 +1326,20 @@
         width: 100%;
         border-radius: 12px;
         padding: 3px;
-        gap: 3px;
+        gap: 2px;
       }
       .tab-btn {
         flex: 1;
         justify-content: center;
-        padding: 8px 4px;
-        font-size: 0.84rem;
+        padding: 8px 2px;
+        font-size: 0.80rem;
         border-radius: 9px;
         min-height: 42px;
+        gap: 2px;
       }
-      .mistakes-counter-badge {
-        font-size: 0.68rem;
-        padding: 1px 5px;
+      .mistakes-counter-badge, .saved-counter-badge {
+        font-size: 0.65rem;
+        padding: 1px 4px;
         margin-inline-start: 2px;
       }
       .card {
@@ -1285,6 +1416,33 @@
         width: 100%;
         min-height: 44px;
       }
+      .saved-slot-card {
+        flex-direction: column;
+        align-items: stretch;
+      }
+      .saved-slot-actions {
+        width: 100%;
+      }
+      .saved-slot-actions .btn {
+        flex: 1;
+        min-height: 42px;
+      }
+      .saved-add-controls {
+        flex-direction: column;
+        align-items: stretch;
+      }
+      .saved-add-controls .btn {
+        width: 100%;
+        min-height: 44px;
+      }
+      .saved-results-banner {
+        flex-direction: column;
+        align-items: stretch;
+        text-align: center;
+      }
+      .saved-results-banner .btn {
+        width: 100%;
+      }
     }
 
     /* ========================================================
@@ -1312,13 +1470,13 @@
         gap: 4px;
       }
       .tab-btn {
-        font-size: 0.78rem;
-        padding: 8px 2px;
-        gap: 2px;
+        font-size: 0.72rem;
+        padding: 7px 1px;
+        gap: 1px;
       }
-      .mistakes-counter-badge {
-        font-size: 0.64rem;
-        padding: 1px 4px;
+      .mistakes-counter-badge, .saved-counter-badge {
+        font-size: 0.58rem;
+        padding: 1px 3px;
       }
       .card-title {
         font-size: 1.18rem;
@@ -1376,6 +1534,10 @@
         </button>
         <button class="tab-btn" id="tabStudy" onclick="switchTab('study')">
           💡 מצב למידה
+        </button>
+        <button class="tab-btn" id="tabSavedExams" onclick="switchTab('saved-exams')">
+          📦 מבחנים שמורים
+          <span class="saved-counter-badge" id="navSavedBadge">0/3</span>
         </button>
         <button class="tab-btn" id="tabStats" onclick="switchTab('stats')">
           📊 סטטיסטיקה
@@ -1528,6 +1690,21 @@
           </div>
         </div>
 
+        <!-- Saved Exam Release Banner -->
+        <div id="savedExamResultsBanner" class="saved-results-banner" style="display:none;">
+          <div>
+            <div style="font-weight:800; color:#065f46; font-size:1.05rem; margin-bottom:4px;">
+              🎉 סיימת בהצלחה מבחן שלם שהיה שמור בנפרד!
+            </div>
+            <div style="font-size:0.88rem; color:#047857;">
+              רוצה להחזיר את שאלות המבחן למאגר הכללי כדי שיופיעו שוב בערבוב של מבחני התרגול והלמידה?
+            </div>
+          </div>
+          <button class="btn btn-primary" onclick="releaseSavedExamFromResults()" style="background:#10b981; border:none; white-space:nowrap;">
+            🔓 שחרר שאלות למאגר הכללי
+          </button>
+        </div>
+
         <div class="results-actions">
           <button class="btn btn-primary" id="btnRetryWrong" onclick="retryWrongExamQuestions()">
             🔁 תרגל עכשיו רק את השגיאות
@@ -1543,6 +1720,65 @@
         <h3 class="card-title" style="font-size:1.15rem; margin-bottom:16px;">פירוט והסברים לשאלות המבחן:</h3>
         <div id="examReviewList">
           <!-- Dynamically populated review questions -->
+        </div>
+      </div>
+    </section>
+
+    <!-- SCREEN 3.5: SAVED EXAMS ZONE (מבחנים שמורים מחוץ למאגר) -->
+    <section id="screenSavedExams" class="screen">
+      <div class="card">
+        <div style="margin-bottom:18px;">
+          <h2 class="card-title" style="margin-bottom:4px;">📦 ניהול מבחנים שמורים (שמירה מחוץ למאגר)</h2>
+          <p class="card-subtitle" style="margin-bottom:0;">
+            נעלו עד 3 שחזורים מלאים למועד מאוחר יותר. שאלות של מבחן שמור <strong>יבודדו מחוץ למאגר</strong> ולא יופיעו במבחני תרגול מעורבבים או במצב למידה, כדי שתוכלו לבצע סימולציית מבחן אמיתית ונקייה.
+          </p>
+        </div>
+
+        <!-- Metrics Banner -->
+        <div class="saved-metrics-bar">
+          <div class="saved-metric-chip">
+            <span class="saved-metric-num" id="savedSlotsCount">0 / 3</span>
+            <span class="saved-metric-lbl">מבחנים שמורים</span>
+          </div>
+          <div class="saved-metric-chip">
+            <span class="saved-metric-num" id="savedQuarantinedCount" style="color:var(--primary);">0</span>
+            <span class="saved-metric-lbl">שאלות שמורות בבידוד</span>
+          </div>
+          <div class="saved-metric-chip">
+            <span class="saved-metric-num" id="savedActivePoolCount" style="color:var(--success);">1,079</span>
+            <span class="saved-metric-lbl">שאלות לתרגול יומיומי</span>
+          </div>
+        </div>
+
+        <!-- Add Exam Card / Controls -->
+        <div class="saved-add-card" id="savedAddSection">
+          <h3 style="font-size:1.05rem; font-weight:800; margin-bottom:8px; color:#1e293b;">
+            ➕ הוספת מבחן מלא לשמירה (מחוץ למאגר)
+          </h3>
+          <p style="font-size:0.88rem; color:var(--text-muted); margin-bottom:14px;">
+            בחרו מבחן מלא מתוך רשימת המבחנים הקיימים. שאלותיו יוקצו מיד למבחן זה וייגרעו ממאגר התרגול והלמידה:
+          </p>
+          <div class="saved-add-controls">
+            <select id="savedExamSourceSelect" class="form-select" style="flex:1;">
+              <!-- Populated dynamically via JS -->
+            </select>
+            <button class="btn btn-primary" onclick="addSelectedExamToSavedZone()" style="white-space:nowrap;">
+              🔒 שמור ונעל מבחן זה
+            </button>
+          </div>
+        </div>
+
+        <!-- Full Limit Message (shown when 3/3 are used) -->
+        <div id="savedLimitReachedNotice" style="display:none; padding:14px 18px; background:#eff6ff; border:1px solid #bfdbfe; border-radius:var(--radius-md); margin-bottom:24px; color:#1e40af; font-size:0.92rem; font-weight:700;">
+          🔒 הגעת למכסה המרבית של 3 מבחנים שמורים. כדי לשמור מבחן אחר, יש לשחרר תחילה את אחד המבחנים הקיימים חזרה למאגר הכללי.
+        </div>
+
+        <!-- List of Saved Slots -->
+        <h3 style="font-size:1.15rem; font-weight:800; margin-bottom:16px; margin-top:24px; color:#0f172a;">
+          המבחנים השמורים שלך (עד 3):
+        </h3>
+        <div id="savedExamsList" class="saved-slots-grid">
+          <!-- Populated dynamically via JS -->
         </div>
       </div>
     </section>
@@ -1680,6 +1916,7 @@
     const STORAGE_KEY_STUDY_STATE = "nursing_study_state_v1";
     const STORAGE_KEY_EXAM_STATE = "nursing_exam_state_v1";
     const STORAGE_KEY_ACTIVE_TAB = "nursing_active_tab_v1";
+    const STORAGE_KEY_SAVED_EXAMS = "nursing_saved_exams_v1";
 
     let state = {
       allQuestions: [],
@@ -1693,6 +1930,7 @@
         "אתיקה, חוק ובטיחות המטופל"
       ],
       mistakes: new Set(), // Set of question IDs
+      savedExams: [], // Array of up to 3 saved exam objects: { id, sourceName, title, questionCount, questionIds, savedAt, status, score, completedAt }
       userStats: {
         totalAnswered: 0,
         totalCorrect: 0,
@@ -1767,12 +2005,13 @@
       restoreExamSession();
 
       renderStats();
+      renderSavedExamsUI();
 
       // Restore active tab
       let initialTab = 'exam';
       try {
         const savedTab = sessionStorage.getItem(STORAGE_KEY_ACTIVE_TAB);
-        if (savedTab && ['exam', 'study', 'stats'].includes(savedTab)) {
+        if (savedTab && ['exam', 'study', 'saved-exams', 'stats'].includes(savedTab)) {
           initialTab = savedTab;
         }
       } catch (e) {}
@@ -1893,10 +2132,21 @@
         if (savedStats) {
           state.userStats = JSON.parse(savedStats);
         }
+        const savedExamsRaw = localStorage.getItem(STORAGE_KEY_SAVED_EXAMS);
+        if (savedExamsRaw) {
+          try {
+            state.savedExams = JSON.parse(savedExamsRaw);
+          } catch (e) {
+            state.savedExams = [];
+          }
+        } else {
+          state.savedExams = [];
+        }
       } catch (e) {
         console.error("Failed to load local storage:", e);
       }
       updateMistakesUI();
+      updateHeaderCounter();
     }
 
     function saveMistakes() {
@@ -1920,6 +2170,283 @@
       } catch (e) {
         console.error("Failed to save stats:", e);
       }
+    }
+
+    function saveSavedExams() {
+      try {
+        localStorage.setItem(STORAGE_KEY_SAVED_EXAMS, JSON.stringify(state.savedExams));
+        updateHeaderCounter();
+        if (window.cloudSync && typeof window.cloudSync.schedulePush === 'function') {
+          window.cloudSync.schedulePush();
+        }
+      } catch (e) {
+        console.error("Failed to save saved exams:", e);
+      }
+    }
+
+    function getQuarantinedQuestionIdSet() {
+      const set = new Set();
+      if (Array.isArray(state.savedExams)) {
+        state.savedExams.forEach(slot => {
+          if (slot && Array.isArray(slot.questionIds)) {
+            slot.questionIds.forEach(id => set.add(id));
+          }
+        });
+      }
+      return set;
+    }
+
+    function updateHeaderCounter() {
+      const quarantinedSet = getQuarantinedQuestionIdSet();
+      const quarantinedCount = quarantinedSet.size;
+      const totalCount = state.allQuestions ? state.allQuestions.length : 0;
+      const activeCount = Math.max(0, totalCount - quarantinedCount);
+      const savedCount = state.savedExams ? state.savedExams.length : 0;
+
+      const headerEl = document.getElementById("totalQuestionsHeader");
+      if (headerEl) {
+        if (quarantinedCount === 0) {
+          headerEl.textContent = `מאגר פעיל: ${totalCount} שאלות מאומתות`;
+        } else {
+          headerEl.textContent = `מאגר פעיל: ${activeCount} שאלות (${quarantinedCount} שמורות ב-${savedCount} מבחנים) • ${totalCount} סה"כ`;
+        }
+      }
+
+      const navSavedBadge = document.getElementById("navSavedBadge");
+      if (navSavedBadge) {
+        navSavedBadge.textContent = `${savedCount}/3`;
+      }
+    }
+
+    function getAvailableFullExams() {
+      const countsBySource = {};
+      if (Array.isArray(state.allQuestions)) {
+        state.allQuestions.forEach(q => {
+          if (q.source) {
+            countsBySource[q.source] = (countsBySource[q.source] || 0) + 1;
+          }
+        });
+      }
+      return Object.entries(countsBySource)
+        .filter(([src, count]) => count >= 20)
+        .sort((a, b) => b[1] - a[1])
+        .map(([src, count]) => ({
+          sourceName: src,
+          questionCount: count
+        }));
+    }
+
+    function renderSavedExamsUI() {
+      const listEl = document.getElementById("savedExamsList");
+      const slotsCountEl = document.getElementById("savedSlotsCount");
+      const quarantinedCountEl = document.getElementById("savedQuarantinedCount");
+      const activePoolCountEl = document.getElementById("savedActivePoolCount");
+      const addSectionEl = document.getElementById("savedAddSection");
+      const limitNoticeEl = document.getElementById("savedLimitReachedNotice");
+      const selectEl = document.getElementById("savedExamSourceSelect");
+
+      const savedCount = state.savedExams ? state.savedExams.length : 0;
+      const quarantinedSet = getQuarantinedQuestionIdSet();
+      const quarantinedCount = quarantinedSet.size;
+      const totalCount = state.allQuestions ? state.allQuestions.length : 0;
+      const activeCount = Math.max(0, totalCount - quarantinedCount);
+
+      if (slotsCountEl) slotsCountEl.textContent = `${savedCount} / 3`;
+      if (quarantinedCountEl) quarantinedCountEl.textContent = quarantinedCount;
+      if (activePoolCountEl) activePoolCountEl.textContent = activeCount;
+
+      updateHeaderCounter();
+
+      // Show / hide limit notice
+      if (savedCount >= 3) {
+        if (addSectionEl) addSectionEl.style.display = "none";
+        if (limitNoticeEl) limitNoticeEl.style.display = "block";
+      } else {
+        if (addSectionEl) addSectionEl.style.display = "block";
+        if (limitNoticeEl) limitNoticeEl.style.display = "none";
+
+        // Populate dropdown with available complete exams (>= 20 questions) that are not already saved
+        if (selectEl) {
+          selectEl.innerHTML = "";
+          const alreadySavedSources = new Set(state.savedExams.map(s => s.sourceName));
+          const availableExams = getAvailableFullExams().filter(e => !alreadySavedSources.has(e.sourceName));
+
+          if (availableExams.length === 0) {
+            selectEl.innerHTML = `<option value="">אין מבחנים נוספים זמינים לשמירה</option>`;
+          } else {
+            availableExams.forEach(e => {
+              const opt = document.createElement("option");
+              opt.value = e.sourceName;
+              opt.textContent = `${e.sourceName} (${e.questionCount} שאלות)`;
+              selectEl.appendChild(opt);
+            });
+          }
+        }
+      }
+
+      // Render slots list
+      if (!listEl) return;
+      listEl.innerHTML = "";
+
+      if (savedCount === 0) {
+        listEl.innerHTML = `
+          <div style="text-align:center; padding:36px 20px; background:#f8fafc; border:1px dashed #cbd5e1; border-radius:var(--radius-md); color:var(--text-muted);">
+            <div style="font-size:36px; margin-bottom:8px;">📦</div>
+            <div style="font-size:1.05rem; font-weight:700; color:#334155; margin-bottom:4px;">עדיין לא שמרת מבחנים בצד</div>
+            <div style="font-size:0.88rem;">בחר מבחן מהתפריט למעלה ולחץ על "שמור ונעל מבחן זה" כדי לבודד אותו למועד מאוחר יותר.</div>
+          </div>
+        `;
+        return;
+      }
+
+      state.savedExams.forEach((slot, idx) => {
+        const card = document.createElement("div");
+        card.className = "saved-slot-card";
+
+        let statusBadge = "";
+        if (slot.status === 'COMPLETED') {
+          statusBadge = `<span class="badge" style="background:#dcfce7; color:#166534; font-weight:800;">✔ הושלם (ציון: ${slot.score}%)</span>`;
+        } else {
+          statusBadge = `<span class="badge" style="background:#e0f2fe; color:#0369a1; font-weight:800;">🔒 שמור ומבודד • טרם נפתר</span>`;
+        }
+
+        const dateStr = slot.savedAt ? new Date(slot.savedAt).toLocaleDateString('he-IL') : '';
+
+        card.innerHTML = `
+          <div class="saved-slot-info">
+            <div class="saved-slot-title">
+              <span>📋 ${escapeHTML(slot.title)}</span>
+              ${statusBadge}
+            </div>
+            <div class="saved-slot-meta">
+              <span>🔢 ${slot.questionCount} שאלות מבודדות</span>
+              <span>📅 נשמר בתאריך: ${dateStr}</span>
+            </div>
+          </div>
+          <div class="saved-slot-actions">
+            <button class="btn btn-primary" onclick="startSavedExam('${slot.id}')">
+              🚀 ${slot.status === 'COMPLETED' ? 'תרגל שוב מבחן מלא זה' : 'התחל מבחן מלא עכשיו'}
+            </button>
+            <button class="btn btn-outline" style="border-color:#fca5a5; color:var(--danger);" onclick="releaseSavedExam('${slot.id}')" title="שחרור שאלות מבחן זה חזרה למאגר הכללי">
+              🔓 שחרר שאלות חזרה למאגר
+            </button>
+          </div>
+        `;
+        listEl.appendChild(card);
+      });
+    }
+
+    function addSelectedExamToSavedZone() {
+      if (state.savedExams.length >= 3) {
+        alert("הגעת למכסה המרבית של 3 מבחנים שמורים. שחרר תחילה מבחן קיים כדי לשמור מבחן חדש.");
+        return;
+      }
+
+      const select = document.getElementById("savedExamSourceSelect");
+      const selectedSource = select ? select.value : null;
+      if (!selectedSource) {
+        alert("אנא בחר מבחן לשמירה.");
+        return;
+      }
+
+      // Find all questions belonging to this source
+      const sourceQuestions = state.allQuestions.filter(q => q.source === selectedSource);
+      if (sourceQuestions.length === 0) {
+        alert("לא נמצאו שאלות עבור מבחן זה.");
+        return;
+      }
+
+      const newSaved = {
+        id: "saved_" + Date.now(),
+        sourceName: selectedSource,
+        title: selectedSource,
+        questionCount: sourceQuestions.length,
+        questionIds: sourceQuestions.map(q => q.id),
+        savedAt: new Date().toISOString(),
+        status: "READY",
+        score: null,
+        completedAt: null
+      };
+
+      state.savedExams.push(newSaved);
+      saveSavedExams();
+      renderSavedExamsUI();
+      initStudyMode();
+
+      showToast(`המבחן '${selectedSource}' נשמר בהצלחה! ${sourceQuestions.length} שאלות בודדו מחוץ למאגר.`);
+    }
+
+    function releaseSavedExam(savedId) {
+      const item = state.savedExams.find(s => s.id === savedId);
+      if (!item) return;
+
+      if (!confirm(`האם ברצונך לשחרר את שאלות המבחן '${item.title}' (${item.questionCount} שאלות) חזרה למאגר הכללי?\nהשאלות יחזרו מיד להופיע בערבוב של מבחני התרגול ובמצב למידה.`)) {
+        return;
+      }
+
+      state.savedExams = state.savedExams.filter(s => s.id !== savedId);
+      saveSavedExams();
+      renderSavedExamsUI();
+      initStudyMode();
+
+      showToast(`המבחן שוחרר! ${item.questionCount} שאלות הוחזרו בהצלחה למאגר התרגול והלמידה.`);
+    }
+
+    function startSavedExam(savedId) {
+      const savedItem = state.savedExams.find(s => s.id === savedId);
+      if (!savedItem) {
+        alert("מבחן שמור לא נמצא.");
+        return;
+      }
+
+      const qMap = new Map(state.allQuestions.map(q => [q.id, q]));
+      const examQuestions = savedItem.questionIds.map(id => qMap.get(id)).filter(Boolean);
+
+      if (examQuestions.length === 0) {
+        alert("שגיאה בטעינת שאלות המבחן השמור.");
+        return;
+      }
+
+      // Shuffle questions order for this run
+      const shuffledQuestions = shuffleArray(examQuestions);
+
+      state.activeExamScreen = 'ACTIVE';
+      state.currentExam = {
+        isSavedExam: true,
+        savedExamId: savedId,
+        savedExamTitle: savedItem.title,
+        questions: shuffledQuestions,
+        currentIndex: 0,
+        userAnswers: {},
+        flagged: new Set(),
+        shuffledOptionsCache: {}
+      };
+      saveExamSession();
+
+      document.querySelectorAll(".tab-btn").forEach(b => b.classList.remove("active"));
+      document.getElementById("tabExam").classList.add("active");
+      document.querySelectorAll(".screen").forEach(s => s.classList.remove("active"));
+      document.getElementById("screenActiveExam").classList.add("active");
+
+      renderExamQuickGrid();
+      renderCurrentExamQuestion();
+    }
+
+    function releaseSavedExamFromResults() {
+      if (!state.currentExam || !state.currentExam.savedExamId) return;
+      const savedId = state.currentExam.savedExamId;
+      const item = state.savedExams.find(s => s.id === savedId);
+      const qCount = item ? item.questionCount : 0;
+
+      state.savedExams = state.savedExams.filter(s => s.id !== savedId);
+      saveSavedExams();
+      renderSavedExamsUI();
+      initStudyMode();
+
+      const banner = document.getElementById("savedExamResultsBanner");
+      if (banner) banner.style.display = "none";
+
+      showToast(`המבחן שוחרר! ${qCount} שאלות חזרו למאגר התרגול והלמידה.`);
     }
 
     function updateMistakesUI() {
@@ -1948,8 +2475,7 @@
         state.allQuestions = [];
       }
 
-      document.getElementById("totalQuestionsHeader").textContent = 
-        `מאגר פעיל: ${state.allQuestions.length} שאלות מאומתות`;
+      updateHeaderCounter();
 
       // Extract sources
       const sourcesSet = new Set(state.allQuestions.map(q => q.source).filter(Boolean));
@@ -2007,6 +2533,10 @@
         document.getElementById("tabStudy").classList.add("active");
         document.getElementById("screenStudyMode").classList.add("active");
         renderCurrentStudyQuestion();
+      } else if (tabId === 'saved-exams') {
+        document.getElementById("tabSavedExams").classList.add("active");
+        document.getElementById("screenSavedExams").classList.add("active");
+        renderSavedExamsUI();
       } else if (tabId === 'stats') {
         document.getElementById("tabStats").classList.add("active");
         document.getElementById("screenStats").classList.add("active");
@@ -2050,6 +2580,10 @@
       const countVal = document.querySelector('input[name="examCount"]:checked').value;
 
       let pool = [...state.allQuestions];
+
+      // Exclude quarantined questions from saved exams
+      const quarantined = getQuarantinedQuestionIdSet();
+      pool = pool.filter(q => !quarantined.has(q.id));
 
       // Filter by source
       if (sourceVal !== 'ALL') {
@@ -2311,6 +2845,22 @@
       state.activeExamScreen = 'RESULTS';
       saveExamSession();
 
+      // Check if this was a saved exam run
+      if (exam.isSavedExam && exam.savedExamId) {
+        const savedSlot = state.savedExams.find(s => s.id === exam.savedExamId);
+        if (savedSlot) {
+          savedSlot.status = 'COMPLETED';
+          savedSlot.score = scorePct;
+          savedSlot.completedAt = new Date().toISOString();
+          saveSavedExams();
+        }
+        const banner = document.getElementById("savedExamResultsBanner");
+        if (banner) banner.style.display = "flex";
+      } else {
+        const banner = document.getElementById("savedExamResultsBanner");
+        if (banner) banner.style.display = "none";
+      }
+
       // Render Review List
       renderExamReviewList(exam);
 
@@ -2458,6 +3008,11 @@
        ======================================================== */
     function initStudyMode() {
       let pool = [...state.allQuestions];
+
+      // Exclude quarantined questions from saved exams
+      const quarantined = getQuarantinedQuestionIdSet();
+      pool = pool.filter(q => !quarantined.has(q.id));
+
       if (state.currentStudy.mistakesOnly) {
         pool = pool.filter(q => state.mistakes.has(q.id));
       } else if (state.currentStudy.selectedCategory !== 'ALL') {
@@ -2850,6 +3405,7 @@
               displayName: auth.currentUser.displayName || "",
               mistakes: Array.from(state.mistakes),
               userStats: state.userStats,
+              savedExams: state.savedExams || [],
               updatedAt: new Date().toISOString()
             };
             await setDoc(userDocRef, dataToPush, { merge: true });
@@ -2872,6 +3428,7 @@
               examsCompleted: 0,
               categoryStats: {}
             },
+            savedExams: [],
             updatedAt: new Date().toISOString()
           }, { merge: true });
           flashSyncIndicator();
@@ -2942,6 +3499,13 @@
 
         localStorage.setItem(STORAGE_KEY_MISTAKES, JSON.stringify(Array.from(state.mistakes)));
         localStorage.setItem(STORAGE_KEY_STATS, JSON.stringify(state.userStats));
+
+        if (Array.isArray(remote.savedExams)) {
+          state.savedExams = remote.savedExams;
+          localStorage.setItem(STORAGE_KEY_SAVED_EXAMS, JSON.stringify(state.savedExams));
+          if (typeof updateHeaderCounter === 'function') updateHeaderCounter();
+          if (typeof renderSavedExamsUI === 'function') renderSavedExamsUI();
+        }
 
         if (typeof updateMistakesUI === 'function') updateMistakesUI();
         if (typeof renderStats === 'function') renderStats();
