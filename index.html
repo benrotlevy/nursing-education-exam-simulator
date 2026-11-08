@@ -3459,20 +3459,6 @@
       return html;
     }
 
-      // 3. Original recovery note (if present)
-      if (origText) {
-        html += `
-          <div class="expl-original-tag">
-            <span class="expl-pill pill-orig">🏷️ הערת שחזור מקורית:</span>
-            <span>${escapeHTML(origText)}</span>
-          </div>
-        `;
-      }
-
-      html += '</div>';
-      return html;
-    }
-
     function retryWrongExamQuestions() {
       const wrongList = state.currentExam.questions.filter((q, idx) => {
         const userChoice = state.currentExam.userAnswers[idx];
