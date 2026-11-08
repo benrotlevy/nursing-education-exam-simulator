@@ -1458,7 +1458,7 @@
       height: 64px;
       background: #ffffff;
       border-top: 1px solid var(--border);
-      box-shadow: 0 -2px 10px rgba(0, 0, 0, 0.06);
+      box-shadow: 0 -3px 12px rgba(0, 0, 0, 0.08);
       z-index: 1000;
       padding-bottom: env(safe-area-inset-bottom, 0px);
       align-items: center;
@@ -1474,10 +1474,11 @@
       justify-content: center;
       background: transparent;
       border: none;
+      border-top: 3px solid transparent;
       cursor: pointer;
-      padding: 6px 2px;
+      padding: 4px 2px;
       color: #64748b;
-      transition: all 0.15s ease;
+      transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
       -webkit-tap-highlight-color: transparent;
       height: 100%;
       position: relative;
@@ -1489,32 +1490,101 @@
       align-items: center;
       justify-content: center;
       line-height: 1;
+      padding: 3px 14px;
+      border-radius: 16px;
       margin-bottom: 2px;
+      transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
     }
 
     .bnav-icon {
       font-size: 1.35rem;
-      transition: transform 0.15s ease;
+      transition: transform 0.2s ease;
     }
 
     .bnav-label {
       font-size: 0.72rem;
       font-weight: 700;
       letter-spacing: -0.2px;
-      transition: color 0.15s ease;
+      transition: color 0.15s ease, font-weight 0.15s ease;
     }
 
     .bnav-btn.active {
       color: var(--primary);
+      border-top: 3px solid var(--primary);
+      background: linear-gradient(180deg, rgba(2, 132, 199, 0.08) 0%, transparent 100%);
+    }
+
+    .bnav-btn.active .bnav-icon-box {
+      background: #e0f2fe;
+      transform: translateY(-1px);
     }
 
     .bnav-btn.active .bnav-icon {
-      transform: scale(1.15);
+      transform: scale(1.1);
     }
 
     .bnav-btn.active .bnav-label {
       font-weight: 800;
       color: var(--primary);
+    }
+
+    /* Mobile Active Section Indicator (Top Header Pill) */
+    .mobile-section-indicator {
+      display: none;
+      align-items: center;
+      justify-content: center;
+      margin-top: 8px;
+      padding-top: 8px;
+      border-top: 1px dashed var(--border);
+      width: 100%;
+    }
+
+    .mobile-section-tag {
+      display: inline-flex;
+      align-items: center;
+      gap: 7px;
+      background: #f8fafc;
+      border: 1px solid var(--border);
+      color: #0f172a;
+      padding: 5px 14px;
+      border-radius: 9999px;
+      font-size: 0.80rem;
+      font-weight: 800;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+      transition: all 0.2s ease;
+    }
+
+    .mobile-section-tag.tag-exam {
+      background: #f0f9ff;
+      border-color: #bae6fd;
+      color: #0369a1;
+    }
+
+    .mobile-section-tag.tag-study {
+      background: #fefce8;
+      border-color: #fef08a;
+      color: #854d0e;
+    }
+
+    .mobile-section-tag.tag-saved {
+      background: #f5f3ff;
+      border-color: #ddd6fe;
+      color: #6d28d9;
+    }
+
+    .mobile-section-tag.tag-stats {
+      background: #fdf2f8;
+      border-color: #fbcfe8;
+      color: #be185d;
+    }
+
+    .mobile-section-dot {
+      width: 7px;
+      height: 7px;
+      border-radius: 50%;
+      background: currentColor;
+      display: inline-block;
+      box-shadow: 0 0 0 2px rgba(0, 0, 0, 0.08);
     }
 
     .bnav-badge {
@@ -1582,6 +1652,11 @@
 
       /* Enable mobile bottom navigation bar */
       .mobile-bottom-nav {
+        display: flex;
+      }
+
+      /* Enable mobile active section pill indicator */
+      .mobile-section-indicator {
         display: flex;
       }
 
@@ -1819,6 +1894,14 @@
             <button class="btn-signout" onclick="window.triggerGoogleSignOut()" title="התנתק מהחשבון">התנתק</button>
           </div>
         </div>
+      </div>
+
+      <!-- Mobile Active Section Indicator (Visible on smartphones <= 640px) -->
+      <div class="mobile-section-indicator" id="mobileSectionIndicator">
+        <span class="mobile-section-tag tag-exam" id="mobileSectionTag">
+          <span class="mobile-section-dot"></span>
+          <span id="mobileSectionText">📝 מצב מבחן: הגדרת תרגול</span>
+        </span>
       </div>
 
       <nav class="nav-tabs">
@@ -2563,6 +2646,10 @@
         bNavSavedBadge.textContent = `${savedCount}/3`;
         bNavSavedBadge.style.display = savedCount > 0 ? "inline-block" : "none";
       }
+
+      if (typeof updateMobileSectionIndicator === 'function') {
+        updateMobileSectionIndicator();
+      }
     }
 
     function getAvailableFullExams() {
@@ -2775,6 +2862,7 @@
       document.querySelectorAll(".bnav-btn").forEach(b => b.classList.remove("active"));
       document.getElementById("tabExam")?.classList.add("active");
       document.getElementById("bNavExam")?.classList.add("active");
+      updateMobileSectionIndicator('exam');
       document.querySelectorAll(".screen").forEach(s => s.classList.remove("active"));
       document.getElementById("screenActiveExam").classList.add("active");
 
@@ -2819,6 +2907,10 @@
       }
       if (studyCount) {
         studyCount.textContent = count;
+      }
+
+      if (typeof updateMobileSectionIndicator === 'function') {
+        updateMobileSectionIndicator();
       }
     }
 
@@ -2903,9 +2995,44 @@
         renderStats();
       }
 
+      updateMobileSectionIndicator(tabId);
+
       try {
         sessionStorage.setItem(STORAGE_KEY_ACTIVE_TAB, tabId);
       } catch (e) {}
+    }
+
+    function updateMobileSectionIndicator(tabId) {
+      const tag = document.getElementById("mobileSectionTag");
+      const text = document.getElementById("mobileSectionText");
+      if (!tag || !text) return;
+
+      const currentTab = tabId || sessionStorage.getItem(STORAGE_KEY_ACTIVE_TAB) || 'exam';
+      tag.classList.remove("tag-exam", "tag-study", "tag-saved", "tag-stats");
+
+      if (currentTab === 'exam') {
+        tag.classList.add("tag-exam");
+        if (state.activeExamScreen === 'ACTIVE') {
+          const cur = (state.currentExam && state.currentExam.currentIndex !== undefined) ? state.currentExam.currentIndex + 1 : 1;
+          const tot = (state.currentExam && state.currentExam.questions) ? state.currentExam.questions.length : 0;
+          text.textContent = `📝 מבחן פעיל (שאלה ${cur} מתוך ${tot})`;
+        } else if (state.activeExamScreen === 'RESULTS') {
+          text.textContent = `📝 סיכום תוצאות המבחן`;
+        } else {
+          text.textContent = `📝 מצב מבחן: הגדרת תרגול`;
+        }
+      } else if (currentTab === 'study') {
+        tag.classList.add("tag-study");
+        text.textContent = `💡 מצב למידה ואימון (משוב מיידי)`;
+      } else if (currentTab === 'saved-exams') {
+        tag.classList.add("tag-saved");
+        const count = state.savedExams ? state.savedExams.length : 0;
+        text.textContent = `📦 מבחנים שמורים (${count}/3 בשימוש)`;
+      } else if (currentTab === 'stats') {
+        tag.classList.add("tag-stats");
+        const mistakes = state.mistakes ? state.mistakes.size : 0;
+        text.textContent = `📊 סטטיסטיקה וטעויות (${mistakes} טעויות)`;
+      }
     }
 
     function confirmAbandonExam() {
@@ -2933,6 +3060,7 @@
       document.querySelectorAll(".bnav-btn").forEach(b => b.classList.remove("active"));
       document.getElementById("tabExam")?.classList.add("active");
       document.getElementById("bNavExam")?.classList.add("active");
+      updateMobileSectionIndicator('exam');
     }
 
     /* ========================================================
@@ -3012,6 +3140,7 @@
       const answeredCount = Object.keys(exam.userAnswers).length;
       document.getElementById("examAnsweredCount").textContent = `נענו: ${answeredCount} מתוך ${total}`;
       document.getElementById("examProgressBar").style.width = `${(answeredCount / total) * 100}%`;
+      updateMobileSectionIndicator('exam');
 
       // Update metadata
       document.getElementById("examQCategory").textContent = q.category || "כללי";
@@ -3281,6 +3410,7 @@
 
       document.querySelectorAll(".screen").forEach(s => s.classList.remove("active"));
       document.getElementById("screenExamResults").classList.add("active");
+      updateMobileSectionIndicator('exam');
     }
 
     function renderExamReviewList(exam) {

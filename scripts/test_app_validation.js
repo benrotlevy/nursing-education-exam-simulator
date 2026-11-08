@@ -158,7 +158,8 @@ function createMockElement(id, classes = []) {
   'tabExam', 'tabStudy', 'tabSavedExams', 'tabStats',
   'bNavExam', 'bNavStudy', 'bNavSaved', 'bNavStats',
   'screenExamSetup', 'screenActiveExam', 'screenExamResults', 'screenSavedExams', 'screenStudyMode', 'screenStats',
-  'navSavedBadge', 'bNavSavedBadge', 'navMistakesBadge', 'bNavMistakesBadge', 'totalQuestionsHeader'
+  'navSavedBadge', 'bNavSavedBadge', 'navMistakesBadge', 'bNavMistakesBadge', 'totalQuestionsHeader',
+  'mobileSectionIndicator', 'mobileSectionTag', 'mobileSectionText'
 ].forEach(id => {
   domElements.set(id, createMockElement(id));
 });
@@ -232,10 +233,12 @@ testTabs.forEach(({ tabId, screenId, topBtnId, bNavId }) => {
   const screen = domElements.get(screenId);
   const topBtn = domElements.get(topBtnId);
   const bNavBtn = domElements.get(bNavId);
+  const mobText = domElements.get('mobileSectionText');
 
   assert.ok(screen.classList.contains('active'), `Screen ${screenId} should be active when tab is '${tabId}'`);
   assert.ok(topBtn.classList.contains('active'), `Top button ${topBtnId} should be active when tab is '${tabId}'`);
   assert.ok(bNavBtn.classList.contains('active'), `Bottom button ${bNavId} should be active when tab is '${tabId}'`);
+  assert.ok(mobText.textContent.length > 0, `Mobile section text must be populated when tab is '${tabId}'`);
   assert.strictEqual(mockSessionStorage.get('nursing_active_tab_v1'), tabId, `SessionStorage should remember tab '${tabId}'`);
 });
 
