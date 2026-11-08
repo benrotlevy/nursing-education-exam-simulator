@@ -635,6 +635,121 @@
       cursor: default;
     }
 
+    /* Option Status Badges */
+    .option-status-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      font-size: 0.72rem;
+      font-weight: 800;
+      padding: 3px 9px;
+      border-radius: 9999px;
+      margin-inline-start: auto;
+      white-space: nowrap;
+      flex-shrink: 0;
+      align-self: center;
+      line-height: 1.2;
+    }
+
+    .option-status-badge.badge-correct {
+      background: #dcfce7;
+      color: #15803d;
+      border: 1px solid #86efac;
+    }
+
+    .option-status-badge.badge-wrong {
+      background: #fee2e2;
+      color: #b91c1c;
+      border: 1px solid #fca5a5;
+    }
+
+    .option-status-badge.badge-distractor {
+      background: #f1f5f9;
+      color: #64748b;
+      border: 1px solid #e2e8f0;
+      opacity: 0.9;
+    }
+
+    /* Option Elimination (Strikethrough Tool in Exam Mode) */
+    .btn-eliminate-option {
+      background: #f8fafc;
+      border: 1px solid #e2e8f0;
+      color: #94a3b8;
+      border-radius: 50%;
+      width: 28px;
+      height: 28px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 0.82rem;
+      font-weight: 800;
+      cursor: pointer;
+      margin-inline-start: auto;
+      align-self: center;
+      flex-shrink: 0;
+      transition: all 0.15s ease;
+      opacity: 0.6;
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    .btn-eliminate-option:hover {
+      background: #fee2e2;
+      color: #dc2626;
+      border-color: #fca5a5;
+      opacity: 1;
+    }
+
+    .option-item.eliminated {
+      opacity: 0.45;
+      background: #f1f5f9;
+      border-color: #e2e8f0;
+    }
+
+    .option-item.eliminated .option-content {
+      text-decoration: line-through;
+      color: #94a3b8;
+    }
+
+    .option-item.eliminated .option-letter {
+      background: #e2e8f0;
+      color: #94a3b8;
+      border-color: #cbd5e1;
+    }
+
+    .option-item.eliminated .btn-eliminate-option {
+      background: #fee2e2;
+      color: #dc2626;
+      border-color: #fca5a5;
+      opacity: 1;
+    }
+
+    /* Review Item Option Row Styling */
+    .review-opt-item {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 9px 12px;
+      border-radius: 8px;
+      background: #ffffff;
+      border: 1px solid var(--border);
+      margin-bottom: 6px;
+      font-size: 0.94rem;
+    }
+
+    .review-opt-item.opt-correct {
+      background: #f0fdf4;
+      border-color: #86efac;
+      color: #15803d;
+      font-weight: 700;
+    }
+
+    .review-opt-item.opt-wrong {
+      background: #fef2f2;
+      border-color: #fca5a5;
+      color: #b91c1c;
+      font-weight: 700;
+    }
+
     /* Explanation Box */
     .explanation-box {
       margin-top: 20px;
@@ -769,6 +884,82 @@
 
     .expl-details-content p:last-child {
       margin-bottom: 0;
+    }
+
+    /* Rationale & Distractor Breakdown Cards */
+    .expl-rationale-block {
+      background: #f0fdf4;
+      border: 1px solid #bbf7d0;
+      border-right: 4px solid #16a34a;
+      border-radius: var(--radius-sm);
+      padding: 12px 14px;
+      margin-bottom: 14px;
+    }
+
+    .expl-block-header {
+      font-weight: 800;
+      font-size: 0.9rem;
+      color: #15803d;
+      margin-bottom: 6px;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .expl-block-text {
+      font-size: 0.92rem;
+      color: #1e293b;
+      line-height: 1.6;
+    }
+
+    .expl-distractors-block {
+      background: #ffffff;
+      border: 1px solid #fed7d7;
+      border-right: 4px solid #ef4444;
+      border-radius: var(--radius-sm);
+      padding: 12px 14px;
+      margin-bottom: 8px;
+    }
+
+    .expl-distractors-header {
+      font-weight: 800;
+      font-size: 0.9rem;
+      color: #b91c1c;
+      margin-bottom: 10px;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .expl-distractor-list {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+
+    .expl-distractor-item {
+      display: flex;
+      align-items: flex-start;
+      gap: 8px;
+      background: #fef2f2;
+      border: 1px solid #fee2e2;
+      border-radius: 6px;
+      padding: 8px 10px;
+      font-size: 0.88rem;
+      line-height: 1.5;
+      color: #7f1d1d;
+    }
+
+    .expl-distractor-icon {
+      font-weight: 800;
+      color: #dc2626;
+      font-size: 0.85rem;
+      line-height: 1.4;
+      flex-shrink: 0;
+    }
+
+    .expl-distractor-text {
+      flex: 1;
     }
 
     /* 3. Original source note */
@@ -1479,6 +1670,19 @@
         padding: 12px 14px;
         font-size: 0.90rem;
       }
+      .option-status-badge {
+        font-size: 0.65rem;
+        padding: 2px 7px;
+      }
+      .btn-eliminate-option {
+        width: 26px;
+        height: 26px;
+        font-size: 0.75rem;
+      }
+      .expl-distractor-item {
+        padding: 7px 8px;
+        font-size: 0.84rem;
+      }
       .results-actions {
         flex-direction: column;
         gap: 10px;
@@ -2063,6 +2267,7 @@
         currentIndex: 0,
         userAnswers: {}, // { qIndex: selectedShuffledIndex }
         flagged: new Set(),
+        eliminated: {}, // { [qIndex]: Set([optIdx]) }
         shuffledOptionsCache: {} // { qIndex: { options: [], correctIndex: 0 } }
       },
       // Active Study
@@ -2201,11 +2406,20 @@
           sessionStorage.removeItem(STORAGE_KEY_EXAM_STATE);
           return;
         }
+        const serializedEliminated = {};
+        if (exam.eliminated) {
+          Object.keys(exam.eliminated).forEach(k => {
+            if (exam.eliminated[k] && exam.eliminated[k].size > 0) {
+              serializedEliminated[k] = Array.from(exam.eliminated[k]);
+            }
+          });
+        }
         const sessionData = {
           activeExamScreen: state.activeExamScreen,
           currentIndex: exam.currentIndex,
           userAnswers: exam.userAnswers || {},
           flagged: Array.from(exam.flagged || []),
+          eliminated: serializedEliminated,
           questionIds: exam.questions.map(q => q.id),
           shuffledOptionsCache: exam.shuffledOptionsCache || {}
         };
@@ -2226,12 +2440,20 @@
         const restoredQuestions = data.questionIds.map(id => qMap.get(id)).filter(Boolean);
         if (restoredQuestions.length === 0) return false;
 
+        const restoredEliminated = {};
+        if (data.eliminated) {
+          Object.keys(data.eliminated).forEach(k => {
+            restoredEliminated[k] = new Set(data.eliminated[k]);
+          });
+        }
+
         state.activeExamScreen = data.activeExamScreen || 'ACTIVE';
         state.currentExam = {
           questions: restoredQuestions,
           currentIndex: Math.min(data.currentIndex || 0, restoredQuestions.length - 1),
           userAnswers: data.userAnswers || {},
           flagged: new Set(data.flagged || []),
+          eliminated: restoredEliminated,
           shuffledOptionsCache: data.shuffledOptionsCache || {}
         };
         return true;
@@ -2544,6 +2766,7 @@
         currentIndex: 0,
         userAnswers: {},
         flagged: new Set(),
+        eliminated: {},
         shuffledOptionsCache: {}
       };
       saveExamSession();
@@ -2698,6 +2921,7 @@
         currentIndex: 0,
         userAnswers: {},
         flagged: new Set(),
+        eliminated: {},
         shuffledOptionsCache: {}
       };
       try {
@@ -2764,6 +2988,7 @@
         currentIndex: 0,
         userAnswers: {},
         flagged: new Set(),
+        eliminated: {},
         shuffledOptionsCache: {}
       };
       saveExamSession();
@@ -2817,19 +3042,45 @@
       container.innerHTML = "";
       const letters = ["א", "ב", "ג", "ד", "ה"];
 
+      const eliminatedSet = (exam.eliminated && exam.eliminated[exam.currentIndex])
+        ? exam.eliminated[exam.currentIndex]
+        : new Set();
+
       shuffledData.options.forEach((optText, optIdx) => {
         const item = document.createElement("div");
         item.className = "option-item";
         if (exam.userAnswers[exam.currentIndex] === optIdx) {
           item.classList.add("selected");
         }
+        const isEliminated = eliminatedSet.has(optIdx);
+        if (isEliminated) {
+          item.classList.add("eliminated");
+        }
 
         item.innerHTML = `
           <div class="option-letter">${letters[optIdx] || optIdx + 1}</div>
           <div class="option-content">${optText}</div>
+          <button type="button" class="btn-eliminate-option" title="${isEliminated ? 'בטל פסילת מסיח' : 'פסול מסיח (סימון קו חוצה)'}" aria-label="פסילת מסיח">
+            ✕
+          </button>
         `;
 
-        item.onclick = () => selectExamOption(optIdx);
+        item.onclick = (e) => {
+          if (e.target.closest('.btn-eliminate-option')) return;
+          if (eliminatedSet.has(optIdx)) {
+            eliminatedSet.delete(optIdx);
+          }
+          selectExamOption(optIdx);
+        };
+
+        const btnEliminate = item.querySelector('.btn-eliminate-option');
+        if (btnEliminate) {
+          btnEliminate.onclick = (e) => {
+            e.stopPropagation();
+            toggleEliminateExamOption(optIdx);
+          };
+        }
+
         container.appendChild(item);
       });
 
@@ -2843,7 +3094,31 @@
     }
 
     function selectExamOption(shuffledOptIdx) {
-      state.currentExam.userAnswers[state.currentExam.currentIndex] = shuffledOptIdx;
+      const exam = state.currentExam;
+      if (exam.eliminated && exam.eliminated[exam.currentIndex]) {
+        exam.eliminated[exam.currentIndex].delete(shuffledOptIdx);
+      }
+      exam.userAnswers[exam.currentIndex] = shuffledOptIdx;
+      saveExamSession();
+      renderCurrentExamQuestion();
+      renderExamQuickGrid();
+    }
+
+    function toggleEliminateExamOption(optIdx) {
+      const exam = state.currentExam;
+      if (!exam.eliminated) exam.eliminated = {};
+      if (!exam.eliminated[exam.currentIndex]) {
+        exam.eliminated[exam.currentIndex] = new Set();
+      }
+      const set = exam.eliminated[exam.currentIndex];
+      if (set.has(optIdx)) {
+        set.delete(optIdx);
+      } else {
+        set.add(optIdx);
+        if (exam.userAnswers[exam.currentIndex] === optIdx) {
+          delete exam.userAnswers[exam.currentIndex];
+        }
+      }
       saveExamSession();
       renderCurrentExamQuestion();
       renderExamQuickGrid();
@@ -3026,17 +3301,24 @@
           : `<span style="color:var(--danger); font-weight:800;">✖ שגיאה</span>`;
 
         let optionsHtml = shuffledData.options.map((opt, oIdx) => {
-          let styleClass = "";
-          let prefix = "";
+          let itemClass = "review-opt-item";
+          let badgeHtml = "";
           if (oIdx === shuffledData.correctIndex) {
-            styleClass = "style='color:#15803d; font-weight:800;'";
-            prefix = " (התשובה הנכונה)";
+            itemClass += " opt-correct";
+            badgeHtml = `<span class="option-status-badge badge-correct">✓ תשובה נכונה</span>`;
+          } else if (oIdx === userChoice && !isCorrect) {
+            itemClass += " opt-wrong";
+            badgeHtml = `<span class="option-status-badge badge-wrong">✕ הבחירה שלך</span>`;
+          } else {
+            badgeHtml = `<span class="option-status-badge badge-distractor">✕ מסיח שגוי</span>`;
           }
-          if (oIdx === userChoice && !isCorrect) {
-            styleClass = "style='color:#b91c1c; font-weight:800; text-decoration:line-through;'";
-            prefix = " (התשובה שבחרת)";
-          }
-          return `<div ${styleClass} style="margin-bottom:4px;">${letters[oIdx]}. ${opt}${prefix}</div>`;
+          return `
+            <div class="${itemClass}">
+              <div class="option-letter" style="width:26px; height:26px; font-size:0.82rem;">${letters[oIdx] || oIdx + 1}</div>
+              <div class="option-content" style="flex:1;">${escapeHTML(opt)}</div>
+              ${badgeHtml}
+            </div>
+          `;
         }).join("");
 
         card.innerHTML = `
@@ -3045,7 +3327,7 @@
             ${statusText}
           </div>
           <div style="font-size:1.05rem; font-weight:700; margin-bottom:12px;">${q.question}</div>
-          <div style="background:#f8fafc; padding:12px; border-radius:8px; margin-bottom:12px; font-size:0.95rem;">
+          <div style="margin-bottom:14px;">
             ${optionsHtml}
           </div>
           ${renderExplanationHTML(q)}
@@ -3063,6 +3345,36 @@
         .replace(/"/g, '&quot;');
     }
 
+    function parseExplanationComponents(detailedText) {
+      if (!detailedText) return { rationale: '', distractors: [] };
+      let rationale = '', distractorRaw = '';
+      const ratMatch = detailedText.match(/•?\s*הרציונל[^\n:]*:\s*([\s\S]*?)(?=•?\s*ניתוח המסיחים|•?\s*(מקור|עיגון) בספרות|$)/);
+      if (ratMatch) rationale = ratMatch[1].trim();
+      const distMatch = detailedText.match(/•?\s*ניתוח המסיחים[^\n:]*:\s*([\s\S]*?)(?=•?\s*(מקור|עיגון) בספרות|$)/);
+      if (distMatch) distractorRaw = distMatch[1].trim();
+
+      if (!rationale && !distractorRaw) {
+        const clean = detailedText
+          .replace(/•?\s*(מקור בספרות|עיגון בספרות|סילבוס)[^\n]*/gi, '')
+          .trim();
+        return { rationale: clean, distractors: [] };
+      }
+
+      let distractors = [];
+      if (distractorRaw) {
+        if (distractorRaw.includes('\n-') || distractorRaw.startsWith('-')) {
+          distractors = distractorRaw.split(/\n?-\s+/).map(d => d.trim()).filter(d => d.length > 1);
+        } else if (distractorRaw.includes(';')) {
+          distractors = distractorRaw.split(';').map(d => d.trim()).filter(d => d.length > 1);
+        } else if (distractorRaw.includes('. ') || distractorRaw.includes('.\n')) {
+          distractors = distractorRaw.split(/(?<=\.)\s+/).map(d => d.trim()).filter(d => d.length > 1);
+        } else {
+          distractors = [distractorRaw];
+        }
+      }
+      return { rationale, distractors };
+    }
+
     function renderExplanationHTML(q) {
       const shortText = q.shortExplanation || (q.aiExplanation ? q.aiExplanation.split('\n')[0] : q.explanation) || 'התשובה המסומנת היא התשובה הנכונה.';
       const detailedText = q.detailedExplanation || q.aiExplanation || q.explanation || '';
@@ -3078,28 +3390,74 @@
         </div>
       `;
 
-      // 2. Interactive Accordion for Detailed Explanation (5-15 lines)
+      // 2. Interactive Accordion for Detailed Explanation & Structured Distractor Breakdown
       if (detailedText && detailedText.trim() !== shortText.trim()) {
-        const formattedDetailed = escapeHTML(detailedText)
-          .replace(/\n\n/g, '<br><br>')
-          .replace(/\n/g, '<br>')
-          .replace(/(•|\-|\*)\s*([^\<]+)/g, '<div style="margin-right:12px; margin-bottom:4px;">• $2</div>');
+        const parsed = parseExplanationComponents(detailedText);
+
+        let contentHtml = '';
+        if (parsed.rationale) {
+          contentHtml += `
+            <div class="expl-rationale-block">
+              <div class="expl-block-header">🎯 הרציונל הקליני / פדגוגי:</div>
+              <div class="expl-block-text">${escapeHTML(parsed.rationale).replace(/\n/g, '<br>')}</div>
+            </div>
+          `;
+        }
+
+        if (parsed.distractors && parsed.distractors.length > 0) {
+          const itemsHtml = parsed.distractors.map(d => `
+            <div class="expl-distractor-item">
+              <span class="expl-distractor-icon">✕</span>
+              <span class="expl-distractor-text">${escapeHTML(d)}</span>
+            </div>
+          `).join('');
+
+          contentHtml += `
+            <div class="expl-distractors-block">
+              <div class="expl-distractors-header">🔍 ניתוח המסיחים השגויים (מדוע שאר האפשרויות שגויות):</div>
+              <div class="expl-distractor-list">
+                ${itemsHtml}
+              </div>
+            </div>
+          `;
+        }
+
+        if (!contentHtml) {
+          const fallbackClean = escapeHTML(detailedText)
+            .replace(/•?\s*(מקור בספרות|עיגון בספרות)[^\n]*/gi, '')
+            .replace(/\n/g, '<br>');
+          contentHtml = `<div class="expl-block-text">${fallbackClean}</div>`;
+        }
 
         html += `
           <details class="expl-details-accordion">
             <summary class="expl-accordion-summary">
               <span class="summary-left">
                 <span>📖</span>
-                <span>הסבר פדגוגי מפורט, ניתוח מסיחים ומקורות ספרות</span>
+                <span>הסבר פדגוגי מפורט וניתוח מסיחים</span>
               </span>
               <span class="summary-arrow">▼</span>
             </summary>
             <div class="expl-details-content">
-              ${formattedDetailed}
+              ${contentHtml}
             </div>
           </details>
         `;
       }
+
+      // 3. Original recovery note (if present)
+      if (origText) {
+        html += `
+          <div class="expl-original-tag">
+            <span class="expl-pill pill-orig">🏷️ הערת שחזור מקורית:</span>
+            <span>${escapeHTML(origText)}</span>
+          </div>
+        `;
+      }
+
+      html += '</div>';
+      return html;
+    }
 
       // 3. Original recovery note (if present)
       if (origText) {
@@ -3133,6 +3491,7 @@
         currentIndex: 0,
         userAnswers: {},
         flagged: new Set(),
+        eliminated: {},
         shuffledOptionsCache: {}
       };
       saveExamSession();
@@ -3231,12 +3590,17 @@
         item.className = "option-item";
         item.id = `studyOpt_${optIdx}`;
 
+        let badgeHtml = '';
         if (isAnswered) {
           item.classList.add("disabled");
           if (optIdx === shuffledData.correctIndex) {
             item.classList.add("correct");
+            badgeHtml = `<span class="option-status-badge badge-correct">✓ תשובה נכונה</span>`;
           } else if (optIdx === prevAnswer) {
             item.classList.add("wrong");
+            badgeHtml = `<span class="option-status-badge badge-wrong">✕ הבחירה שלך</span>`;
+          } else {
+            badgeHtml = `<span class="option-status-badge badge-distractor">✕ מסיח שגוי</span>`;
           }
         } else {
           item.onclick = () => answerStudyQuestion(optIdx);
@@ -3245,6 +3609,7 @@
         item.innerHTML = `
           <div class="option-letter">${letters[optIdx] || optIdx + 1}</div>
           <div class="option-content">${optText}</div>
+          ${badgeHtml}
         `;
         container.appendChild(item);
       });
