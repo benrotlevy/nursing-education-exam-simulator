@@ -1857,6 +1857,15 @@
       .saved-results-banner .btn {
         width: 100%;
       }
+      .q-header-actions {
+        width: 100%;
+        justify-content: space-between;
+        margin-top: 4px;
+      }
+      .btn-copy-ai {
+        padding: 6px 12px;
+        font-size: 0.82rem;
+      }
     }
 
     /* ========================================================
@@ -2357,6 +2366,9 @@
       <span class="bnav-label">סטטיסטיקה</span>
     </button>
   </nav>
+
+  <!-- Global App Toast Notification -->
+  <div id="appGlobalToast" class="app-toast" role="status" aria-live="polite"></div>
 
   <!-- Include Questions Database -->
   <script src="questions.js"></script>
@@ -3878,7 +3890,7 @@ ${formattedOptions}
 ═══════════════════════════════════════════════════════════════`;
     }
 
-    function copyCurrentStudyQuestionForAI() {
+    async function copyCurrentStudyQuestionForAI() {
       const study = state.currentStudy;
       if (!study || !study.questions || study.questions.length === 0) return;
       const q = study.questions[study.currentIndex];
@@ -3887,7 +3899,22 @@ ${formattedOptions}
       const shuffledData = study.shuffledOptionsCache[study.currentIndex] || getShuffledQuestionOptions(q);
       const textToCopy = formatQuestionForAI(q, shuffledData.options);
 
-      function onCopySuccess() {
+      let copied = false;
+      if (navigator.clipboard && navigator.clipboard.writeText) {
+        try {
+          await navigator.clipboard.writeText(textToCopy);
+          copied = true;
+        } catch (e) {
+          console.warn("navigator.clipboard.writeText failed, using fallback:", e);
+          copied = false;
+        }
+      }
+
+      if (!copied) {
+        copied = fallbackCopyText(textToCopy);
+      }
+
+      if (copied) {
         showToast("השאלה והפרומפט ל-AI הועתקו בהצלחה! ניתן להדביק ב-ChatGPT/Claude/Gemini");
         const btn = document.getElementById("btnCopyStudyAI");
         if (btn) {
@@ -3899,32 +3926,32 @@ ${formattedOptions}
             btn.classList.remove("btn-copied");
           }, 2000);
         }
-      }
-
-      if (navigator.clipboard && navigator.clipboard.writeText) {
-        navigator.clipboard.writeText(textToCopy)
-          .then(onCopySuccess)
-          .catch(() => fallbackCopyText(textToCopy, onCopySuccess));
       } else {
-        fallbackCopyText(textToCopy, onCopySuccess);
+        showToast("לא ניתן לגשת ללוח באופן אוטומטי בדפדפן זה");
       }
     }
 
-    function fallbackCopyText(text, callback) {
+    function fallbackCopyText(text) {
       const textarea = document.createElement("textarea");
       textarea.value = text;
+      textarea.setAttribute("readonly", "");
       textarea.style.position = "fixed";
+      textarea.style.top = "0";
       textarea.style.left = "-9999px";
+      textarea.style.opacity = "0";
       document.body.appendChild(textarea);
       textarea.focus();
       textarea.select();
+      textarea.setSelectionRange(0, 999999);
+      let success = false;
       try {
-        document.execCommand('copy');
-        if (callback) callback();
+        success = document.execCommand('copy');
       } catch (err) {
-        alert("לא הצלחנו להעתיק אוטומטית ללוח. אנא העתק ידנית.");
+        console.warn("fallback document.execCommand failed:", err);
+        success = false;
       }
       document.body.removeChild(textarea);
+      return success;
     }
 
     function nextStudyQuestion() {
@@ -4060,6 +4087,22 @@ ${formattedOptions}
         alert("הנתונים אופסו בהצלחה.");
       }
     }
+
+    function showToast(message) {
+      let toast = document.getElementById("appGlobalToast");
+      if (!toast) {
+        toast = document.createElement("div");
+        toast.id = "appGlobalToast";
+        toast.className = "app-toast";
+        document.body.appendChild(toast);
+      }
+      toast.textContent = message;
+      toast.classList.add("visible");
+      setTimeout(() => {
+        toast.classList.remove("visible");
+      }, 3500);
+    }
+    window.showToast = showToast;
   </script>
 
   <!-- Firebase Cloud Sync (Modular SDK v11) -->
@@ -4308,18 +4351,9 @@ ${formattedOptions}
     }
 
     function showToast(message) {
-      let toast = document.getElementById("appGlobalToast");
-      if (!toast) {
-        toast = document.createElement("div");
-        toast.id = "appGlobalToast";
-        toast.className = "app-toast";
-        document.body.appendChild(toast);
+      if (typeof window.showToast === 'function') {
+        window.showToast(message);
       }
-      toast.textContent = message;
-      toast.classList.add("visible");
-      setTimeout(() => {
-        toast.classList.remove("visible");
-      }, 3500);
     }
 
     window.triggerGoogleSignIn = () => {

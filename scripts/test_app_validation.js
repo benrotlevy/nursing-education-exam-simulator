@@ -149,7 +149,10 @@ function createMockElement(id, classes = []) {
     querySelector(sel) { return createMockElement('sub_' + Math.random()); },
     querySelectorAll(sel) { return []; },
     setAttribute(k, v) {},
-    getAttribute(k) { return null; }
+    getAttribute(k) { return null; },
+    focus() {},
+    select() {},
+    setSelectionRange() {}
   };
 }
 
@@ -159,7 +162,7 @@ function createMockElement(id, classes = []) {
   'bNavExam', 'bNavStudy', 'bNavSaved', 'bNavStats',
   'screenExamSetup', 'screenActiveExam', 'screenExamResults', 'screenSavedExams', 'screenStudyMode', 'screenStats',
   'navSavedBadge', 'bNavSavedBadge', 'navMistakesBadge', 'bNavMistakesBadge', 'totalQuestionsHeader',
-  'mobileSectionIndicator', 'mobileSectionTag', 'mobileSectionText', 'btnCopyStudyAI'
+  'mobileSectionIndicator', 'mobileSectionTag', 'mobileSectionText', 'btnCopyStudyAI', 'appGlobalToast'
 ].forEach(id => {
   domElements.set(id, createMockElement(id));
 });
@@ -174,6 +177,7 @@ const sandbox = {
     removeEventListener: () => {}
   },
   document: {
+    body: createMockElement('body'),
     getElementById(id) {
       if (!domElements.has(id)) {
         domElements.set(id, createMockElement(id));
@@ -360,6 +364,58 @@ assert.ok(sampleAI.includes('ניתוח ביקורתי של כל אחד מהמס
 console.log('  ✅ AI Prompt Copy button is verified to be ONLY in Study Mode.');
 console.log('  ✅ AI Prompt format contains full curriculum context, authors, question, and distractor instructions.');
 
-console.log('\n======================================================');
-console.log('🎉 ALL INTEGRITY, SYNTAX, DOM, AND BEHAVIORAL TESTS PASSED (100%)!');
-console.log('======================================================\n');
+// 3. Test copyCurrentStudyQuestionForAI execution and toast notification
+assert.strictEqual(typeof sandbox.showToast, 'function', 'showToast must be a function in sandbox');
+assert.strictEqual(typeof sandbox.window.showToast, 'function', 'showToast must be exported to window.showToast');
+
+let alertCallCount = 0;
+sandbox.alert = (msg) => { alertCallCount++; };
+
+// Setup current study state
+appState.currentStudy = {
+  questions: [sampleQ],
+  currentIndex: 0,
+  shuffledOptionsCache: {},
+  userAnswers: {}
+};
+
+// Setup mock navigator.clipboard
+let copiedClipboardText = null;
+sandbox.navigator = {
+  clipboard: {
+    writeText: async (t) => {
+      copiedClipboardText = t;
+      return Promise.resolve();
+    }
+  }
+};
+
+(async () => {
+  // Call copyCurrentStudyQuestionForAI
+  await sandbox.copyCurrentStudyQuestionForAI();
+
+  // Ensure alert was never called
+  assert.strictEqual(alertCallCount, 0, 'alert() should NEVER be called on copy');
+
+  // Check toast was updated
+  const toastEl = domElements.get('appGlobalToast');
+  assert.ok(toastEl.textContent.includes('הועתקו בהצלחה'), 'Global toast must show success message');
+
+  // Check button state was temporarily updated to copied
+  const btnCopyEl = domElements.get('btnCopyStudyAI');
+  assert.ok(btnCopyEl.innerHTML.includes('הועתק ללוח'), 'Button must show copied indicator');
+
+  // Test fallback copy execution without navigator.clipboard
+  sandbox.navigator = {};
+  sandbox.document.execCommand = (cmd) => true;
+  const fallbackResult = sandbox.fallbackCopyText('test fallback');
+  assert.strictEqual(fallbackResult, true, 'fallbackCopyText must return true on execCommand success');
+  assert.strictEqual(alertCallCount, 0, 'alert() must NEVER be triggered in fallback');
+
+  console.log('  ✅ copyCurrentStudyQuestionForAI executed cleanly without alerts and updated toast & button UI.');
+  console.log('  ✅ Fallback copy executes safely with zero modal alerts.');
+
+  console.log('\n======================================================');
+  console.log('🎉 ALL INTEGRITY, SYNTAX, DOM, AND BEHAVIORAL TESTS PASSED (100%)!');
+  console.log('======================================================\n');
+})();
