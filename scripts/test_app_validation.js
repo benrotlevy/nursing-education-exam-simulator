@@ -159,7 +159,7 @@ function createMockElement(id, classes = []) {
   'bNavExam', 'bNavStudy', 'bNavSaved', 'bNavStats',
   'screenExamSetup', 'screenActiveExam', 'screenExamResults', 'screenSavedExams', 'screenStudyMode', 'screenStats',
   'navSavedBadge', 'bNavSavedBadge', 'navMistakesBadge', 'bNavMistakesBadge', 'totalQuestionsHeader',
-  'mobileSectionIndicator', 'mobileSectionTag', 'mobileSectionText'
+  'mobileSectionIndicator', 'mobileSectionTag', 'mobileSectionText', 'btnCopyStudyAI'
 ].forEach(id => {
   domElements.set(id, createMockElement(id));
 });
@@ -328,6 +328,37 @@ sandbox.restoreExamSession();
 assert.ok(appState.currentExam.eliminated[0].has(2) && appState.currentExam.eliminated[0].has(3), 'Restored eliminated set must contain 2 and 3');
 
 console.log('  ✅ Distractor elimination tool passes 100% of functional & serialization checks.');
+
+// ----------------------------------------------------
+// TEST 7: AI Prompt Copy Feature (Study Mode Only)
+// ----------------------------------------------------
+console.log('\n[7/7] Testing AI Prompt Copy Feature (Study Mode Only)...');
+
+// 1. Assert button exists ONLY in Study Mode section in indexHtml
+const studyModeSectionMatch = indexHtml.match(/<section id="screenStudyMode"[\s\S]*?<\/section>/i);
+assert.ok(studyModeSectionMatch, 'screenStudyMode section must exist');
+assert.ok(studyModeSectionMatch[0].includes('id="btnCopyStudyAI"'), 'btnCopyStudyAI must be in screenStudyMode');
+
+const examScreenMatch = indexHtml.match(/<section id="screenActiveExam"[\s\S]*?<\/section>/i);
+assert.ok(examScreenMatch, 'screenActiveExam section must exist');
+assert.ok(!examScreenMatch[0].includes('btnCopyStudyAI'), 'btnCopyStudyAI must NOT be in screenActiveExam (Study Mode only)');
+
+// 2. Test formatQuestionForAI output
+const sampleQ = questions[0];
+const sampleAI = sandbox.formatQuestionForAI(sampleQ, sampleQ.options);
+
+assert.ok(sampleAI.includes(sampleQ.question), 'AI prompt must include question text');
+sampleQ.options.forEach(opt => {
+  assert.ok(sampleAI.includes(opt), `AI prompt must include option: ${opt}`);
+});
+assert.ok(sampleAI.includes('מנהל הסיעוד'), 'AI prompt must include Ministry of Health nursing context');
+assert.ok(sampleAI.includes('רמי אבירם'), 'AI prompt must include official authors (Aviram)');
+assert.ok(sampleAI.includes('בלום'), 'AI prompt must include Bloom taxonomy');
+assert.ok(sampleAI.includes('הרציונל הפדגוגי/קליני'), 'AI prompt must require pedagogical rationale');
+assert.ok(sampleAI.includes('ניתוח ביקורתי של כל אחד מהמסיחים השגויים'), 'AI prompt must require distractor analysis');
+
+console.log('  ✅ AI Prompt Copy button is verified to be ONLY in Study Mode.');
+console.log('  ✅ AI Prompt format contains full curriculum context, authors, question, and distractor instructions.');
 
 console.log('\n======================================================');
 console.log('🎉 ALL INTEGRITY, SYNTAX, DOM, AND BEHAVIORAL TESTS PASSED (100%)!');

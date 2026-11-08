@@ -1137,6 +1137,49 @@
       color: #b45309;
     }
 
+    /* Copy for AI Button (Study Mode Only) */
+    .btn-copy-ai {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 5px 12px;
+      font-size: 0.82rem;
+      font-weight: 700;
+      border-radius: 20px;
+      background: #f8fafc;
+      border: 1px solid var(--border);
+      color: #334155;
+      cursor: pointer;
+      transition: all 0.15s ease;
+      -webkit-tap-highlight-color: transparent;
+      user-select: none;
+    }
+
+    .btn-copy-ai:hover {
+      background: #f0f9ff;
+      border-color: #7dd3fc;
+      color: #0369a1;
+      transform: translateY(-1px);
+      box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+    }
+
+    .btn-copy-ai.btn-copied {
+      background: #dcfce7 !important;
+      border-color: #86efac !important;
+      color: #15803d !important;
+    }
+
+    .copy-ai-icon {
+      font-size: 0.95rem;
+      line-height: 1;
+    }
+
+    .q-header-actions {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
     /* Score and Results Screen */
     .results-hero {
       text-align: center;
@@ -2185,8 +2228,14 @@
             <span class="badge badge-source" id="studyQSource">מקור</span>
             <span class="badge badge-unverified" id="studyQUnverified" style="display:none;">פתרון משוער</span>
           </div>
-          <div style="font-size:0.9rem; font-weight:700; color:var(--text-muted);">
-            שאלה <span id="studyCurrentIndex">1</span> מתוך <span id="studyTotalCount">0</span>
+          <div class="q-header-actions">
+            <button type="button" class="btn-copy-ai" id="btnCopyStudyAI" onclick="copyCurrentStudyQuestionForAI()" title="העתק שאלה ופרומפט מובנה להתייעצות עם מודל AI (ChatGPT, Claude, Gemini)">
+              <span class="copy-ai-icon">📋</span>
+              <span class="copy-ai-label">העתק שאלה ל-AI</span>
+            </button>
+            <div style="font-size:0.9rem; font-weight:700; color:var(--text-muted); white-space:nowrap;">
+              שאלה <span id="studyCurrentIndex">1</span> מתוך <span id="studyTotalCount">0</span>
+            </div>
           </div>
         </div>
 
@@ -24248,6 +24297,89 @@ window.EXAM_QUESTIONS = [
         saveStudySession();
         renderCurrentStudyQuestion();
       }
+    }
+
+    /* ========================================================
+       STUDY MODE: AI PROMPT COPY UTILITY (STUDY MODE ONLY)
+       ======================================================== */
+    function formatQuestionForAI(q, options) {
+      const letters = ["א", "ב", "ג", "ד", "ה"];
+      const formattedOptions = options.map((opt, idx) => `  ${letters[idx]}. ${opt}`).join('\n');
+
+      return `שלום! אני לומד/ת למבחן ההסמכה הממשלתי בהדרכה קלינית בסיעוד של משרד הבריאות (מנהל הסיעוד בישראל).
+אשמח לעזרתך כמומחה בכיר בהדרכה קלינית בסיעוד בניתוח השאלה הבאה מתוך מבחני ההסמכה.
+
+═══════════════════════════════════════════════════════════════
+📌 פרטי השאלה:
+• תחום / קטגוריה: ${q.category || 'הדרכה קלינית בסיעוד'}
+• מקור: ${q.source || 'שחזור מבחן ממשלתי'}
+═══════════════════════════════════════════════════════════════
+
+❓ גוף השאלה:
+${q.question}
+
+📋 אפשרויות התשובה:
+${formattedOptions}
+
+═══════════════════════════════════════════════════════════════
+🎯 הנחיות למענה:
+אנא בסס את תשובתך על סילבוס מנהל הסיעוד וספרות החובה הרשמית (ספרו של רמי אבירם, Bastable, Billings & Halstead, הטקסונומיה של בלום, מעגל הלמידה של קולב, מודל השיפוט הקליני של טאנר, חוזרי מנהל הסיעוד וקוד האתיקה לאחיות בישראל).
+
+אנא הצג את תשובתך במבנה הברור הבא:
+1. ✅ התשובה הנכונה ביותר: (ציין את אות התשובה ואת ניסוחה המדויק).
+2. 🎯 הרציונל הפדגוגי/קליני המעמיק: (הסבר מעמיק של העיקרון הפדגוגי המנחה, מדוע פעולה זו נדרשת מהמדריך הקליני, וכיצד היא מקדמת את למידת הסטודנט ובטיחות המטופל).
+3. 🔍 ניתוח ביקורתי של כל אחד מהמסיחים השגויים: (הסבר מפורט לכל מסיח בנפרד – מדוע אינו נכון, מה הפגם בגישה זו או מדוע הוא פחות מתאים).
+4. 📚 עיגון בספרות ובסילבוס: (קישור לתיאוריה, לפרק בספרות המקצועית או להנחיית משרד הבריאות הרלוונטית).
+═══════════════════════════════════════════════════════════════`;
+    }
+
+    function copyCurrentStudyQuestionForAI() {
+      const study = state.currentStudy;
+      if (!study || !study.questions || study.questions.length === 0) return;
+      const q = study.questions[study.currentIndex];
+      if (!q) return;
+
+      const shuffledData = study.shuffledOptionsCache[study.currentIndex] || getShuffledQuestionOptions(q);
+      const textToCopy = formatQuestionForAI(q, shuffledData.options);
+
+      function onCopySuccess() {
+        showToast("השאלה והפרומפט ל-AI הועתקו בהצלחה! ניתן להדביק ב-ChatGPT/Claude/Gemini");
+        const btn = document.getElementById("btnCopyStudyAI");
+        if (btn) {
+          const origHtml = btn.innerHTML;
+          btn.innerHTML = `<span class="copy-ai-icon">✔</span> <span class="copy-ai-label">הועתק ללוח!</span>`;
+          btn.classList.add("btn-copied");
+          setTimeout(() => {
+            btn.innerHTML = origHtml;
+            btn.classList.remove("btn-copied");
+          }, 2000);
+        }
+      }
+
+      if (navigator.clipboard && navigator.clipboard.writeText) {
+        navigator.clipboard.writeText(textToCopy)
+          .then(onCopySuccess)
+          .catch(() => fallbackCopyText(textToCopy, onCopySuccess));
+      } else {
+        fallbackCopyText(textToCopy, onCopySuccess);
+      }
+    }
+
+    function fallbackCopyText(text, callback) {
+      const textarea = document.createElement("textarea");
+      textarea.value = text;
+      textarea.style.position = "fixed";
+      textarea.style.left = "-9999px";
+      document.body.appendChild(textarea);
+      textarea.focus();
+      textarea.select();
+      try {
+        document.execCommand('copy');
+        if (callback) callback();
+      } catch (err) {
+        alert("לא הצלחנו להעתיק אוטומטית ללוח. אנא העתק ידנית.");
+      }
+      document.body.removeChild(textarea);
     }
 
     function nextStudyQuestion() {
