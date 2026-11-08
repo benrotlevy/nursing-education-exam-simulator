@@ -1257,6 +1257,101 @@
       flex-wrap: wrap;
     }
 
+    /* Mobile Bottom Navigation Bar Styles */
+    .mobile-bottom-nav {
+      display: none;
+      position: fixed;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      height: 64px;
+      background: #ffffff;
+      border-top: 1px solid var(--border);
+      box-shadow: 0 -2px 10px rgba(0, 0, 0, 0.06);
+      z-index: 1000;
+      padding-bottom: env(safe-area-inset-bottom, 0px);
+      align-items: center;
+      justify-content: space-around;
+      user-select: none;
+    }
+
+    .bnav-btn {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      background: transparent;
+      border: none;
+      cursor: pointer;
+      padding: 6px 2px;
+      color: #64748b;
+      transition: all 0.15s ease;
+      -webkit-tap-highlight-color: transparent;
+      height: 100%;
+      position: relative;
+    }
+
+    .bnav-icon-box {
+      position: relative;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      line-height: 1;
+      margin-bottom: 2px;
+    }
+
+    .bnav-icon {
+      font-size: 1.35rem;
+      transition: transform 0.15s ease;
+    }
+
+    .bnav-label {
+      font-size: 0.72rem;
+      font-weight: 700;
+      letter-spacing: -0.2px;
+      transition: color 0.15s ease;
+    }
+
+    .bnav-btn.active {
+      color: var(--primary);
+    }
+
+    .bnav-btn.active .bnav-icon {
+      transform: scale(1.15);
+    }
+
+    .bnav-btn.active .bnav-label {
+      font-weight: 800;
+      color: var(--primary);
+    }
+
+    .bnav-badge {
+      position: absolute;
+      top: -4px;
+      left: -8px;
+      font-size: 0.62rem;
+      font-weight: 800;
+      line-height: 1;
+      padding: 2px 5px;
+      border-radius: 9999px;
+      border: 1.5px solid #ffffff;
+      box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
+      white-space: nowrap;
+    }
+
+    .bnav-badge-info {
+      background: #0284c7;
+      color: #ffffff;
+    }
+
+    .bnav-badge-danger {
+      background: #ef4444;
+      color: #ffffff;
+      min-width: 17px;
+      text-align: center;
+    }
+
     /* ========================================================
        RESPONSIVE DESIGN: TABLETS & MID-SIZE SCREENS (<=768px)
        ======================================================== */
@@ -1281,6 +1376,24 @@
        (e.g., Google Pixel 10 Pro XL, Samsung Galaxy S25 / S24)
        ======================================================== */
     @media (max-width: 640px) {
+      body {
+        padding-bottom: 76px;
+      }
+
+      .app-toast {
+        bottom: 76px;
+      }
+
+      /* Hide top segmented tabs on mobile to free screen space */
+      .nav-tabs {
+        display: none !important;
+      }
+
+      /* Enable mobile bottom navigation bar */
+      .mobile-bottom-nav {
+        display: flex;
+      }
+
       .header-inner {
         padding: 10px 12px;
         gap: 10px;
@@ -1320,27 +1433,6 @@
       .user-name {
         max-width: 80px;
         font-size: 0.76rem;
-      }
-      .nav-tabs {
-        max-width: 100%;
-        width: 100%;
-        border-radius: 12px;
-        padding: 3px;
-        gap: 2px;
-      }
-      .tab-btn {
-        flex: 1;
-        justify-content: center;
-        padding: 8px 2px;
-        font-size: 0.80rem;
-        border-radius: 9px;
-        min-height: 42px;
-        gap: 2px;
-      }
-      .mistakes-counter-badge, .saved-counter-badge {
-        font-size: 0.65rem;
-        padding: 1px 4px;
-        margin-inline-start: 2px;
       }
       .card {
         padding: 18px 14px;
@@ -1469,15 +1561,6 @@
         font-size: 0.74rem;
         gap: 4px;
       }
-      .tab-btn {
-        font-size: 0.72rem;
-        padding: 7px 1px;
-        gap: 1px;
-      }
-      .mistakes-counter-badge, .saved-counter-badge {
-        font-size: 0.58rem;
-        padding: 1px 3px;
-      }
       .card-title {
         font-size: 1.18rem;
       }
@@ -1487,6 +1570,12 @@
       .pill-badge {
         font-size: 0.82rem;
         padding: 9px 4px;
+      }
+      .bnav-icon {
+        font-size: 1.25rem;
+      }
+      .bnav-label {
+        font-size: 0.68rem;
       }
     }
   </style>
@@ -1903,6 +1992,36 @@
     מערכת סימולציה ותרגול לקורס הדרכה קלינית בסיעוד &bull; נבנה בהתאמה אישית &bull; סנכרון ענן בזמן אמת (Google) ותמיכה אופליין
   </footer>
 
+  <!-- Mobile Bottom Navigation Bar (Active on Mobile Screens <= 640px) -->
+  <nav class="mobile-bottom-nav" id="mobileBottomNav" aria-label="ניווט ראשי למכשירים ניידים">
+    <button class="bnav-btn active" id="bNavExam" onclick="switchTab('exam')" aria-label="מצב מבחן">
+      <div class="bnav-icon-box">
+        <span class="bnav-icon">📝</span>
+      </div>
+      <span class="bnav-label">מבחן</span>
+    </button>
+    <button class="bnav-btn" id="bNavStudy" onclick="switchTab('study')" aria-label="מצב למידה">
+      <div class="bnav-icon-box">
+        <span class="bnav-icon">💡</span>
+      </div>
+      <span class="bnav-label">למידה</span>
+    </button>
+    <button class="bnav-btn" id="bNavSaved" onclick="switchTab('saved-exams')" aria-label="מבחנים שמורים">
+      <div class="bnav-icon-box">
+        <span class="bnav-icon">📦</span>
+        <span class="bnav-badge bnav-badge-info" id="bNavSavedBadge" style="display:none;">0/3</span>
+      </div>
+      <span class="bnav-label">שמורים</span>
+    </button>
+    <button class="bnav-btn" id="bNavStats" onclick="switchTab('stats')" aria-label="סטטיסטיקה">
+      <div class="bnav-icon-box">
+        <span class="bnav-icon">📊</span>
+        <span class="bnav-badge bnav-badge-danger" id="bNavMistakesBadge" style="display:none;">0</span>
+      </div>
+      <span class="bnav-label">סטטיסטיקה</span>
+    </button>
+  </nav>
+
   <!-- Include Questions Database -->
   <script src="questions.js"></script>
 
@@ -2216,6 +2335,12 @@
       if (navSavedBadge) {
         navSavedBadge.textContent = `${savedCount}/3`;
       }
+
+      const bNavSavedBadge = document.getElementById("bNavSavedBadge");
+      if (bNavSavedBadge) {
+        bNavSavedBadge.textContent = `${savedCount}/3`;
+        bNavSavedBadge.style.display = savedCount > 0 ? "inline-block" : "none";
+      }
     }
 
     function getAvailableFullExams() {
@@ -2424,7 +2549,9 @@
       saveExamSession();
 
       document.querySelectorAll(".tab-btn").forEach(b => b.classList.remove("active"));
-      document.getElementById("tabExam").classList.add("active");
+      document.querySelectorAll(".bnav-btn").forEach(b => b.classList.remove("active"));
+      document.getElementById("tabExam")?.classList.add("active");
+      document.getElementById("bNavExam")?.classList.add("active");
       document.querySelectorAll(".screen").forEach(s => s.classList.remove("active"));
       document.getElementById("screenActiveExam").classList.add("active");
 
@@ -2452,12 +2579,17 @@
     function updateMistakesUI() {
       const count = state.mistakes.size;
       const navBadge = document.getElementById("navMistakesBadge");
+      const bNavMistakesBadge = document.getElementById("bNavMistakesBadge");
       const pillCount = document.getElementById("examMistakesPill");
       const studyCount = document.getElementById("studyMistakesCount");
 
       if (navBadge) {
         navBadge.textContent = `${count} טעויות לחיזוק`;
         navBadge.style.display = count > 0 ? "inline-block" : "none";
+      }
+      if (bNavMistakesBadge) {
+        bNavMistakesBadge.textContent = count;
+        bNavMistakesBadge.style.display = count > 0 ? "inline-block" : "none";
       }
       if (pillCount) {
         pillCount.textContent = `מאגר טעויות בלבד (${count})`;
@@ -2515,10 +2647,12 @@
        ======================================================== */
     function switchTab(tabId) {
       document.querySelectorAll(".tab-btn").forEach(b => b.classList.remove("active"));
+      document.querySelectorAll(".bnav-btn").forEach(b => b.classList.remove("active"));
       document.querySelectorAll(".screen").forEach(s => s.classList.remove("active"));
 
       if (tabId === 'exam') {
-        document.getElementById("tabExam").classList.add("active");
+        document.getElementById("tabExam")?.classList.add("active");
+        document.getElementById("bNavExam")?.classList.add("active");
         if (state.activeExamScreen === 'ACTIVE' && state.currentExam && state.currentExam.questions && state.currentExam.questions.length > 0) {
           document.getElementById("screenActiveExam").classList.add("active");
           renderCurrentExamQuestion();
@@ -2530,15 +2664,18 @@
           document.getElementById("screenExamSetup").classList.add("active");
         }
       } else if (tabId === 'study') {
-        document.getElementById("tabStudy").classList.add("active");
+        document.getElementById("tabStudy")?.classList.add("active");
+        document.getElementById("bNavStudy")?.classList.add("active");
         document.getElementById("screenStudyMode").classList.add("active");
         renderCurrentStudyQuestion();
       } else if (tabId === 'saved-exams') {
-        document.getElementById("tabSavedExams").classList.add("active");
+        document.getElementById("tabSavedExams")?.classList.add("active");
+        document.getElementById("bNavSaved")?.classList.add("active");
         document.getElementById("screenSavedExams").classList.add("active");
         renderSavedExamsUI();
       } else if (tabId === 'stats') {
-        document.getElementById("tabStats").classList.add("active");
+        document.getElementById("tabStats")?.classList.add("active");
+        document.getElementById("bNavStats")?.classList.add("active");
         document.getElementById("screenStats").classList.add("active");
         renderStats();
       }
@@ -2568,7 +2705,10 @@
       } catch (e) {}
       document.querySelectorAll(".screen").forEach(s => s.classList.remove("active"));
       document.getElementById("screenExamSetup").classList.add("active");
-      document.getElementById("tabExam").classList.add("active");
+      document.querySelectorAll(".tab-btn").forEach(b => b.classList.remove("active"));
+      document.querySelectorAll(".bnav-btn").forEach(b => b.classList.remove("active"));
+      document.getElementById("tabExam")?.classList.add("active");
+      document.getElementById("bNavExam")?.classList.add("active");
     }
 
     /* ========================================================
