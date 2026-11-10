@@ -5,6 +5,7 @@ Every refactoring step branch (`docs/*`, `chore/*`, `test/*`, `refactor/*`, `fix
 ---
 
 ## ✅ 1. Code & Architecture Compliance
+
 - [ ] Follows the layer dependency rules in [`01-ARCHITECTURE.md`](./01-ARCHITECTURE.md) (`domain/` has zero DOM/storage/service imports).
 - [ ] File and folder names match [`02-FOLDER-STRUCTURE.md`](./02-FOLDER-STRUCTURE.md).
 - [ ] Zero `window.*` globals, zero `onclick="..."` inline attributes, zero `alert()` / `confirm()` calls (once the relevant refactor step is reached).
@@ -12,6 +13,7 @@ Every refactoring step branch (`docs/*`, `chore/*`, `test/*`, `refactor/*`, `fix
 - [ ] `npm run lint` (ESLint + Prettier check) exits with **0 errors and 0 warnings**.
 
 ## ✅ 2. Automated Testing & STPR Traceability
+
 - [ ] Unit tests (`tests/unit/`) pass for all modified/added domain logic.
 - [ ] Data schema tests (`tests/data/`) pass against the 1,079 questions.
 - [ ] Integration & DOM tests (`tests/integration/`, `tests/dom/`) pass.
@@ -19,11 +21,13 @@ Every refactoring step branch (`docs/*`, `chore/*`, `test/*`, `refactor/*`, `fix
 - [ ] [`docs/STPR.md`](../STPR.md) traceability matrix and execution report are updated to reflect new/passing tests.
 
 ## ✅ 3. Accessibility, RTL & Mobile UX
+
 - [ ] All interactive controls are keyboard-focusable and operable via `Enter` / `Space`.
 - [ ] Hebrew RTL layout (`dir="rtl"`) renders without horizontal overflow at `360px`, `412px`, `768px`, and `1280px` widths.
 - [ ] Mobile bottom navigation bar and active section indicator remain synchronized across all tabs.
 
 ## ✅ 4. Git Hygiene & Checkpoint Reporting
+
 - [ ] Work was performed on a dedicated step branch cut from `release/v2` (`main` untouched).
 - [ ] Commits follow Conventional Commits format.
 - [ ] Branch is pushed to `origin`.

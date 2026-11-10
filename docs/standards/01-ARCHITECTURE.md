@@ -30,15 +30,15 @@ flowchart TD
 
 ### The Strict Dependency Rule
 
-| Layer | Allowed to Import From | Forbidden to Import From | Environment |
-|---|---|---|---|
-| `config.js` | *(none)* | All layers | Universal (Node + Browser) |
-| `domain/*` | `config.js`, other `domain/*` | `core/*`, `services/*`, `ui/*`, `features/*`, `window`, `document`, `localStorage` | Universal (100% pure JS) |
-| `core/*` | `config.js`, `domain/*` | `services/*`, `ui/*`, `features/*` | Universal / Browser |
-| `ui/*` | `config.js`, `core/*` | `domain/*`, `services/*`, `features/*` | Browser / `happy-dom` |
-| `services/*` | `config.js`, `core/*`, `domain/*` | `ui/*`, `features/*` | Browser (with injectable adapters) |
-| `features/*` | `config.js`, `core/*`, `domain/*`, `services/*`, `ui/*` | Other `features/*` (communicate via `store` or `router`) | Browser / `happy-dom` |
-| `main.js` | All layers | *(nothing imports `main.js`)* | Browser entry point |
+| Layer        | Allowed to Import From                                  | Forbidden to Import From                                                           | Environment                        |
+| ------------ | ------------------------------------------------------- | ---------------------------------------------------------------------------------- | ---------------------------------- |
+| `config.js`  | _(none)_                                                | All layers                                                                         | Universal (Node + Browser)         |
+| `domain/*`   | `config.js`, other `domain/*`                           | `core/*`, `services/*`, `ui/*`, `features/*`, `window`, `document`, `localStorage` | Universal (100% pure JS)           |
+| `core/*`     | `config.js`, `domain/*`                                 | `services/*`, `ui/*`, `features/*`                                                 | Universal / Browser                |
+| `ui/*`       | `config.js`, `core/*`                                   | `domain/*`, `services/*`, `features/*`                                             | Browser / `happy-dom`              |
+| `services/*` | `config.js`, `core/*`, `domain/*`                       | `ui/*`, `features/*`                                                               | Browser (with injectable adapters) |
+| `features/*` | `config.js`, `core/*`, `domain/*`, `services/*`, `ui/*` | Other `features/*` (communicate via `store` or `router`)                           | Browser / `happy-dom`              |
+| `main.js`    | All layers                                              | _(nothing imports `main.js`)_                                                      | Browser entry point                |
 
 ---
 
@@ -58,6 +58,7 @@ All user interactions and state transitions follow a single predictable loop:
 ## 4. Module Responsibilities
 
 ### `domain/` (Pure Business Rules)
+
 - **`shuffle.js`**: Fisher-Yates array shuffle and option-shuffling with preserved `correctIndex`. Accepts an optional `rng` function (`() => number`) for deterministic unit tests.
 - **`question-pool.js`**: Quarantined ID calculation, active pool filtering (by source, category, mistakes-only), and full-exam eligibility detection.
 - **`exam-session.js`**: Creating an exam session, selecting an option, toggling distractor elimination (and clearing conflicting selection), flagging questions, navigating, and computing final score/breakdown.
@@ -69,17 +70,20 @@ All user interactions and state transitions follow a single predictable loop:
 - **`sync-merge.js`**: Deterministic merging of local and remote cloud state (including timestamps/tombstones so deletions and resets propagate cleanly).
 
 ### `core/` (Application Plumbing)
+
 - **`store.js`**: Lightweight observable state container (`getState`, `setState`, `subscribe`).
 - **`storage.js`**: Versioned (`v2`) wrapper around `localStorage` and `sessionStorage` with safe JSON serialization (`Set` ↔ `Array`) and quota/privacy error handling.
 - **`router.js`**: Manages active tab (`exam`, `study`, `saved-exams`, `stats`), sub-screens (`SETUP`, `ACTIVE`, `RESULTS`), session persistence of active tab, and synchronizes desktop tabs with mobile bottom navigation.
 - **`events.js`**: Declarative event delegation (`click`, `change`) via `data-action` attributes. Eliminates all inline `onclick` and `window.*` globals.
 
 ### `services/` (Boundary I/O)
+
 - **`question-repository.js`**: Fetches and caches `data/questions.json`, validates basic structure, and exposes query helpers.
 - **`clipboard.js`**: Async clipboard write with mobile-safe `execCommand('copy')` fallback; returns `{ ok: boolean }` and never triggers native `alert()`.
 - **`cloud-sync.js`**: Encapsulates Firebase Auth and Firestore synchronization, listening to store changes and remote snapshots without polluting `window`.
 
 ### `ui/` (Reusable Presentation Primitives)
+
 - **`dom.js`**: Tagged template literal `html` that **automatically HTML-escapes** all interpolated values unless explicitly wrapped in `raw()`, preventing XSS by default.
 - **`toast.js`**: Non-blocking toast notification manager (`#appGlobalToast`).
 - **`dialog.js`**: Accessible modal confirmation/alert `<dialog>` replacing blocking browser `alert()` and `confirm()`.

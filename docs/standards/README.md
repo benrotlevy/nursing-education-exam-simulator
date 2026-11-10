@@ -14,20 +14,20 @@ This directory serves as the authoritative **Project Bible**. Every architectura
 
 ## 📚 Table of Contents
 
-| # | Document | Purpose & Scope |
-|---|---|---|
-| 01 | [01-ARCHITECTURE.md](./01-ARCHITECTURE.md) | Layered architecture, unidirectional dependency rules, data flow, and module boundaries. |
-| 02 | [02-FOLDER-STRUCTURE.md](./02-FOLDER-STRUCTURE.md) | Canonical repository tree, file naming conventions, and where new features belong. |
-| 03 | [03-JS-STANDARDS.md](./03-JS-STANDARDS.md) | Vanilla ES2022+ module standards, JSDoc typing, pure functions, DOM safety, and event delegation. |
-| 04 | [04-CSS-STANDARDS.md](./04-CSS-STANDARDS.md) | CSS `@layer` cascade, design tokens, logical RTL properties, BEM-lite naming, and responsive breakpoints. |
-| 05 | [05-HTML-A11Y-RTL.md](./05-HTML-A11Y-RTL.md) | Semantic HTML5 landmarks, Hebrew RTL rules, WCAG 2.1 AA contrast, keyboard navigation, and ARIA patterns. |
-| 06 | [06-STATE-AND-PERSISTENCE.md](./06-STATE-AND-PERSISTENCE.md) | Observable state store contract, immutable updates, storage key registry (`v2`), and cloud sync rules. |
-| 07 | [07-DATA-SCHEMA.md](./07-DATA-SCHEMA.md) | JSON Schema for `questions.json` v2, category enums, ID conventions, and data pipeline integrity. |
-| 08 | [08-TESTING-STRATEGY.md](./08-TESTING-STRATEGY.md) | Test pyramid (`node:test`, `happy-dom`, Playwright), coverage targets, and the regression-first rule. |
-| 09 | [09-GIT-WORKFLOW.md](./09-GIT-WORKFLOW.md) | Branching strategy (`release/v2`, feature branches), Conventional Commits, tagging, and rollback protocol. |
-| 10 | [10-SECURITY.md](./10-SECURITY.md) | XSS prevention via auto-escaping templates, Content Security Policy (CSP), Firebase security, and artifact isolation. |
-| 11 | [11-PERFORMANCE.md](./11-PERFORMANCE.md) | Asset size budgets, Web Vitals targets (LCP, INP, CLS), and data-loading optimization. |
-| 12 | [12-DEFINITION-OF-DONE.md](./12-DEFINITION-OF-DONE.md) | Mandatory quality gates that every branch and release must pass before merge. |
+| #   | Document                                                     | Purpose & Scope                                                                                                       |
+| --- | ------------------------------------------------------------ | --------------------------------------------------------------------------------------------------------------------- |
+| 01  | [01-ARCHITECTURE.md](./01-ARCHITECTURE.md)                   | Layered architecture, unidirectional dependency rules, data flow, and module boundaries.                              |
+| 02  | [02-FOLDER-STRUCTURE.md](./02-FOLDER-STRUCTURE.md)           | Canonical repository tree, file naming conventions, and where new features belong.                                    |
+| 03  | [03-JS-STANDARDS.md](./03-JS-STANDARDS.md)                   | Vanilla ES2022+ module standards, JSDoc typing, pure functions, DOM safety, and event delegation.                     |
+| 04  | [04-CSS-STANDARDS.md](./04-CSS-STANDARDS.md)                 | CSS `@layer` cascade, design tokens, logical RTL properties, BEM-lite naming, and responsive breakpoints.             |
+| 05  | [05-HTML-A11Y-RTL.md](./05-HTML-A11Y-RTL.md)                 | Semantic HTML5 landmarks, Hebrew RTL rules, WCAG 2.1 AA contrast, keyboard navigation, and ARIA patterns.             |
+| 06  | [06-STATE-AND-PERSISTENCE.md](./06-STATE-AND-PERSISTENCE.md) | Observable state store contract, immutable updates, storage key registry (`v2`), and cloud sync rules.                |
+| 07  | [07-DATA-SCHEMA.md](./07-DATA-SCHEMA.md)                     | JSON Schema for `questions.json` v2, category enums, ID conventions, and data pipeline integrity.                     |
+| 08  | [08-TESTING-STRATEGY.md](./08-TESTING-STRATEGY.md)           | Test pyramid (`node:test`, `happy-dom`, Playwright), coverage targets, and the regression-first rule.                 |
+| 09  | [09-GIT-WORKFLOW.md](./09-GIT-WORKFLOW.md)                   | Branching strategy (`release/v2`, feature branches), Conventional Commits, tagging, and rollback protocol.            |
+| 10  | [10-SECURITY.md](./10-SECURITY.md)                           | XSS prevention via auto-escaping templates, Content Security Policy (CSP), Firebase security, and artifact isolation. |
+| 11  | [11-PERFORMANCE.md](./11-PERFORMANCE.md)                     | Asset size budgets, Web Vitals targets (LCP, INP, CLS), and data-loading optimization.                                |
+| 12  | [12-DEFINITION-OF-DONE.md](./12-DEFINITION-OF-DONE.md)       | Mandatory quality gates that every branch and release must pass before merge.                                         |
 
 ---
 

@@ -134,6 +134,7 @@ The repository separates **deployable web application assets** (`app/`), **autom
 ## 3. Adding a New Feature (Checklist)
 
 When adding a new feature in v2+:
+
 1. Add any pure calculations or state transitions to `app/js/domain/<feature>.js` with unit tests in `tests/unit/<feature>.test.js`.
 2. Create `app/js/features/<feature>/<feature>.view.js` and `<feature>.controller.js`.
 3. Add styles in `app/styles/features/<feature>.css` and import it inside `app/styles/main.css` under `@layer features`.

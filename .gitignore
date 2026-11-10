@@ -1,3 +1,10 @@
+# Node.js Dependencies & Test Artifacts
+node_modules/
+playwright-report/
+test-results/
+blob-report/
+playwright/.cache/
+
 # Python Virtual Environments
 .venv/
 venv/
