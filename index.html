@@ -3402,7 +3402,10 @@
 
       exam.questions.forEach((q, idx) => {
         const userChoice = exam.userAnswers[idx];
-        const shuffledData = exam.shuffledOptionsCache[idx] || getShuffledQuestionOptions(q);
+        if (!exam.shuffledOptionsCache[idx]) {
+          exam.shuffledOptionsCache[idx] = getShuffledQuestionOptions(q);
+        }
+        const shuffledData = exam.shuffledOptionsCache[idx];
         const isCorrect = userChoice !== undefined && userChoice === shuffledData.correctIndex;
 
         // Update statistics
@@ -3481,7 +3484,7 @@
 
       exam.questions.forEach((q, idx) => {
         const userChoice = exam.userAnswers[idx];
-        const shuffledData = exam.shuffledOptionsCache[idx];
+        const shuffledData = exam.shuffledOptionsCache[idx] || getShuffledQuestionOptions(q);
         const isCorrect = userChoice !== undefined && userChoice === shuffledData.correctIndex;
 
         const card = document.createElement("div");
