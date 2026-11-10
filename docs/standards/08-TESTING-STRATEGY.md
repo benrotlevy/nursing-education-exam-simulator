@@ -7,7 +7,7 @@
 3. **Fast Feedback Pyramid**:
    - **Unit & Data Schema tests** (`node:test`): Run in `< 2 seconds` on every save/commit.
    - **Integration & DOM View tests** (`node:test` + `happy-dom`): Run in `< 5 seconds` without launching a browser.
-   - **End-to-End & Visual Regression tests** (`Playwright`): Run in a real headless Chromium browser across Desktop (`1280×800`) and Mobile Pixel (`412×915`) viewports.
+   - **End-to-End & Visual Regression tests** (`Playwright`): Run in a real headless Chromium browser across 4 target device profiles: **Laptop (`1440×900`)**, **Tablet (`768×1024`)**, **Google Pixel 10 Pro XL (`448×998`)**, and **Samsung Galaxy S25 (`360×780`)**.
 
 ---
 

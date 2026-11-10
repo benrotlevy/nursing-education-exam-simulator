@@ -33,12 +33,12 @@ Before the v2 refactor, the repository contained 4 test scripts in `scripts/`:
 
 ## 3. Test Levels & Environments (v2 Target)
 
-| Level                                                           | Tooling                            | Environment                                                                | Target Execution Time |
-| --------------------------------------------------------------- | ---------------------------------- | -------------------------------------------------------------------------- | --------------------- |
-| **L1 — Data Schema** (`tests/data/`)                            | `node:test` + `node:assert/strict` | Node.js 20+                                                                | `< 1s`                |
-| **L2 — Unit (Domain)** (`tests/unit/`)                          | `node:test` + `node:assert/strict` | Node.js 20+ (Zero DOM)                                                     | `< 1.5s`              |
-| **L3 — Integration & DOM** (`tests/integration/`, `tests/dom/`) | `node:test` + `happy-dom`          | Node.js 20+ with simulated DOM & Storage                                   | `< 3s`                |
-| **L4 — End-to-End & Visual** (`tests/e2e/`)                     | `@playwright/test`                 | Headless Chromium — Desktop (`1280×800`) & Mobile Pixel 7 (`412×915`, RTL) | `< 30s`               |
+| Level                                                           | Tooling                            | Environment                                                                                                                                                          | Target Execution Time |
+| --------------------------------------------------------------- | ---------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------- | --------------------- |
+| **L1 — Data Schema** (`tests/data/`)                            | `node:test` + `node:assert/strict` | Node.js 20+                                                                                                                                                          | `< 1s`                |
+| **L2 — Unit (Domain)** (`tests/unit/`)                          | `node:test` + `node:assert/strict` | Node.js 20+ (Zero DOM)                                                                                                                                               | `< 1.5s`              |
+| **L3 — Integration & DOM** (`tests/integration/`, `tests/dom/`) | `node:test` + `happy-dom`          | Node.js 20+ with simulated DOM & Storage                                                                                                                             | `< 3s`                |
+| **L4 — End-to-End & Visual** (`tests/e2e/`)                     | `@playwright/test`                 | Headless Chromium (RTL) across 4 device viewports: **Laptop (`1440×900`)**, **Tablet (`768×1024`)**, **Pixel 10 Pro XL (`448×998`)**, and **Galaxy S25 (`360×780`)** | `< 45s`               |
 
 ---
 
