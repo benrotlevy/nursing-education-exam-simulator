@@ -1,0 +1,363 @@
+/* Top Navigation Header */
+header {
+  background: white;
+  border-bottom: 1px solid var(--border);
+  position: sticky;
+  top: 0;
+  z-index: var(--z-header);
+  box-shadow: var(--shadow-sm);
+}
+
+.header-inner {
+  max-width: 960px;
+  margin: 0 auto;
+  padding: 12px 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.header-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  width: 100%;
+}
+
+.cloud-auth-bar {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.brand {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.brand-icon {
+  width: 44px;
+  height: 44px;
+  background: linear-gradient(135deg, var(--primary), var(--secondary));
+  color: white;
+  border-radius: var(--radius-md);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 22px;
+  box-shadow: 0 2px 8px rgba(2, 132, 199, 0.3);
+}
+
+.brand-title h1 {
+  font-size: 1.25rem;
+  font-weight: 800;
+  color: #0f172a;
+}
+
+.brand-title p {
+  font-size: 0.82rem;
+  color: var(--text-muted);
+}
+
+/* Segmented Desktop Navigation Tabs */
+.nav-tabs {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  max-width: 720px;
+  width: 100%;
+  margin: 0 auto;
+  background: #f1f5f9;
+  border: 1px solid #e2e8f0;
+  padding: 5px;
+  border-radius: 9999px;
+  box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.04);
+  gap: 4px;
+}
+
+.tab-btn {
+  flex: 1;
+  border: none;
+  background: transparent;
+  padding: 9px 14px;
+  font-size: 0.92rem;
+  font-weight: 700;
+  color: #64748b;
+  cursor: pointer;
+  border-radius: 9999px;
+  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 5px;
+  white-space: nowrap;
+  user-select: none;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.tab-btn:hover {
+  color: var(--text-main);
+  background: rgba(255, 255, 255, 0.6);
+}
+
+.tab-btn.active {
+  background: #ffffff;
+  color: var(--primary);
+  box-shadow:
+    0 2px 8px rgba(0, 0, 0, 0.08),
+    0 1px 2px rgba(0, 0, 0, 0.04);
+  font-weight: 800;
+}
+
+/* Main Content Container & Screen Switching */
+main {
+  max-width: 900px;
+  width: 100%;
+  margin: 24px auto;
+  padding: 0 16px;
+  flex: 1;
+}
+
+.screen {
+  display: none;
+}
+
+.screen.active {
+  display: block;
+  animation: fadeIn 0.25s ease-in-out;
+}
+
+/* Footer */
+footer {
+  text-align: center;
+  padding: 24px;
+  font-size: 0.85rem;
+  color: var(--text-muted);
+  border-top: 1px solid var(--border);
+  background: white;
+  margin-top: auto;
+}
+
+/* Mobile Bottom Navigation Bar */
+.mobile-bottom-nav {
+  display: none;
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: 64px;
+  background: #ffffff;
+  border-top: 1px solid var(--border);
+  box-shadow: 0 -3px 12px rgba(0, 0, 0, 0.08);
+  z-index: var(--z-mobile-nav);
+  padding-bottom: env(safe-area-inset-bottom, 0px);
+  align-items: center;
+  justify-content: space-around;
+  user-select: none;
+}
+
+.bnav-btn {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  background: transparent;
+  border: none;
+  border-top: 3px solid transparent;
+  cursor: pointer;
+  padding: 4px 2px;
+  color: #64748b;
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  -webkit-tap-highlight-color: transparent;
+  height: 100%;
+  position: relative;
+}
+
+.bnav-icon-box {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  line-height: 1;
+  padding: 3px 14px;
+  border-radius: 16px;
+  margin-bottom: 2px;
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.bnav-icon {
+  font-size: 1.35rem;
+  transition: transform 0.2s ease;
+}
+
+.bnav-label {
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: -0.2px;
+  transition:
+    color 0.15s ease,
+    font-weight 0.15s ease;
+}
+
+.bnav-btn.active {
+  color: var(--primary);
+  border-top: 3px solid var(--primary);
+  background: linear-gradient(180deg, rgba(2, 132, 199, 0.08) 0%, transparent 100%);
+}
+
+.bnav-btn.active .bnav-icon-box {
+  background: #e0f2fe;
+  transform: translateY(-1px);
+}
+
+.bnav-btn.active .bnav-icon {
+  transform: scale(1.1);
+}
+
+.bnav-btn.active .bnav-label {
+  font-weight: 800;
+  color: var(--primary);
+}
+
+/* Mobile Active Section Indicator (Top Header Pill) */
+.mobile-section-indicator {
+  display: none;
+  align-items: center;
+  justify-content: center;
+  margin-top: 8px;
+  padding-top: 8px;
+  border-top: 1px dashed var(--border);
+  width: 100%;
+}
+
+.mobile-section-tag {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  background: #f8fafc;
+  border: 1px solid var(--border);
+  color: #0f172a;
+  padding: 5px 14px;
+  border-radius: 9999px;
+  font-size: 0.8rem;
+  font-weight: 800;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+  transition: all 0.2s ease;
+}
+
+.mobile-section-tag.tag-exam {
+  background: #f0f9ff;
+  border-color: #bae6fd;
+  color: #0369a1;
+}
+
+.mobile-section-tag.tag-study {
+  background: #fefce8;
+  border-color: #fef08a;
+  color: #854d0e;
+}
+
+.mobile-section-tag.tag-saved {
+  background: #f5f3ff;
+  border-color: #ddd6fe;
+  color: #6d28d9;
+}
+
+.mobile-section-tag.tag-stats {
+  background: #fdf2f8;
+  border-color: #fbcfe8;
+  color: #be185d;
+}
+
+.mobile-section-dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: currentColor;
+  display: inline-block;
+  box-shadow: 0 0 0 2px rgba(0, 0, 0, 0.08);
+}
+
+/* Responsive Layout: Tablets (<=768px) */
+@media (max-width: 768px) {
+  .header-inner {
+    padding: 10px 16px;
+  }
+  main {
+    padding: 0 12px;
+    margin: 16px auto;
+  }
+  .nav-tabs {
+    max-width: 600px;
+  }
+}
+
+/* Responsive Layout: Smartphones (<=640px: Pixel 10 Pro XL, Galaxy S25) */
+@media (max-width: 640px) {
+  body {
+    padding-bottom: 76px;
+  }
+
+  .nav-tabs {
+    display: none !important;
+  }
+
+  .mobile-bottom-nav {
+    display: flex;
+  }
+
+  .mobile-section-indicator {
+    display: flex;
+  }
+
+  .header-inner {
+    padding: 10px 12px;
+    gap: 10px;
+  }
+
+  .header-top {
+    gap: 8px;
+  }
+
+  .brand-title h1 {
+    font-size: 1.05rem;
+  }
+
+  .brand-title p {
+    font-size: 0.72rem;
+  }
+
+  .brand-icon {
+    width: 36px;
+    height: 36px;
+    font-size: 18px;
+    border-radius: 10px;
+  }
+}
+
+/* Responsive Layout: Ultra-Compact Smartphones (<=420px: Galaxy S25 portrait) */
+@media (max-width: 420px) {
+  .header-inner {
+    padding: 8px 10px;
+  }
+  .brand-title h1 {
+    font-size: 0.96rem;
+  }
+  .brand-title p {
+    font-size: 0.68rem;
+  }
+  .brand-icon {
+    width: 32px;
+    height: 32px;
+    font-size: 16px;
+  }
+  .bnav-icon {
+    font-size: 1.25rem;
+  }
+  .bnav-label {
+    font-size: 0.68rem;
+  }
+}

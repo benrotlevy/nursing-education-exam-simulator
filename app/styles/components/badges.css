@@ -1,0 +1,176 @@
+/* User Cloud Sync Pill */
+.user-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  background: #f0fdf4;
+  border: 1px solid #bbf7d0;
+  border-radius: 9999px;
+  padding: 4px 12px 4px 6px;
+  box-shadow: var(--shadow-sm);
+}
+
+.user-avatar {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  object-fit: cover;
+  border: 2px solid white;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+}
+
+.user-meta {
+  display: flex;
+  flex-direction: column;
+  line-height: 1.15;
+}
+
+.user-name {
+  font-size: 0.84rem;
+  font-weight: 700;
+  color: #166534;
+  max-width: 130px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.sync-status-indicator {
+  font-size: 0.72rem;
+  color: #15803d;
+  transition: all 0.3s ease;
+}
+
+/* Navigation Counter Badges */
+.mistakes-counter-badge {
+  background: var(--danger-light);
+  color: var(--danger);
+  font-size: 0.74rem;
+  padding: 2px 7px;
+  border-radius: 9999px;
+  font-weight: 800;
+  margin-inline-start: 4px;
+  display: inline-flex;
+  align-items: center;
+  line-height: 1;
+}
+
+.saved-counter-badge {
+  background: #e0f2fe;
+  color: #0369a1;
+  font-size: 0.74rem;
+  padding: 2px 7px;
+  border-radius: 9999px;
+  font-weight: 800;
+  margin-inline-start: 4px;
+  display: inline-flex;
+  align-items: center;
+  line-height: 1;
+}
+
+.bnav-badge {
+  position: absolute;
+  top: -4px;
+  left: -8px;
+  font-size: 0.62rem;
+  font-weight: 800;
+  line-height: 1;
+  padding: 2px 5px;
+  border-radius: 9999px;
+  border: 1.5px solid #ffffff;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
+  white-space: nowrap;
+}
+
+.bnav-badge-info {
+  background: #0284c7;
+  color: #ffffff;
+}
+
+.bnav-badge-danger {
+  background: #ef4444;
+  color: #ffffff;
+  min-width: 17px;
+  text-align: center;
+}
+
+/* Question Metadata Badges */
+.badge {
+  font-size: 0.8rem;
+  font-weight: 700;
+  padding: 4px 10px;
+  border-radius: 20px;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.badge-category {
+  background: #e0f2fe;
+  color: #0369a1;
+}
+
+.badge-source {
+  background: #f1f5f9;
+  color: #475569;
+}
+
+.badge-unverified {
+  background: #fef3c7;
+  color: #92400e;
+  border: 1px solid #fde68a;
+}
+
+/* Option Status Badges */
+.option-status-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 0.72rem;
+  font-weight: 800;
+  padding: 3px 9px;
+  border-radius: 9999px;
+  margin-inline-start: auto;
+  white-space: nowrap;
+  flex-shrink: 0;
+  align-self: center;
+  line-height: 1.2;
+}
+
+.option-status-badge.badge-correct {
+  background: #dcfce7;
+  color: #15803d;
+  border: 1px solid #86efac;
+}
+
+.option-status-badge.badge-wrong {
+  background: #fee2e2;
+  color: #b91c1c;
+  border: 1px solid #fca5a5;
+}
+
+.option-status-badge.badge-distractor {
+  background: #f1f5f9;
+  color: #64748b;
+  border: 1px solid #e2e8f0;
+  opacity: 0.9;
+}
+
+@media (max-width: 640px) {
+  .user-pill {
+    padding: 3px 8px 3px 4px;
+    gap: 6px;
+  }
+  .user-avatar {
+    width: 26px;
+    height: 26px;
+  }
+  .user-name {
+    max-width: 80px;
+    font-size: 0.76rem;
+  }
+  .option-status-badge {
+    font-size: 0.65rem;
+    padding: 2px 7px;
+  }
+}
