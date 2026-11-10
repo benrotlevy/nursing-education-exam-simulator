@@ -34,13 +34,13 @@
 
 ## 3. Naming Conventions
 
-| Construct | Convention | Example |
-|---|---|---|
-| Variables & parameters | `camelCase` | `currentIndex`, `selectedCategory` |
-| Booleans | `is*`, `has*`, `can*`, `should*` | `isVerified`, `hasMistakes`, `isEliminated` |
-| Functions & methods | `camelCase` (verb-first) | `calculateExamScore()`, `parseExplanation()` |
-| Constants (module/config) | `UPPER_SNAKE_CASE` | `MAX_SAVED_EXAMS`, `STORAGE_KEYS` |
-| Classes / Constructors | `PascalCase` | `SafeHtml`, `QuestionRepository` |
+| Construct                 | Convention                       | Example                                      |
+| ------------------------- | -------------------------------- | -------------------------------------------- |
+| Variables & parameters    | `camelCase`                      | `currentIndex`, `selectedCategory`           |
+| Booleans                  | `is*`, `has*`, `can*`, `should*` | `isVerified`, `hasMistakes`, `isEliminated`  |
+| Functions & methods       | `camelCase` (verb-first)         | `calculateExamScore()`, `parseExplanation()` |
+| Constants (module/config) | `UPPER_SNAKE_CASE`               | `MAX_SAVED_EXAMS`, `STORAGE_KEYS`            |
+| Classes / Constructors    | `PascalCase`                     | `SafeHtml`, `QuestionRepository`             |
 
 ---
 

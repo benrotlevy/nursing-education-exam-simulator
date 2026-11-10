@@ -5,7 +5,7 @@
 - `app/index.html` must declare:
   ```html
   <!DOCTYPE html>
-  <html lang="he" dir="rtl">
+  <html lang="he" dir="rtl"></html>
   ```
 - `<meta charset="UTF-8">` and `<meta name="viewport" content="width=device-width, initial-scale=1.0">` are mandatory.
 
@@ -14,6 +14,7 @@
 ## 2. Semantic Landmarks
 
 Every screen and region must use proper HTML5 landmarks so screen readers and assistive technologies can navigate effortlessly:
+
 - `<header>`: Application title, active question pool counter, and cloud authentication controls.
 - `<nav aria-label="ניווט ראשי">`: Desktop top tab bar.
 - `<nav id="mobileBottomNav" aria-label="ניווט ראשי למכשירים ניידים">`: Mobile bottom navigation bar.
@@ -27,7 +28,7 @@ Every screen and region must use proper HTML5 landmarks so screen readers and as
 
 1. **Buttons vs. Links**:
    - Any control that triggers an in-app action (selecting an answer, switching tabs, eliminating a distractor, copying for AI) **must** be a `<button type="button">` (or `<input>`/`<select>`).
-   -Clickable `<div>` or `<span>` elements without keyboard support are prohibited, except when a composite card container contains nested interactive buttons (such as an option row that contains a separate nested `.btn-eliminate-option` button), in which case the container must have `role="button"`, `tabindex="0"`, and handle `Enter` / `Space` keydown events in `core/events.js`.
+     -Clickable `<div>` or `<span>` elements without keyboard support are prohibited, except when a composite card container contains nested interactive buttons (such as an option row that contains a separate nested `.btn-eliminate-option` button), in which case the container must have `role="button"`, `tabindex="0"`, and handle `Enter` / `Space` keydown events in `core/events.js`.
 2. **Visible Focus States**:
    - Never remove `:focus` outlines without providing a high-contrast `:focus-visible` ring (`outline: 2px solid var(--color-primary); outline-offset: 2px;`).
 3. **Form Labels**:

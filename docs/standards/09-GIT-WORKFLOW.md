@@ -15,6 +15,7 @@ flowchart LR
 ```
 
 ### Rules of Engagement
+
 1. **`main` Is Sacred**: Zero commits or merges are made to `main` during the entire v2 development cycle. `main` stays untouched at `v1.0.0` until Step 14 is explicitly approved by the user.
 2. **Integration Branch (`release/v2`)**: Holds all completed, verified steps for v2.
 3. **Step Branches**: Every step in the implementation plan is developed on its own dedicated branch cut from `release/v2`:
@@ -70,7 +71,9 @@ All commits must follow the [Conventional Commits](https://www.conventionalcommi
 - **`v2.0.0`**: Annotated tag created on `main` upon completing Step 14.
 
 ### Emergency Rollback from v2 to v1
+
 If an issue is discovered after v2 cutover:
+
 1. In GitHub Settings → Pages, switch source back to `Deploy from a branch (main / root)` or revert the release merge commit on `main`:
    ```bash
    git checkout main

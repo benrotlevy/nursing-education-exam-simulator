@@ -69,25 +69,27 @@ All runtime application state lives in a single observable store instance create
 
 Per the v2 architecture decision (ADR-0003), v2 starts with a clean, versioned key namespace in `config.js`:
 
-| Constant | Key Name | Storage Engine | Purpose |
-|---|---|---|---|
-| `STORAGE_KEYS.PROGRESS` | `nursing_progress_v2` | `localStorage` | Consolidated `mistakes`, `savedExams`, `userStats`, `updatedAt`, and `schemaVersion: 2`. |
-| `STORAGE_KEYS.EXAM_SESSION` | `nursing_exam_session_v2` | `sessionStorage` | Active in-progress exam state across page reloads. |
-| `STORAGE_KEYS.STUDY_SESSION` | `nursing_study_session_v2` | `sessionStorage` | Active study session state across tab switches and page reloads. |
-| `STORAGE_KEYS.ACTIVE_TAB` | `nursing_active_tab_v2` | `sessionStorage` | Remembers the active navigation tab within the browser session. |
+| Constant                     | Key Name                   | Storage Engine   | Purpose                                                                                  |
+| ---------------------------- | -------------------------- | ---------------- | ---------------------------------------------------------------------------------------- |
+| `STORAGE_KEYS.PROGRESS`      | `nursing_progress_v2`      | `localStorage`   | Consolidated `mistakes`, `savedExams`, `userStats`, `updatedAt`, and `schemaVersion: 2`. |
+| `STORAGE_KEYS.EXAM_SESSION`  | `nursing_exam_session_v2`  | `sessionStorage` | Active in-progress exam state across page reloads.                                       |
+| `STORAGE_KEYS.STUDY_SESSION` | `nursing_study_session_v2` | `sessionStorage` | Active study session state across tab switches and page reloads.                         |
+| `STORAGE_KEYS.ACTIVE_TAB`    | `nursing_active_tab_v2`    | `sessionStorage` | Remembers the active navigation tab within the browser session.                          |
 
 ---
 
 ## 3. Cloud Synchronization & Conflict Resolution (`domain/sync-merge.js`)
 
 In v1, merging used naive set-union for mistakes and `Math.max` for stats, which caused two bugs:
+
 1. Answering a mistake correctly (removing it locally) was overwritten by the old cloud list on next sync.
 2. Resetting statistics (`confirmResetStats`) was overwritten by the cloud's old higher numbers.
 
 ### v2 Deterministic Merge Rules
+
 1. **Stats Reset Propagation**:
    - `userStats.lastResetAt` records the timestamp when the user explicitly reset their stats.
-   - When merging local and remote states, if one side has a strictly newer `lastResetAt`, any stats/mistakes recorded *before* that `lastResetAt` are discarded.
+   - When merging local and remote states, if one side has a strictly newer `lastResetAt`, any stats/mistakes recorded _before_ that `lastResetAt` are discarded.
 2. **Per-Question Mistake Tracking**:
    - `mistakes` maps `questionId -> { status: 'mistake' | 'resolved', updatedAt: epochMs }`.
    - When merging local and remote `mistakes`, for each `questionId`, the entry with the higher `updatedAt` wins! Active mistakes are those where `status === 'mistake'`.

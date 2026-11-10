@@ -22,6 +22,7 @@ To eliminate specificity wars and `!important` overrides, `app/styles/main.css` 
 All colors, shadows, border-radii, font sizes, and z-indices must be defined in `tokens.css` and referenced via `var(--*)`. Raw hex codes outside `tokens.css` are discouraged.
 
 ### Core Token Categories
+
 - **Brand & Accent**: `--color-primary`, `--color-primary-hover`, `--color-primary-light`, `--color-secondary`
 - **Semantic Status**:
   - Success: `--color-success`, `--color-success-bg`, `--color-success-border`, `--color-success-text`
@@ -48,6 +49,7 @@ All colors, shadows, border-radii, font sizes, and z-indices must be defined in 
 ## 4. RTL & Logical Properties
 
 Because the application is native Hebrew (`dir="rtl"`):
+
 - Prefer **CSS Logical Properties** (`margin-inline-start`, `padding-inline-end`, `border-inline-start`, `inset-inline-end`, `text-align: start`) over physical `left`/`right` properties.
 - Never hardcode `direction: ltr` except on technical strings such as email addresses or code/numeric badges.
 
@@ -57,12 +59,12 @@ Because the application is native Hebrew (`dir="rtl"`):
 
 Keep media queries consolidated and consistent across component/feature stylesheets using two standard breakpoints:
 
-| Tier | Media Query | Target Devices |
-|---|---|---|
-| Desktop / Default | *(base rules)* | Laptops, desktops, landscape tablets (`> 768px`) |
-| Tablet | `@media (max-width: 768px)` | Portrait tablets & compact windows |
-| Smartphone | `@media (max-width: 640px)` | Smartphones (Pixel, Galaxy S, iPhone) — activates bottom navigation bar and mobile section pill |
-| Ultra-Compact | `@media (max-width: 420px)` | Narrow portrait viewports |
+| Tier              | Media Query                 | Target Devices                                                                                  |
+| ----------------- | --------------------------- | ----------------------------------------------------------------------------------------------- |
+| Desktop / Default | _(base rules)_              | Laptops, desktops, landscape tablets (`> 768px`)                                                |
+| Tablet            | `@media (max-width: 768px)` | Portrait tablets & compact windows                                                              |
+| Smartphone        | `@media (max-width: 640px)` | Smartphones (Pixel, Galaxy S, iPhone) — activates bottom navigation bar and mobile section pill |
+| Ultra-Compact     | `@media (max-width: 420px)` | Narrow portrait viewports                                                                       |
 
 ---
 

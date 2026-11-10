@@ -13,7 +13,9 @@
 Once all inline `<script>`, inline `<style>`, and inline `onclick="..."` handlers are removed in Steps 6–10, `app/index.html` will enforce a strict Content Security Policy via `<meta http-equiv="Content-Security-Policy">`:
 
 ```html
-<meta http-equiv="Content-Security-Policy" content="
+<meta
+  http-equiv="Content-Security-Policy"
+  content="
   default-src 'self';
   script-src 'self' https://www.gstatic.com https://apis.google.com;
   style-src 'self' https://fonts.googleapis.com;
@@ -23,7 +25,8 @@ Once all inline `<script>`, inline `<style>`, and inline `onclick="..."` handler
   frame-src https://*.firebaseapp.com https://accounts.google.com;
   object-src 'none';
   base-uri 'self';
-">
+"
+/>
 ```
 
 - Notice that `'unsafe-inline'` is **omitted** from `script-src`, blocking injected scripts from executing.

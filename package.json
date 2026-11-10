@@ -1,0 +1,32 @@
+{
+  "name": "nursing-education-exam-simulator",
+  "version": "2.0.0-alpha.0",
+  "private": true,
+  "description": "Clinical Preceptorship Nursing Exam Simulator (Ministry of Health Israel)",
+  "type": "module",
+  "engines": {
+    "node": ">=20.0.0"
+  },
+  "scripts": {
+    "serve": "node tools/serve.js",
+    "lint": "eslint --no-error-on-unmatched-pattern app/ tools/ tests/ eslint.config.js playwright.config.js && prettier --no-error-on-unmatched-pattern --check \"app/**/*.{js,css,html}\" \"tools/**/*.js\" \"tests/**/*.js\" \"docs/standards/**/*.md\" \"docs/adr/**/*.md\" \"docs/STPR.md\"",
+    "format": "prettier --no-error-on-unmatched-pattern --write \"app/**/*.{js,css,html}\" \"tools/**/*.js\" \"tests/**/*.js\" \"docs/standards/**/*.md\" \"docs/adr/**/*.md\" \"docs/STPR.md\"",
+    "test:unit": "node --test tests/unit",
+    "test:integration": "node --test tests/integration",
+    "test:data": "node --test tests/data",
+    "test:dom": "node --test tests/dom",
+    "test:legacy": "node scripts/test_app_validation.js && node scripts/test_saved_exams_quarantine.js && node scripts/verify_database.js && node scripts/test_shuffle_logic.js",
+    "test": "node --test tests/unit",
+    "test:e2e": "playwright test",
+    "build:data": "node tools/build-questions.js",
+    "verify": "npm run lint && npm test"
+  },
+  "devDependencies": {
+    "@eslint/js": "^9.0.0",
+    "@playwright/test": "^1.40.0",
+    "eslint": "^9.0.0",
+    "globals": "^16.0.0",
+    "happy-dom": "^20.0.0",
+    "prettier": "^3.0.0"
+  }
+}

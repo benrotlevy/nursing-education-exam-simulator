@@ -2,12 +2,13 @@
 
 ## 1. Canonical Source vs. Deployed Artifact
 
-| File | Role | Tracked in Git | Deployed to Pages |
-|---|---|---|---|
-| `data-pipeline/source/clean_questions.json` | Canonical master dataset containing full historical metadata (`originalExplanation`, etc.). | Yes | **No** |
-| `app/data/questions.json` | Slimmed, schema-validated runtime dataset compiled by `tools/build-questions.js`. | Yes | **Yes** |
+| File                                        | Role                                                                                        | Tracked in Git | Deployed to Pages |
+| ------------------------------------------- | ------------------------------------------------------------------------------------------- | -------------- | ----------------- |
+| `data-pipeline/source/clean_questions.json` | Canonical master dataset containing full historical metadata (`originalExplanation`, etc.). | Yes            | **No**            |
+| `app/data/questions.json`                   | Slimmed, schema-validated runtime dataset compiled by `tools/build-questions.js`.           | Yes            | **Yes**           |
 
 ### Why We Slim `app/data/questions.json`
+
 In v1, `questions.js` was 4.41 MB because every question carried both `aiExplanation` (784 KB total) and `detailedExplanation` (784 KB total) with 100% identical content, plus unused legacy fields (`explanation`).
 In v2, `tools/build-questions.js` strips redundant duplicate fields and emits pure JSON (`app/data/questions.json`), cutting payload size by ~1 MB while retaining 100% of user-facing information.
 
