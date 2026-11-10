@@ -24,10 +24,10 @@ const indexPath = fs.existsSync(path.join(rootDir, 'app', 'index.html'))
   ? path.join(rootDir, 'app', 'index.html')
   : path.join(rootDir, 'index.html');
 const standalonePath = path.join(rootDir, 'simulator_all_in_one.html');
-const questionsPath = path.join(rootDir, 'questions.js');
+const questionsJsonPath = path.join(rootDir, 'app', 'data', 'questions.json');
 
 assert.ok(fs.existsSync(indexPath), 'index.html must exist');
-assert.ok(fs.existsSync(questionsPath), 'questions.js must exist');
+assert.ok(fs.existsSync(questionsJsonPath), 'app/data/questions.json must exist');
 
 const indexHtml = fs.readFileSync(indexPath, 'utf8');
 
@@ -220,10 +220,10 @@ const sandbox = {
   clearTimeout: () => {}
 };
 
-// Execute questions.js and the inline JS in our mock context
+// Execute questions.json and the inline JS in our mock context
 vm.createContext(sandbox);
-const questionsContent = fs.readFileSync(questionsPath, 'utf8');
-vm.runInContext(questionsContent, sandbox);
+const questionsPayload = JSON.parse(fs.readFileSync(questionsJsonPath, 'utf8'));
+sandbox.window.EXAM_QUESTIONS = questionsPayload.questions || questionsPayload;
 vm.runInContext(jsCode, sandbox);
 
 // Test switchTab across all 4 modes

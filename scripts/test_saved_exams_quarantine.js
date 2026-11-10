@@ -3,14 +3,12 @@
  */
 
 const fs = require('fs');
-const vm = require('vm');
+const path = require('path');
 
-const code = fs.readFileSync('questions.js', 'utf8');
-const sandbox = { window: {} };
-vm.createContext(sandbox);
-vm.runInContext(code, sandbox);
-
-const allQuestions = sandbox.window.EXAM_QUESTIONS;
+const payload = JSON.parse(
+  fs.readFileSync(path.join(__dirname, '..', 'app', 'data', 'questions.json'), 'utf8')
+);
+const allQuestions = payload.questions || payload;
 
 console.log('======================================================');
 console.log('🧪 Testing Saved Exams & Question Quarantining Logic');
