@@ -20,7 +20,9 @@ console.log('🧪 Running Comprehensive App Integrity & Validation Test');
 console.log('======================================================');
 
 const rootDir = path.resolve(__dirname, '..');
-const indexPath = path.join(rootDir, 'index.html');
+const indexPath = fs.existsSync(path.join(rootDir, 'app', 'index.html'))
+  ? path.join(rootDir, 'app', 'index.html')
+  : path.join(rootDir, 'index.html');
 const standalonePath = path.join(rootDir, 'simulator_all_in_one.html');
 const questionsPath = path.join(rootDir, 'questions.js');
 
