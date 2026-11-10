@@ -1,0 +1,364 @@
+/* Question Card UI (Shared across Exam & Study) */
+.q-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 16px;
+  flex-wrap: wrap;
+}
+
+.q-meta {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.q-header-actions {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.q-text {
+  font-size: 1.25rem;
+  font-weight: 700;
+  color: #0f172a;
+  line-height: 1.6;
+  margin-bottom: 24px;
+}
+
+/* Options List */
+.options-list {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  margin-bottom: 24px;
+}
+
+.option-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 14px;
+  padding: 16px 18px;
+  background: #f8fafc;
+  border: 2px solid var(--border);
+  border-radius: var(--radius-md);
+  cursor: pointer;
+  transition: all 0.2s ease;
+  position: relative;
+  user-select: none;
+}
+
+.option-item:hover {
+  background: #f1f5f9;
+  border-color: #cbd5e1;
+}
+
+.option-letter {
+  width: 32px;
+  height: 32px;
+  background: white;
+  border: 1px solid #cbd5e1;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 800;
+  font-size: 0.95rem;
+  color: #475569;
+  flex-shrink: 0;
+  transition: all 0.2s ease;
+}
+
+.option-content {
+  font-size: 1.05rem;
+  font-weight: 600;
+  color: #1e293b;
+  flex: 1;
+  padding-top: 2px;
+}
+
+/* Selected in Exam Mode */
+.option-item.selected {
+  background: var(--primary-light);
+  border-color: var(--primary);
+}
+
+.option-item.selected .option-letter {
+  background: var(--primary);
+  color: white;
+  border-color: var(--primary);
+}
+
+/* Study Mode / Feedback states */
+.option-item.correct {
+  background: var(--success-light) !important;
+  border-color: var(--success) !important;
+}
+
+.option-item.correct .option-letter {
+  background: var(--success) !important;
+  color: white !important;
+  border-color: var(--success) !important;
+}
+
+.option-item.wrong {
+  background: var(--danger-light) !important;
+  border-color: var(--danger) !important;
+}
+
+.option-item.wrong .option-letter {
+  background: var(--danger) !important;
+  color: white !important;
+  border-color: var(--danger) !important;
+}
+
+.option-item.disabled {
+  cursor: default;
+}
+
+/* Eliminated State */
+.option-item.eliminated {
+  opacity: 0.45;
+  background: #f1f5f9;
+  border-color: #e2e8f0;
+}
+
+.option-item.eliminated .option-content {
+  text-decoration: line-through;
+  color: #94a3b8;
+}
+
+.option-item.eliminated .option-letter {
+  background: #e2e8f0;
+  color: #94a3b8;
+  border-color: #cbd5e1;
+}
+
+.option-item.eliminated .btn-eliminate-option {
+  background: #fee2e2;
+  color: #dc2626;
+  border-color: #fca5a5;
+  opacity: 1;
+}
+
+/* Question Navigation Footer */
+.q-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding-top: 16px;
+  border-top: 1px solid var(--border);
+}
+
+/* Progress Bar */
+.progress-wrapper {
+  margin-bottom: 20px;
+}
+
+.progress-bar-bg {
+  height: 8px;
+  background: #e2e8f0;
+  border-radius: 4px;
+  overflow: hidden;
+}
+
+.progress-bar-fill {
+  height: 100%;
+  background: var(--primary);
+  width: 0%;
+  transition: width 0.3s ease;
+}
+
+.progress-text {
+  display: flex;
+  justify-content: space-between;
+  font-size: 0.85rem;
+  font-weight: 700;
+  color: var(--text-muted);
+  margin-bottom: 6px;
+}
+
+/* Quick Grid */
+.quick-grid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-top: 20px;
+  padding-top: 16px;
+  border-top: 1px solid var(--border);
+}
+
+.grid-cell {
+  width: 34px;
+  height: 34px;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--border);
+  background: white;
+  font-size: 0.85rem;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  color: #475569;
+  transition: all 0.15s;
+}
+
+.grid-cell:hover {
+  border-color: var(--primary);
+}
+
+.grid-cell.active {
+  border-color: var(--primary);
+  box-shadow: 0 0 0 2px var(--primary);
+}
+
+.grid-cell.answered {
+  background: var(--primary-light);
+  color: var(--primary-dark);
+  border-color: #7dd3fc;
+}
+
+.grid-cell.flagged {
+  position: relative;
+}
+
+.grid-cell.flagged::after {
+  content: '★';
+  position: absolute;
+  top: -3px;
+  right: 2px;
+  font-size: 10px;
+  color: var(--warning);
+}
+
+/* Score and Results Screen */
+.results-hero {
+  text-align: center;
+  padding: 24px 0 32px;
+}
+
+.score-circle {
+  width: 140px;
+  height: 140px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, var(--primary), var(--secondary));
+  color: white;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  margin: 0 auto 20px;
+  box-shadow: 0 8px 24px rgba(2, 132, 199, 0.25);
+}
+
+.score-value {
+  font-size: 2.8rem;
+  font-weight: 800;
+  line-height: 1;
+}
+
+.score-label {
+  font-size: 0.85rem;
+  font-weight: 700;
+  opacity: 0.9;
+}
+
+.results-actions {
+  display: flex;
+  gap: 12px;
+  margin-bottom: 28px;
+  flex-wrap: wrap;
+}
+
+.results-actions .btn {
+  flex: 1;
+  min-width: 180px;
+}
+
+/* Review Question Item & Option Row Styling */
+.review-item {
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  padding: 20px;
+  margin-bottom: 16px;
+  background: white;
+}
+
+.review-item.was-correct {
+  border-right: 6px solid var(--success);
+}
+
+.review-item.was-wrong {
+  border-right: 6px solid var(--danger);
+}
+
+.review-opt-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 9px 12px;
+  border-radius: 8px;
+  background: #ffffff;
+  border: 1px solid var(--border);
+  margin-bottom: 6px;
+  font-size: 0.94rem;
+}
+
+.review-opt-item.opt-correct {
+  background: #f0fdf4;
+  border-color: #86efac;
+  color: #15803d;
+  font-weight: 700;
+}
+
+.review-opt-item.opt-wrong {
+  background: #fef2f2;
+  border-color: #fca5a5;
+  color: #b91c1c;
+  font-weight: 700;
+}
+
+@media (max-width: 640px) {
+  .q-text {
+    font-size: 1.12rem;
+    line-height: 1.55;
+    margin-bottom: 18px;
+  }
+  .option-item {
+    padding: 12px 14px;
+    gap: 10px;
+  }
+  .option-letter {
+    width: 28px;
+    height: 28px;
+    font-size: 0.88rem;
+  }
+  .option-content {
+    font-size: 0.98rem;
+  }
+  .q-footer {
+    flex-direction: column-reverse;
+    gap: 8px;
+  }
+  .q-footer .btn {
+    width: 100%;
+  }
+  .results-actions {
+    flex-direction: column;
+    gap: 10px;
+  }
+  .results-actions .btn {
+    width: 100%;
+    min-height: 46px;
+  }
+  .q-header-actions {
+    width: 100%;
+    justify-content: space-between;
+    margin-top: 4px;
+  }
+}
