@@ -27,7 +27,10 @@ function getSampleQuestions() {
     cachedQuestions = Array.isArray(parsed) ? parsed : parsed.questions;
     return cachedQuestions;
   }
-  const cleanJson = path.join(repoRoot, 'data', 'clean_questions.json');
+  const pipelineJson = path.join(repoRoot, 'data-pipeline', 'source', 'clean_questions.json');
+  const cleanJson = fs.existsSync(pipelineJson)
+    ? pipelineJson
+    : path.join(repoRoot, 'data', 'clean_questions.json');
   cachedQuestions = JSON.parse(fs.readFileSync(cleanJson, 'utf8'));
   return cachedQuestions;
 }

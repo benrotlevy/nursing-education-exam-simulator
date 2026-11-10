@@ -10,6 +10,7 @@ export default [
       'data/**',
       'scripts/**',
       'app/data/**',
+      'app/questions.js',
       'questions.js',
       'playwright-report/**',
       'test-results/**',
