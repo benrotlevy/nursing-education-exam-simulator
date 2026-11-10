@@ -33,7 +33,7 @@ Thumbs.db
 desktop.ini
 
 # Intermediate OCR & Scratch extraction files
-data/
+/data/
 temp_*.txt
 
 # Environment variables & Secrets

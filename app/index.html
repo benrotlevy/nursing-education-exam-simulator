@@ -2370,9 +2370,6 @@
   <!-- Global App Toast Notification -->
   <div id="appGlobalToast" class="app-toast" role="status" aria-live="polite"></div>
 
-  <!-- Include Questions Database -->
-  <script src="questions.js"></script>
-
   <!-- Application Logic -->
   <script>
     /* ========================================================
@@ -2459,7 +2456,7 @@
     /* ========================================================
        INITIALIZATION
        ======================================================== */
-    window.addEventListener("DOMContentLoaded", () => {
+    function bootstrapApplication() {
       loadStorage();
       initQuestions();
 
@@ -2485,6 +2482,27 @@
       } catch (e) {}
 
       switchTab(initialTab);
+    }
+
+    window.addEventListener("DOMContentLoaded", () => {
+      if (Array.isArray(window.EXAM_QUESTIONS) && window.EXAM_QUESTIONS.length > 0) {
+        bootstrapApplication();
+        return;
+      }
+
+      fetch("./data/questions.json")
+        .then(res => {
+          if (!res.ok) throw new Error(`HTTP ${res.status}`);
+          return res.json();
+        })
+        .then(payload => {
+          window.EXAM_QUESTIONS = Array.isArray(payload) ? payload : payload.questions || [];
+          bootstrapApplication();
+        })
+        .catch(err => {
+          console.error("Failed to load ./data/questions.json:", err);
+          bootstrapApplication();
+        });
     });
 
     function saveStudySession() {

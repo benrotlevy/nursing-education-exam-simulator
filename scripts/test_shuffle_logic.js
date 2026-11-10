@@ -22,11 +22,11 @@ function getShuffledQuestionOptions(q) {
 }
 
 const fs = require('fs');
-const vm = require('vm');
-const sandbox = { window: {} };
-vm.createContext(sandbox);
-vm.runInContext(fs.readFileSync('questions.js', 'utf8'), sandbox);
-const questions = sandbox.window.EXAM_QUESTIONS;
+const path = require('path');
+const payload = JSON.parse(
+  fs.readFileSync(path.join(__dirname, '..', 'app', 'data', 'questions.json'), 'utf8')
+);
+const questions = payload.questions || payload;
 
 console.log("Testing 1000 shuffles across database questions...");
 let allPassed = true;
