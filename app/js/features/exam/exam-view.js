@@ -233,7 +233,7 @@ export function renderExamReviewList({ document = globalThis.document, exam } = 
     const optionsHtml = shuffledData.options
       .map((opt, oIdx) => {
         let itemClass = 'review-opt-item';
-        let badgeHtml = '';
+        let badgeHtml;
         if (oIdx === shuffledData.correctIndex) {
           itemClass += ' opt-correct';
           badgeHtml = '<span class="option-status-badge badge-correct">✓ תשובה נכונה</span>';

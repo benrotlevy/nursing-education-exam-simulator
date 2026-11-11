@@ -24,7 +24,7 @@ export function fallbackCopyTextToClipboard(text, document = globalThis.document
   if (typeof textarea.setSelectionRange === 'function') {
     textarea.setSelectionRange(0, 999999);
   }
-  let success = false;
+  let success;
   try {
     success = typeof document.execCommand === 'function' ? document.execCommand('copy') : true;
   } catch {
