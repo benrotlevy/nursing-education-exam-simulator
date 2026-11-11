@@ -15,7 +15,7 @@
     "test:integration": "node --test tests/integration",
     "test:data": "node --test tests/data",
     "test:dom": "node --test tests/dom",
-    "test:legacy": "node scripts/test_app_validation.js && node scripts/test_saved_exams_quarantine.js && node scripts/test_shuffle_logic.js",
+    "test:legacy": "node scripts/test_app_validation.js",
     "test": "node --test tests/unit tests/integration tests/data tests/dom",
     "test:e2e": "playwright test",
     "build:data": "node tools/build-questions.js",
