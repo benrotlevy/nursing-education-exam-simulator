@@ -31,16 +31,20 @@ export function mountApplication({
   preloadedQuestions = null,
   firebaseSdk = null,
   autoInitCloudSync = false,
+  confirmAction: customConfirmAction = null,
 } = {}) {
   const store = createStore(createInitialState());
   const storage = createStorageAdapter({ localStorage, sessionStorage });
   const toast = createToastController({ document });
   const dialog = createDialogController({ document });
 
-  const confirmAction = (msg) => {
-    const fn = window?.confirm || globalThis?.confirm;
-    return typeof fn === 'function' ? fn(msg) : true;
-  };
+  const confirmAction =
+    customConfirmAction ||
+    ((optionsOrMsg) => {
+      const opts =
+        typeof optionsOrMsg === 'string' ? { message: optionsOrMsg } : optionsOrMsg || {};
+      return dialog.confirmDialog(opts);
+    });
 
   const controllers = {};
 
@@ -201,6 +205,7 @@ export function mountApplication({
     store,
     storage,
     toast,
+    notifyError: (message) => dialog.alertDialog({ title: 'שגיאת התחברות לענן', message }),
     firebaseSdk,
     onRemoteMerged: () => {
       updateMistakesUI();
@@ -216,7 +221,12 @@ export function mountApplication({
   controllers.stats = statsController;
   controllers.auth = authController;
 
-  function bootstrapWithQuestions(questions = []) {
+  function bootstrapWithQuestions(rawQuestions = []) {
+    const questions = Array.isArray(rawQuestions)
+      ? rawQuestions
+      : Array.isArray(rawQuestions?.questions)
+        ? rawQuestions.questions
+        : [];
     const progress = storage.loadProgress();
     const sources = extractUniqueSources(questions);
 

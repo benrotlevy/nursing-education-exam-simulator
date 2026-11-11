@@ -75,9 +75,10 @@ test.describe('Characterization E2E Suite (Laptop, Tablet, Pixel 10 Pro XL, Gala
     await page.locator('#examQuickGrid .grid-q-btn').nth(9).click();
     await expect(page.locator('#examProgressCount')).toContainText('10 מתוך 10');
 
-    // Accept unanswered confirmation dialog and submit
-    page.on('dialog', (dialog) => dialog.accept());
+    // Accept unanswered confirmation modal (<dialog>) and submit
     await page.locator('#btnSubmitExam').click();
+    await expect(page.locator('#appModalDialog')).toBeVisible();
+    await page.locator('#appModalConfirmBtn').click();
 
     await expect(page.locator('#screenExamResults')).toBeVisible();
     await expect(page.locator('#resTotalCount')).toHaveText('10');
@@ -127,9 +128,10 @@ test.describe('Characterization E2E Suite (Laptop, Tablet, Pixel 10 Pro XL, Gala
     await expect(page.locator('#savedSlotsCount')).toHaveText('1 / 3');
     await expect(page.locator('#totalQuestionsHeader')).not.toContainText('מאגר פעיל: 1079');
 
-    // Release saved exam
-    page.on('dialog', (dialog) => dialog.accept());
+    // Release saved exam via accessible <dialog> confirmation
     await page.locator('#savedExamsList .saved-slot-card button.btn-outline').click();
+    await expect(page.locator('#appModalDialog')).toBeVisible();
+    await page.locator('#appModalConfirmBtn').click();
     await expect(page.locator('#savedSlotsCount')).toHaveText('0 / 3');
     await expect(page.locator('#totalQuestionsHeader')).toContainText('1079');
   });

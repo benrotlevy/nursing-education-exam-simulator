@@ -37,14 +37,7 @@ export function createStatsController({
     router.switchTab('study');
   }
 
-  function confirmResetStats() {
-    if (typeof confirmAction === 'function') {
-      const proceed = confirmAction(
-        'האם אתה בטוח שברצונך לאפס את כל נתוני הסטטיסטיקה ומאגר הטעויות?'
-      );
-      if (!proceed) return false;
-    }
-
+  function executeResetStats() {
     const state = store.getState();
     const resetPayload = createResetStatsPayload();
 
@@ -70,6 +63,28 @@ export function createStatsController({
     }
     toast.showToast('הנתונים אופסו בהצלחה.');
     return true;
+  }
+
+  function confirmResetStats() {
+    if (typeof confirmAction === 'function') {
+      const proceed = confirmAction({
+        title: 'איפוס נתוני סטטיסטיקה',
+        message:
+          'האם אתה בטוח שברצונך לאפס את כל נתוני הסטטיסטיקה ומאגר הטעויות? פעולה זו אינה הפיכה.',
+        confirmText: 'אפס נתונים',
+        cancelText: 'ביטול',
+        danger: true,
+      });
+      if (proceed && typeof proceed.then === 'function') {
+        return proceed.then((confirmed) => {
+          if (!confirmed) return false;
+          return executeResetStats();
+        });
+      }
+      if (!proceed) return false;
+    }
+
+    return executeResetStats();
   }
 
   return {

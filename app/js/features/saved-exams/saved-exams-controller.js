@@ -65,18 +65,8 @@ export function createSavedExamsController({
     return true;
   }
 
-  function releaseSavedExam(savedId) {
+  function executeReleaseSavedExam(savedId, item) {
     const state = store.getState();
-    const item = state.savedExams.find((s) => s.id === savedId);
-    if (!item) return false;
-
-    if (typeof confirmAction === 'function') {
-      const proceed = confirmAction(
-        `האם ברצונך לשחרר את שאלות המבחן '${item.title}' (${item.questionCount} שאלות) חזרה למאגר הכללי?\nהשאלות יחזרו מיד להופיע בערבוב של מבחני התרגול ובמצב למידה.`
-      );
-      if (!proceed) return false;
-    }
-
     const rel = releaseSavedExamSlot(state.savedExams, savedId);
     store.setState({ savedExams: rel.savedExams }, 'saved-exams/release');
     storage.saveProgress({
@@ -93,6 +83,31 @@ export function createSavedExamsController({
 
     toast.showToast(`המבחן שוחרר! ${item.questionCount} שאלות הוחזרו בהצלחה למאגר התרגול והלמידה.`);
     return true;
+  }
+
+  function releaseSavedExam(savedId) {
+    const state = store.getState();
+    const item = state.savedExams.find((s) => s.id === savedId);
+    if (!item) return false;
+
+    if (typeof confirmAction === 'function') {
+      const proceed = confirmAction({
+        title: 'שחרור מבחן שמור למאגר',
+        message: `האם ברצונך לשחרר את שאלות המבחן '${item.title}' (${item.questionCount} שאלות) חזרה למאגר הכללי?\nהשאלות יחזרו מיד להופיע בערבוב של מבחני התרגול ובמצב למידה.`,
+        confirmText: 'שחרר למאגר',
+        cancelText: 'ביטול',
+        danger: true,
+      });
+      if (proceed && typeof proceed.then === 'function') {
+        return proceed.then((confirmed) => {
+          if (!confirmed) return false;
+          return executeReleaseSavedExam(savedId, item);
+        });
+      }
+      if (!proceed) return false;
+    }
+
+    return executeReleaseSavedExam(savedId, item);
   }
 
   function startSavedExam(savedId) {

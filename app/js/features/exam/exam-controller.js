@@ -123,16 +123,40 @@ export function createExamController({
     syncActiveExamDOM();
   }
 
+  function runWithConfirmation(dialogOptions, onConfirmed) {
+    if (typeof confirmAction !== 'function') {
+      onConfirmed();
+      return true;
+    }
+    const result = confirmAction(dialogOptions);
+    if (result && typeof result.then === 'function') {
+      return result.then((confirmed) => {
+        if (!confirmed) return false;
+        onConfirmed();
+        return true;
+      });
+    }
+    if (!result) return false;
+    onConfirmed();
+    return true;
+  }
+
   function confirmSubmitExam() {
     const state = store.getState();
     const total = state.currentExam.questions.length;
     const unanswered = countUnansweredQuestions(state.currentExam);
     const answered = total - unanswered;
-    if (unanswered > 0 && typeof confirmAction === 'function') {
-      const proceed = confirmAction(
-        `שים לב: ענית על ${answered} מתוך ${total} שאלות בלבד.\nהאם ברצונך להגיש את המבחן כעת?`
+    if (unanswered > 0) {
+      return runWithConfirmation(
+        {
+          title: 'הגשת מבחן עם שאלות פתוחות',
+          message: `שים לב: ענית על ${answered} מתוך ${total} שאלות בלבד.\nהאם ברצונך להגיש את המבחן כעת?`,
+          confirmText: 'הגש מבחן',
+          cancelText: 'המשך במבחן',
+          danger: false,
+        },
+        () => submitExam()
       );
-      if (!proceed) return false;
     }
     submitExam();
     return true;
@@ -183,14 +207,16 @@ export function createExamController({
   }
 
   function confirmAbandonExam() {
-    if (typeof confirmAction === 'function') {
-      const proceed = confirmAction(
-        'האם ברצונך לצאת מהמבחן הנוכחי? התשובות של מבחן זה שטרם הוגש יאופסו.'
-      );
-      if (!proceed) return false;
-    }
-    resetExamToSetup();
-    return true;
+    return runWithConfirmation(
+      {
+        title: 'יציאה מהמבחן הפעיל',
+        message: 'האם ברצונך לצאת מהמבחן הנוכחי? התשובות של מבחן זה שטרם הוגש יאופסו.',
+        confirmText: 'צא מהמבחן',
+        cancelText: 'חזור למבחן',
+        danger: true,
+      },
+      () => resetExamToSetup()
+    );
   }
 
   function resetExamToSetup() {

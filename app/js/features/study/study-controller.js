@@ -11,6 +11,7 @@ import {
 } from '../../domain/study-session.js';
 import { getShuffledQuestionOptions } from '../../domain/shuffle.js';
 import { formatQuestionForAI } from '../../domain/ai-prompt.js';
+import { copyTextToClipboard } from '../../services/clipboard.js';
 import { renderStudyQuestionView, syncStudyFilterControls } from './study-view.js';
 
 export function createStudyController({
@@ -126,31 +127,6 @@ export function createStudyController({
     syncStudyDOM();
   }
 
-  function fallbackCopyText(text) {
-    if (!document?.body) return false;
-    const textarea = document.createElement('textarea');
-    textarea.value = text;
-    textarea.setAttribute('readonly', '');
-    textarea.style.position = 'fixed';
-    textarea.style.top = '0';
-    textarea.style.left = '-9999px';
-    textarea.style.opacity = '0';
-    document.body.appendChild(textarea);
-    textarea.focus();
-    textarea.select();
-    if (typeof textarea.setSelectionRange === 'function') {
-      textarea.setSelectionRange(0, 999999);
-    }
-    let success = false;
-    try {
-      success = typeof document.execCommand === 'function' ? document.execCommand('copy') : true;
-    } catch {
-      success = false;
-    }
-    document.body.removeChild(textarea);
-    return success;
-  }
-
   async function copyCurrentStudyQuestionForAI() {
     const state = store.getState();
     const study = state.currentStudy;
@@ -162,19 +138,7 @@ export function createStudyController({
       study.shuffledOptionsCache?.[study.currentIndex] || getShuffledQuestionOptions(q);
     const textToCopy = formatQuestionForAI(q, shuffledData.options);
 
-    let copied = false;
-    if (navigator?.clipboard && typeof navigator.clipboard.writeText === 'function') {
-      try {
-        await navigator.clipboard.writeText(textToCopy);
-        copied = true;
-      } catch {
-        copied = false;
-      }
-    }
-
-    if (!copied) {
-      copied = fallbackCopyText(textToCopy);
-    }
+    const copied = await copyTextToClipboard(textToCopy, { navigator, document });
 
     if (copied) {
       toast.showToast('השאלה והפרומפט ל-AI הועתקו בהצלחה! ניתן להדביק ב-ChatGPT/Claude/Gemini');
