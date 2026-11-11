@@ -1,8 +1,8 @@
 # Software Test Plan & Report (STPR) — v2.0
 
 - **Project**: Clinical Preceptorship Nursing Exam Simulator
-- **Document Version**: 1.0 (Baseline Audit & v2 Target Plan)
-- **Date**: 2026-11-10
+- **Document Version**: 1.1 (v2.0 Post-Release Audit & Missing Test Backlog)
+- **Date**: 2026-11-12
 - **Standards Reference**: [`docs/standards/08-TESTING-STRATEGY.md`](./standards/08-TESTING-STRATEGY.md)
 
 ---
@@ -81,38 +81,44 @@ Before the v2 refactor, the repository contained 4 test scripts in `scripts/`:
 
 ### 4.4 Exam Mode (`EXAM`)
 
-| Req ID    | Requirement Description                                                                                                                                                          | Level  | v1 Status | v2 Target Test File                                                              |
-| --------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------ | --------- | -------------------------------------------------------------------------------- |
-| `EXAM-01` | Starting an exam with count `10 / 25 / 50 / 100 / mistakes` samples the requested number of shuffled questions.                                                                  | L2, L4 | ✅        | `tests/unit/exam-session.test.js`, `tests/e2e/exam.spec.js`                      |
-| `EXAM-02` | Attempting to start a mistakes-only exam when mistakes are empty shows a non-blocking notification and stays on setup.                                                           | L2, L4 | ✅        | `tests/unit/exam-session.test.js`, `tests/e2e/exam.spec.js`                      |
-| `EXAM-03` | Selecting an option records the user's answer and clears any elimination on that option.                                                                                         | L2, L4 | ✅        | `tests/unit/exam-session.test.js`                                                |
-| `EXAM-04` | Toggling distractor elimination (`✕`) strikes through the option and clears selection if that option was selected.                                                               | L2, L4 | ✅        | `tests/unit/exam-session.test.js`, `tests/e2e/exam.spec.js`                      |
-| `EXAM-05` | Flagging a question (`★`) toggles its flagged status and updates the Quick Grid button state.                                                                                    | L2, L4 | ✅        | `tests/unit/exam-session.test.js`, `tests/e2e/exam.spec.js`                      |
-| `EXAM-06` | Next, Previous, and Quick Grid jump buttons navigate accurately and preserve cached option shuffles.                                                                             | L2, L4 | ✅        | `tests/unit/exam-session.test.js`, `tests/e2e/exam.spec.js`                      |
-| `EXAM-07` | Submitting an exam computes the exact percentage score, updates `userStats`, adds wrong/unanswered questions to `mistakes`, and removes newly-correct questions from `mistakes`. | L2, L4 | ✅        | `tests/unit/exam-session.test.js`, `tests/e2e/characterization.spec.js`          |
-| `EXAM-08` | Submitting an exam warns the user via dialog if unanswered questions remain.                                                                                                     | L3, L4 | ✅        | `tests/integration/behavior-fixes.test.js`, `tests/e2e/characterization.spec.js` |
-| `EXAM-09` | Exam Results screen renders full review cards with structured explanations and allows "Retry Wrong Questions Only".                                                              | L3, L4 | ✅        | `tests/dom/exam-view.test.js`, `tests/e2e/characterization.spec.js`              |
-| `EXAM-10` | Active exam session (including answers, flags, eliminations, and option order) survives a page reload via `sessionStorage`.                                                      | L3, L4 | ✅        | `tests/integration/storage.test.js`, `tests/e2e/exam.spec.js`                    |
+| Req ID    | Requirement Description                                                                                                                                                          | Level  | v1 Status  | v2 Target Test File                                                              |
+| --------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------ | ---------- | -------------------------------------------------------------------------------- |
+| `EXAM-01` | Starting an exam with count `10 / 25 / 50 / 100 / mistakes` samples the requested number of shuffled questions.                                                                  | L2, L4 | ✅         | `tests/unit/exam-session.test.js`, `tests/e2e/exam.spec.js`                      |
+| `EXAM-02` | Attempting to start a mistakes-only exam when mistakes are empty shows a non-blocking notification and stays on setup.                                                           | L2, L4 | ✅         | `tests/unit/exam-session.test.js`, `tests/e2e/exam.spec.js`                      |
+| `EXAM-03` | Selecting an option records the user's answer and clears any elimination on that option.                                                                                         | L2, L4 | ✅         | `tests/unit/exam-session.test.js`                                                |
+| `EXAM-04` | Toggling distractor elimination (`✕`) strikes through the option and clears selection if that option was selected.                                                               | L2, L4 | ✅         | `tests/unit/exam-session.test.js`, `tests/e2e/exam.spec.js`                      |
+| `EXAM-05` | Flagging a question (`★`) toggles its flagged status and updates the Quick Grid button state.                                                                                    | L2, L4 | ✅         | `tests/unit/exam-session.test.js`, `tests/e2e/exam.spec.js`                      |
+| `EXAM-06` | Next, Previous, and Quick Grid jump buttons navigate accurately and preserve cached option shuffles.                                                                             | L2, L4 | ✅         | `tests/unit/exam-session.test.js`, `tests/e2e/exam.spec.js`                      |
+| `EXAM-07` | Submitting an exam computes the exact percentage score, updates `userStats`, adds wrong/unanswered questions to `mistakes`, and removes newly-correct questions from `mistakes`. | L2, L4 | ✅         | `tests/unit/exam-session.test.js`, `tests/e2e/characterization.spec.js`          |
+| `EXAM-08` | Submitting an exam warns the user via dialog if unanswered questions remain.                                                                                                     | L3, L4 | ✅         | `tests/integration/behavior-fixes.test.js`, `tests/e2e/characterization.spec.js` |
+| `EXAM-09` | Exam Results screen renders full review cards with structured explanations and allows "Retry Wrong Questions Only".                                                              | L3, L4 | ✅         | `tests/dom/exam-view.test.js`, `tests/e2e/characterization.spec.js`              |
+| `EXAM-10` | Active exam session (including answers, flags, eliminations, and option order) survives a page reload via `sessionStorage`.                                                      | L3, L4 | ✅         | `tests/integration/storage.test.js`, `tests/e2e/exam.spec.js`                    |
+| `EXAM-11` | Abandoning an active exam via dialog confirms user intent, clears sessionStorage, and returns to Setup without zombie state.                                                     | L3, L4 | ⏳ Planned | `tests/integration/behavior-fixes.test.js`, `tests/e2e/exam.spec.js`             |
+| `EXAM-12` | "Retry Wrong Questions Only" launches a sub-exam with only incorrect questions, or displays a celebratory toast if score was 100%.                                               | L2, L3 | ⏳ Planned | `tests/unit/exam-session.test.js`, `tests/dom/exam-view.test.js`                 |
+| `EXAM-13` | Reloading the browser while on the Exam Results screen reconstructs review cards, scores, and explanations without crashing.                                                     | L3, L4 | ⏳ Planned | `tests/dom/exam-view.test.js`, `tests/e2e/exam.spec.js`                          |
 
 ### 4.5 Study Mode (`STUDY`)
 
-| Req ID     | Requirement Description                                                                                                                                                                 | Level      | v1 Status | v2 Target Test File                                                           |
-| ---------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ---------- | --------- | ----------------------------------------------------------------------------- |
-| `STUDY-01` | Filtering by category or toggling "Mistakes Only" updates the study deck immediately.                                                                                                   | L2, L4     | ✅        | `tests/unit/study-session.test.js`, `tests/e2e/study.spec.js`                 |
-| `STUDY-02` | Answering a study question immediately highlights green (correct) or red + green (wrong), reveals the explanation, and updates stats/mistakes once per question.                        | L2, L4     | ✅        | `tests/unit/study-session.test.js`, `tests/e2e/study.spec.js`                 |
-| `STUDY-03` | Advancing past the last question in the study deck wraps around to index 0 with a fresh shuffle.                                                                                        | L2         | ✅        | `tests/unit/study-session.test.js`                                            |
-| `STUDY-04` | Explanation renderer displays "בשורה אחת" summary, pedagogical rationale, and structured distractor cards while hiding `• מקור בספרות`.                                                 | L2, L3     | ✅        | `tests/unit/explanation-parser.test.js`, `tests/dom/explanation-card.test.js` |
-| `STUDY-05` | "Copy Question for AI" button appears **only** in Study Mode, formats the Hebrew prompt with current shuffled options, copies to clipboard, and shows a toast without native `alert()`. | L2, L3, L4 | ✅        | `tests/unit/ai-prompt.test.js`, `tests/e2e/study.spec.js`                     |
+| Req ID     | Requirement Description                                                                                                                                                                 | Level      | v1 Status  | v2 Target Test File                                                           |
+| ---------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ---------- | ---------- | ----------------------------------------------------------------------------- |
+| `STUDY-01` | Filtering by category or toggling "Mistakes Only" updates the study deck immediately.                                                                                                   | L2, L4     | ✅         | `tests/unit/study-session.test.js`, `tests/e2e/study.spec.js`                 |
+| `STUDY-02` | Answering a study question immediately highlights green (correct) or red + green (wrong), reveals the explanation, and updates stats/mistakes once per question.                        | L2, L4     | ✅         | `tests/unit/study-session.test.js`, `tests/e2e/study.spec.js`                 |
+| `STUDY-03` | Advancing past the last question in the study deck wraps around to index 0 with a fresh shuffle.                                                                                        | L2         | ✅         | `tests/unit/study-session.test.js`                                            |
+| `STUDY-04` | Explanation renderer displays "בשורה אחת" summary, pedagogical rationale, and structured distractor cards while hiding `• מקור בספרות`.                                                 | L2, L3     | ✅         | `tests/unit/explanation-parser.test.js`, `tests/dom/explanation-card.test.js` |
+| `STUDY-05` | "Copy Question for AI" button appears **only** in Study Mode, formats the Hebrew prompt with current shuffled options, copies to clipboard, and shows a toast without native `alert()`. | L2, L3, L4 | ✅         | `tests/unit/ai-prompt.test.js`, `tests/e2e/study.spec.js`                     |
+| `STUDY-06` | Backwards navigation (`#btnPrevStudy`) stops gracefully at index 0 without underflow, and forward navigation preserves option shuffles.                                                 | L2, L3     | ⏳ Planned | `tests/unit/study-session.test.js`, `tests/dom/study-view.test.js`            |
+| `STUDY-07` | Interactive filter switching (`studyCategoryFilter` change, `studyMistakesOnlyToggle`) dynamically re-indexes the study deck and updates counter.                                       | L3, L4     | ⏳ Planned | `tests/dom/study-view.test.js`, `tests/e2e/study.spec.js`                     |
 
 ### 4.6 Saved Exams & Quarantine Zone (`SAVED`)
 
-| Req ID     | Requirement Description                                                                                                                            | Level  | v1 Status | v2 Target Test File                                               |
-| ---------- | -------------------------------------------------------------------------------------------------------------------------------------------------- | ------ | --------- | ----------------------------------------------------------------- |
-| `SAVED-01` | Reserving a full exam adds it to `savedExams` (up to max 3 slots) and immediately removes its questions from the active pool.                      | L2, L4 | ✅        | `tests/unit/saved-exams.test.js`, `tests/e2e/saved-exams.spec.js` |
-| `SAVED-02` | Attempting to save a 4th exam or duplicate source is rejected with a clear message.                                                                | L2     | ✅        | `tests/unit/saved-exams.test.js`                                  |
-| `SAVED-03` | Starting a saved exam launches a full exam with all questions from that source in `ACTIVE` screen.                                                 | L2, L4 | ✅        | `tests/unit/saved-exams.test.js`, `tests/e2e/saved-exams.spec.js` |
-| `SAVED-04` | Completing a saved exam records its `score` and `completedAt` on the saved slot and shows the "Release Exam to Pool" banner on the results screen. | L2, L4 | ✅        | `tests/unit/saved-exams.test.js`, `tests/e2e/saved-exams.spec.js` |
-| `SAVED-05` | Releasing a saved exam removes the slot and restores all its questions to the active pool and header counter.                                      | L2, L4 | ✅        | `tests/unit/saved-exams.test.js`, `tests/e2e/saved-exams.spec.js` |
+| Req ID     | Requirement Description                                                                                                                            | Level  | v1 Status  | v2 Target Test File                                               |
+| ---------- | -------------------------------------------------------------------------------------------------------------------------------------------------- | ------ | ---------- | ----------------------------------------------------------------- |
+| `SAVED-01` | Reserving a full exam adds it to `savedExams` (up to max 3 slots) and immediately removes its questions from the active pool.                      | L2, L4 | ✅         | `tests/unit/saved-exams.test.js`, `tests/e2e/saved-exams.spec.js` |
+| `SAVED-02` | Attempting to save a 4th exam or duplicate source is rejected with a clear message.                                                                | L2     | ✅         | `tests/unit/saved-exams.test.js`                                  |
+| `SAVED-03` | Starting a saved exam launches a full exam with all questions from that source in `ACTIVE` screen.                                                 | L2, L4 | ✅         | `tests/unit/saved-exams.test.js`, `tests/e2e/saved-exams.spec.js` |
+| `SAVED-04` | Completing a saved exam records its `score` and `completedAt` on the saved slot and shows the "Release Exam to Pool" banner on the results screen. | L2, L4 | ✅         | `tests/unit/saved-exams.test.js`, `tests/e2e/saved-exams.spec.js` |
+| `SAVED-05` | Releasing a saved exam removes the slot and restores all its questions to the active pool and header counter.                                      | L2, L4 | ✅         | `tests/unit/saved-exams.test.js`, `tests/e2e/saved-exams.spec.js` |
+| `SAVED-06` | Edge cases: Attempting to launch or release a saved exam with corrupted metadata or deleted ID fails gracefully with toast feedback.               | L2, L3 | ⏳ Planned | `tests/unit/saved-exams.test.js`, `tests/dom/saved-exams.test.js` |
 
 ### 4.7 Statistics & Weakest Category (`STATS`)
 
@@ -125,37 +131,136 @@ Before the v2 refactor, the repository contained 4 test scripts in `scripts/`:
 
 ### 4.8 Persistence, Security & Cloud Sync (`SYNC` & `SEC`)
 
-| Req ID    | Requirement Description                                                                                                                                   | Level  | v1 Status | v2 Target Test File                                                              |
-| --------- | --------------------------------------------------------------------------------------------------------------------------------------------------------- | ------ | --------- | -------------------------------------------------------------------------------- |
-| `SYNC-01` | Local progress persists under `nursing_progress_v2` and survives corrupt JSON in `localStorage` without crashing.                                         | L3     | ✅        | `tests/integration/storage.test.js`                                              |
-| `SYNC-02` | Merging local and remote cloud state resolves mistake additions and removals by per-item `updatedAt` timestamp (no zombie mistakes).                      | L2, L3 | ✅        | `tests/unit/sync-merge.test.js`, `tests/integration/behavior-fixes.test.js`      |
-| `SYNC-03` | Merging local and remote cloud state respects `userStats.lastResetAt` so a stats reset propagates across devices.                                         | L2, L3 | ✅        | `tests/unit/sync-merge.test.js`, `tests/integration/behavior-fixes.test.js`      |
-| `SEC-01`  | `html` template tag escapes `<script>`, `onerror=`, quotes, and ampersands in all interpolated strings.                                                   | L2, L3 | ✅        | `tests/unit/dom-escape.test.js`, `tests/dom/auth-view.test.js`                   |
-| `A11Y-01` | All 4 screens pass automated accessibility checks (landmarks, labels, contrast, keyboard navigation) and visual regression baselines on Desktop & Mobile. | L3, L4 | ✅        | `tests/integration/behavior-fixes.test.js`, `tests/e2e/characterization.spec.js` |
+| Req ID     | Requirement Description                                                                                                                                   | Level  | v1 Status  | v2 Target Test File                                                              |
+| ---------- | --------------------------------------------------------------------------------------------------------------------------------------------------------- | ------ | ---------- | -------------------------------------------------------------------------------- |
+| `SYNC-01`  | Local progress persists under `nursing_progress_v2` and survives corrupt JSON in `localStorage` without crashing.                                         | L3     | ✅         | `tests/integration/storage.test.js`                                              |
+| `SYNC-02`  | Merging local and remote cloud state resolves mistake additions and removals by per-item `updatedAt` timestamp (no zombie mistakes).                      | L2, L3 | ✅         | `tests/unit/sync-merge.test.js`, `tests/integration/behavior-fixes.test.js`      |
+| `SYNC-03`  | Merging local and remote cloud state respects `userStats.lastResetAt` so a stats reset propagates across devices.                                         | L2, L3 | ✅         | `tests/unit/sync-merge.test.js`, `tests/integration/behavior-fixes.test.js`      |
+| `SYNC-04`  | Network failures during cloud push degrade gracefully without crashing or corrupting local progress.                                                      | L3     | ⏳ Planned | `tests/integration/cloud-sync.test.js`                                           |
+| `SYNC-05`  | Rapid state changes trigger debounced Firestore writes, coalescing multiple updates into a single network payload.                                        | L3     | ⏳ Planned | `tests/integration/cloud-sync.test.js`                                           |
+| `SYNC-06`  | Auth sign-out unbinds real-time snapshot listeners and cleans up debounce timers without clearing local storage progress.                                 | L3     | ⏳ Planned | `tests/integration/cloud-sync.test.js`                                           |
+| `SEC-01`   | `html` template tag escapes `<script>`, `onerror=`, quotes, and ampersands in all interpolated strings.                                                   | L2, L3 | ✅         | `tests/unit/dom-escape.test.js`, `tests/dom/auth-view.test.js`                   |
+| `SEC-04`   | Automated security rules suite proves Firestore rejects unauthorized writes, schema violations, and non-owner access via local emulator.                  | L3     | ⏳ Planned | `tests/integration/firestore-rules.test.js`                                      |
+| `A11Y-01`  | All 4 screens pass automated accessibility checks (landmarks, labels, contrast, keyboard navigation) and visual regression baselines on Desktop & Mobile. | L3, L4 | ✅         | `tests/integration/behavior-fixes.test.js`, `tests/e2e/characterization.spec.js` |
+| `A11Y-02`  | Complete keyboard-only workflow (`Tab`, `Space`, `Enter`, `Escape`, arrow keys) allows passing an entire exam without mouse interaction.                  | L4     | ⏳ Planned | `tests/e2e/accessibility.spec.js`                                                |
+| `A11Y-03`  | Screen reader announcements (`aria-live="polite"`, `role="alert"`) broadcast study feedback, toast alerts, and modal transitions in Hebrew.               | L3, L4 | ⏳ Planned | `tests/dom/ui-primitives.test.js`, `tests/e2e/accessibility.spec.js`             |
+| `STORE-01` | LocalStorage quota limits (`QuotaExceededError`) degrade gracefully to in-memory state and display a clear user warning without losing session data.      | L3     | ⏳ Planned | `tests/integration/storage.test.js`                                              |
+| `UX-01`    | Ultra-narrow viewport (320px - iPhone SE) and portrait/landscape rotation maintain zero horizontal overflow and full touch target clearance (>=44px).     | L4     | ⏳ Planned | `tests/e2e/responsive-stress.spec.js`                                            |
+| `PERF-01`  | Exam Results review card batch rendering for a full 100-question exam completes in under 300ms without UI jank.                                           | L3     | ⏳ Planned | `tests/dom/exam-view.test.js`                                                    |
 
 ---
 
-## 5. Prioritized Missing Test Backlog (To Be Closed During Refactor)
+## 5. Missing Test Analysis & Prioritized Backlog
 
-### Priority 0 (Blocker for v2 — Closed in Steps 3, 5, 7, 8, 9, 10, 11)
+### 5.1 Historical Baseline: v2.0 Refactor Milestone (Closed Gaps)
 
-1. **Real-Browser Characterization E2E Suite (`tests/e2e/`)**: Added in **Step 3** before touching application code.
-2. **Data Schema & Deduplication Suite (`tests/data/questions.schema.test.js`)**: Added in **Step 5**.
-3. **Storage & Store Integration Suite (`tests/integration/`)**: Added in **Step 7**.
-4. **Pure Domain Unit Suite (`tests/unit/*.test.js`)**: Added in **Step 8**, replacing copy-pasted v1 scripts with direct imports of `shuffle.js`, `question-pool.js`, `exam-session.js`, `study-session.js`, `saved-exams.js`, `stats.js`, `explanation-parser.js`, and `ai-prompt.js`.
-5. **Cloud Sync Merge Suite (`tests/unit/sync-merge.test.js`)**: Added in **Steps 10–11** to verify timestamped mistake deletion and reset propagation.
+During the v2.0 refactoring process, the initial testing debt inherited from v1 was resolved across Steps 3–12:
 
-### Priority 1 (High Value — Closed in Steps 9 & 12)
+- **Characterization E2E Suite (`tests/e2e/`)**: Established 16 end-to-end browser specs covering navigation, exam submission, study mode, and statistics across 4 device viewports before code split.
+- **Data Schema Verification (`tests/data/questions.schema.test.js`)**: Enforced 1,079 unique questions, categories, 3-4 options, rationale formatting, and literature removal.
+- **Persistence & Store Integration (`tests/integration/storage.test.js`)**: Verified JSON corruption resilience, store subscription lifecycle, and `v2` namespace keys.
+- **Domain Logic Units (`tests/unit/*.test.js`)**: Replaced copy-pasted test scripts with pure module imports of `shuffle.js`, `question-pool.js`, `exam-session.js`, `study-session.js`, `saved-exams.js`, `stats.js`, `explanation-parser.js`, and `ai-prompt.js`.
+- **Cloud Sync Reconciliation (`tests/unit/sync-merge.test.js`, `tests/integration/cloud-sync.test.js`)**: Proved timestamp-based mistake deletion, reset propagation, and state convergence.
+- **DOM View & Template Escaping (`tests/dom/`)**: Verified XSS immunity in `html` template literals and DOM rendering for explanation cards, auth, exam, study, and stats views.
 
-1. **DOM View Rendering & XSS Escaping Suite (`tests/dom/`)**: Added in **Steps 7 & 9**.
-2. **Visual Regression Baselines (Desktop 1280px & Pixel 412px)**: Added in **Step 3** and enforced at **Step 6** (CSS split) and **Step 12**.
-3. **Accessibility Audit (`@axe-core/playwright` or ARIA assertions)**: Added in **Step 12**.
+---
 
-### Priority 2 (Future Enhancements Backlog — Post-v2.0)
+### 5.2 Post-v2.0 Prioritized Missing Test Backlog
 
-1. **Firestore Emulator Rules Test Suite**: Automated testing of `firestore.rules` against the local Firebase Emulator (`@firebase/rules-unit-testing`).
-2. **Network Throttling / Offline Service Worker E2E Tests**: Once a Service Worker is added in a future v2.1 release.
-3. **Mutation Testing (StrykerJS)**: Optional periodic run on `app/js/domain/` to verify test assertion strength.
+Based on a systematic code coverage audit (Node 24 test coverage report: 89.03% Line, 66.42% Branch, 75.00% Functions) and behavioral failure mode analysis across the runtime controllers, the following 16 missing test scenarios have been identified and prioritized into three strategic tiers:
+
+#### Priority 1: Critical State, Data Loss Prevention & Resilience (Immediate Safety Net)
+
+1. **`SYNC-04`: Offline Network Disconnect & Push Error Resilience**
+   - **Target Suite**: `tests/integration/cloud-sync.test.js` (Level 3 — Integration / DOM)
+   - **Why Critical**: If a student is studying on a train or unstable Wi-Fi, Firestore `setDoc` calls will reject or time out. The application must catch push errors gracefully, update sync status indicators without unhandled promise rejections, and guarantee that local `localStorage` progress remains completely intact and uncorrupted.
+   - **Test Specification**: Mock `setDoc` to reject with a simulated network timeout; dispatch user answer; assert local store is unchanged, error is caught gracefully, and user status reflects offline/retry state without throwing an unhandled exception.
+
+2. **`SYNC-05`: Rapid State Change Debounce & Coalescing**
+   - **Target Suite**: `tests/integration/cloud-sync.test.js` (Level 3 — Integration / DOM)
+   - **Why Critical**: Rapidly answering study questions or toggling flags can generate dozens of state updates per minute. Un-debounced writes flood Firestore, leading to quota exhaustion, excessive billable operations, and potential out-of-order write conflicts.
+   - **Test Specification**: Trigger 10 state mutations in under 500ms; advance fake timers past the debounce interval (e.g., 1,000ms); assert `setDoc` is invoked exactly once with the coalesced final state.
+
+3. **`SYNC-06`: Auth Sign-Out Listener Teardown & In-Memory Timer Cleanup**
+   - **Target Suite**: `tests/integration/cloud-sync.test.js` (Level 3 — Integration / DOM)
+   - **Why Critical**: When a student signs out, existing Firestore `onSnapshot` real-time listeners must be cleanly detached, and pending debounce timers must be cancelled. Failure to unbind causes memory leaks, unexpected cross-user sync contamination, or attempts to write to a closed session.
+   - **Test Specification**: Authenticate user, verify listener is active, trigger sign-out; assert listener unsubscribe function was called, pending timers are cleared, and subsequent local mutations do not trigger remote pushes.
+
+4. **`EXAM-11`: Active Exam Abandonment Lifecycle & Storage Purge**
+   - **Target Suite**: `tests/integration/behavior-fixes.test.js` (Level 3) & `tests/e2e/exam.spec.js` (Level 4)
+   - **Why Critical**: Clicking "Abandon Exam" (`#btnAbandonExam`) must present an accessible `<dialog>`, ask for confirmation, purge `sessionStorage` (`nursing_active_exam_v2`), and reset controller memory. Without explicit tests, zombie active sessions can persist across navigation, preventing new exams from starting.
+   - **Test Specification**: Start an exam, answer 3 questions, click abandon; verify confirmation modal renders; confirm abandon; assert `sessionStorage` is empty, active view resets to `SETUP`, and question counter resets to default.
+
+5. **`EXAM-12`: "Retry Wrong Questions Only" Sub-Exam Generation & 100% Toast Guard**
+   - **Target Suite**: `tests/unit/exam-session.test.js` (Level 2) & `tests/dom/exam-view.test.js` (Level 3)
+   - **Why Critical**: When viewing exam results, `#btnRetryWrong` must collect all wrong/unanswered question IDs from the completed session and instantiate a new sub-exam containing only those questions. If the user achieved 100%, it must show a celebratory toast and prevent launching a 0-question session.
+   - **Test Specification**: (a) Submit exam with 3 correct and 2 wrong; click retry; assert new exam contains exactly the 2 wrong question IDs. (b) Submit exam with 5/5 correct; click retry; assert toast notification "אין שאלות שגויות לתרגול חוזר!" is displayed and no new exam starts.
+
+6. **`EXAM-13`: Exam Results Screen State Hydration on Page Reload**
+   - **Target Suite**: `tests/dom/exam-view.test.js` (Level 3) & `tests/e2e/exam.spec.js` (Level 4)
+   - **Why Critical**: If a user refreshes their browser or returns after a tab crash while inspecting their exam results, the app currently may reset to the initial exam setup screen, losing their detailed review cards and score breakdown.
+   - **Test Specification**: Complete an exam, verify results screen is displayed; reload page; assert results screen is re-hydrated from session storage or safely routed to setup without throwing `TypeError: Cannot read properties of null`.
+
+7. **`STORE-01`: LocalStorage Quota Limit (`QuotaExceededError`) Fallback**
+   - **Target Suite**: `tests/integration/storage.test.js` (Level 3 — Integration / DOM)
+   - **Why Critical**: On mobile Safari (private mode) or storage-constrained devices, `localStorage.setItem` can throw a `QuotaExceededError`. The storage adapter must catch this error, degrade to in-memory state, and notify the user rather than bubbling an unhandled exception that freezes the app.
+   - **Test Specification**: Mock `localStorage.setItem` to throw `DOMException('QuotaExceededError')`; attempt to save progress; assert write falls back to in-memory cache and returns false/warning without crashing caller.
+
+---
+
+#### Priority 2: Interactive Edge Cases, Security Rules & Accessibility
+
+8. **`STUDY-06`: Study Mode Lower-Bound Navigation & Shuffle Retention**
+   - **Target Suite**: `tests/unit/study-session.test.js` (Level 2) & `tests/dom/study-view.test.js` (Level 3)
+   - **Why Critical**: In Study Mode, navigating backward with `#btnPrevStudy` at index 0 must be safely disabled/clamped without index underflow. Furthermore, moving back and forth between previously answered questions must preserve the exact shuffled option order and student's selected answer.
+   - **Test Specification**: Navigate to question 2, answer it, click previous twice; assert index stops at 0; click next; assert question 1 retains original shuffled options and answer feedback.
+
+9. **`STUDY-07`: Study Filter Dynamic Re-indexing & DOM Reactive State**
+   - **Target Suite**: `tests/dom/study-view.test.js` (Level 3) & `tests/e2e/study.spec.js` (Level 4)
+   - **Why Critical**: Dynamically changing `#studyCategoryFilter` or toggling `#studyMistakesOnlyToggle` must immediately rebuild the active deck, reset current index to 0, update the counter pill (`שאלה 1 מתוך X`), and render an informative empty state if 0 questions match.
+   - **Test Specification**: Set filter to a category with 10 questions; toggle "Mistakes Only" when 0 mistakes exist; assert empty state card appears; uncheck toggle; assert deck reloads and counter displays "שאלה 1 מתוך 10".
+
+10. **`SAVED-06`: Corrupted Saved Exam Payload & ID Defensive Handling**
+    - **Target Suite**: `tests/unit/saved-exams.test.js` (Level 2) & `tests/dom/saved-exams.test.js` (Level 3)
+    - **Why Critical**: If `savedExams` in storage contains malformed JSON, a missing `source`, or an unknown `savedExamId`, initiating or releasing the exam must fail gracefully with error toast feedback without bricking the Saved Exams tab.
+    - **Test Specification**: Inject saved exam slot with `savedExamId: null` or nonexistent question source; render saved exams list; attempt launch; assert error is caught, toast is displayed, and application does not crash.
+
+11. **`SEC-04`: Automated Firestore Security Rules Emulator Verification**
+    - **Target Suite**: `tests/integration/firestore-rules.test.js` (Level 3 — Integration)
+    - **Why Critical**: Although `firestore.rules` is deployed, there is no automated unit test suite executing against the Firebase Rules emulator to prove:
+      1. Unauthenticated users cannot read or write `/users/{userId}`.
+      2. Authenticated user `Alice` (`uid: "alice"`) cannot read or write to `/users/bob`.
+      3. Valid authenticated user `Alice` can read and write to `/users/alice`.
+      4. Schema validation rejects payloads missing required fields or exceeding reasonable size limits.
+    - **Test Specification**: Use `@firebase/rules-unit-testing` against `firebase emulators:start --only firestore` to assert `assertFails()` and `assertSucceeds()` across all four scenarios.
+
+12. **`A11Y-02`: Full Keyboard-Only Navigation Workflow**
+    - **Target Suite**: `tests/e2e/accessibility.spec.js` (Level 4 — E2E)
+    - **Why Critical**: In accordance with WCAG 2.1 Principle 2 (Operable), a user with motor disabilities relying strictly on keyboard navigation must be able to complete an entire exam from start to finish without using a mouse.
+    - **Test Specification**: Use Playwright `page.keyboard.press()` with `Tab`, `Space`, `Enter`, and arrow keys to: select 10-question exam, start exam, navigate options, eliminate distractor, flag question, advance, submit, and confirm modal dialog.
+
+13. **`A11Y-03`: ARIA Live Region & Screen Reader Politeness**
+    - **Target Suite**: `tests/dom/ui-primitives.test.js` (Level 3) & `tests/e2e/accessibility.spec.js` (Level 4)
+    - **Why Critical**: Screen reader users must receive timely audio feedback when dynamic content changes. Important UI notifications (toast alerts, answer correctness feedback, and dialog openings) must be explicitly configured with `aria-live="polite"` or `role="alert"`.
+    - **Test Specification**: Trigger toast notification; assert presence of `role="status"` or `aria-live="polite"`; answer study question; assert live announcement container is updated with result in Hebrew.
+
+---
+
+#### Priority 3: Usability Stress, Performance & Code Quality
+
+14. **`UX-01`: Ultra-Narrow Viewport (320px) & Viewport Rotation Stress**
+    - **Target Suite**: `tests/e2e/responsive-stress.spec.js` (Level 4 — E2E)
+    - **Why Critical**: Mobile exam takers may use small devices (e.g. iPhone SE, 320px width) or rotate devices between portrait and landscape. Layout must maintain zero horizontal overflow, preserve minimum 44×44px touch targets, and avoid overlapping elimination buttons.
+    - **Test Specification**: Set viewport to `320×568` and `568×320`; run automated horizontal scroll check (`document.documentElement.scrollWidth <= window.innerWidth`); verify distractor elimination button hit areas.
+
+15. **`PERF-01`: 100-Question Exam Results Batch Card Rendering Benchmark**
+    - **Target Suite**: `tests/dom/exam-view.test.js` (Level 3 — DOM)
+    - **Why Critical**: Submitting a 100-question exam generates 100 full explanation review cards, complete with formatted pedagogical rationale and distractor breakdowns. An un-optimized loop could block the main thread and freeze the browser.
+    - **Test Specification**: Construct completed 100-question session; benchmark `renderExamResults()`; assert complete DOM creation and injection executes in `< 300ms` without UI jank.
+
+16. **`Domain Mutation Testing (StrykerJS)`**
+    - **Target Suite**: StrykerJS runner against `app/js/domain/*.js`
+    - **Why Critical**: Ensures that unit tests do not merely execute lines of code for coverage, but contain rigorous assertions that fail when operators (`>`, `<=`), conditions, or calculations are mutated.
 
 ---
 
