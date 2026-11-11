@@ -1,0 +1,13 @@
+node_modules/
+.venv/
+raw_materials/
+data/
+scripts/
+questions.js
+app/questions.js
+app/index.html
+app/data/questions.json
+data-pipeline/source/clean_questions.json
+playwright-report/
+test-results/
+package-lock.json

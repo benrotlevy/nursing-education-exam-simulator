@@ -1,3 +1,14 @@
+# Node.js Dependencies & Test Artifacts
+node_modules/
+playwright-report/
+test-results/
+blob-report/
+playwright/.cache/
+
+# Local Raw Exam Materials (Not Tracked in Public Git Repo — ADR-0002)
+raw_materials/
+app/questions.js
+
 # Python Virtual Environments
 .venv/
 venv/
@@ -22,8 +33,7 @@ Thumbs.db
 desktop.ini
 
 # Intermediate OCR & Scratch extraction files
-data/scans/
-data/*.txt
+/data/
 temp_*.txt
 
 # Environment variables & Secrets

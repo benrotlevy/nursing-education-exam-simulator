@@ -1,0 +1,478 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta
+    http-equiv="Content-Security-Policy"
+    content="default-src 'self'; script-src 'self' https://www.gstatic.com https://apis.google.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; img-src 'self' data: https://*.googleusercontent.com https://www.gravatar.com; connect-src 'self' https://*.googleapis.com https://*.firebaseio.com https://*.firebaseapp.com https://www.gstatic.com; frame-src https://*.firebaseapp.com https://accounts.google.com; object-src 'none'; base-uri 'self';"
+  >
+  <title>סימולטור מבחן בהדרכה קלינית בסיעוד</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Assistant:wght@300;400;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="./styles/main.css">
+</head>
+<body>
+
+  <!-- Top Header -->
+  <header>
+    <div class="header-inner">
+      <div class="header-top">
+        <div class="brand">
+          <div class="brand-icon">🩺</div>
+          <div class="brand-title">
+            <h1>מבחן הדרכה קלינית בסיעוד</h1>
+            <p id="totalQuestionsHeader">טוען מאגר שאלות...</p>
+          </div>
+        </div>
+
+        <!-- Cloud Auth / Sync Section -->
+        <div class="cloud-auth-bar" id="cloudAuthBar">
+          <button type="button" class="btn-google-auth" id="btnGoogleSignIn" data-action="google-sign-in" title="התחבר עם חשבון Google כדי לשמור ולסנכרן את הטעויות והסטטיסטיקות בין הטלפון למחשב">
+            <svg class="google-icon" viewBox="0 0 24 24" width="18" height="18">
+              <path fill="#4285F4" d="M23.745 12.27c0-.7-.06-1.4-.19-2.07H12v4.51h6.6c-.29 1.52-1.14 2.82-2.4 3.68v3.05h3.88c2.27-2.09 3.665-5.17 3.665-9.17z"/>
+              <path fill="#34A853" d="M12 24c3.24 0 5.95-1.08 7.93-2.91l-3.88-3.05c-1.08.72-2.45 1.16-4.05 1.16-3.12 0-5.77-2.1-6.72-4.93H1.25v3.15C3.26 21.36 7.33 24 12 24z"/>
+              <path fill="#FBBC05" d="M5.28 14.27c-.25-.72-.38-1.49-.38-2.27s.13-1.55.38-2.27V6.58H1.25C.45 8.18 0 9.99 0 12s.45 3.82 1.25 5.42l4.03-3.15z"/>
+              <path fill="#EA4335" d="M12 4.75c1.77 0 3.35.61 4.6 1.8l3.42-3.42C17.95 1.19 15.24 0 12 0 7.33 0 3.26 2.64 1.25 6.58l4.03 3.15c.95-2.83 3.6-4.98 6.72-4.98z"/>
+            </svg>
+            <span>סנכרון ענן (Google)</span>
+          </button>
+
+          <div class="user-pill" id="userPill" style="display:none;">
+            <img class="user-avatar" id="userAvatar" src="https://www.gravatar.com/avatar/?d=mp" alt="תמונת משתמש" />
+            <div class="user-meta">
+              <span class="user-name" id="userName">משתמש</span>
+              <span class="sync-status-indicator" id="syncStatusIndicator">☁️ סנכרון ענן פעיל</span>
+            </div>
+            <button type="button" class="btn-signout" data-action="google-sign-out" title="התנתק מהחשבון">התנתק</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Mobile Active Section Indicator (Visible on smartphones <= 640px) -->
+      <div class="mobile-section-indicator" id="mobileSectionIndicator">
+        <span class="mobile-section-tag tag-exam" id="mobileSectionTag">
+          <span class="mobile-section-dot"></span>
+          <span id="mobileSectionText">📝 מצב מבחן: הגדרת תרגול</span>
+        </span>
+      </div>
+
+      <nav class="nav-tabs">
+        <button type="button" class="tab-btn active" id="tabExam" data-action="switch-tab" data-tab="exam">
+          📝 מצב מבחן
+        </button>
+        <button type="button" class="tab-btn" id="tabStudy" data-action="switch-tab" data-tab="study">
+          💡 מצב למידה
+        </button>
+        <button type="button" class="tab-btn" id="tabSavedExams" data-action="switch-tab" data-tab="saved-exams">
+          📦 מבחנים שמורים
+          <span class="saved-counter-badge" id="navSavedBadge">0/3</span>
+        </button>
+        <button type="button" class="tab-btn" id="tabStats" data-action="switch-tab" data-tab="stats">
+          📊 סטטיסטיקה
+          <span class="mistakes-counter-badge" id="navMistakesBadge" style="display:none;">0 טעויות</span>
+        </button>
+      </nav>
+    </div>
+  </header>
+
+  <main>
+    <!-- SCREEN 1: EXAM SETUP -->
+    <section id="screenExamSetup" class="screen active">
+      <div class="card">
+        <h2 class="card-title">הגדרת מבחן תרגול</h2>
+        <p class="card-subtitle">בחר את תנאי המבחן. השאלות והמסיחים יתערבבו באופן רנדומלי לחלוטין בכל פעם.</p>
+
+        <div class="form-group">
+          <label class="form-label" for="examSourceSelect">מקור השאלות:</label>
+          <select id="examSourceSelect" class="form-select">
+            <option value="ALL">כל המאגר מעורבב (מומלץ ביותר)</option>
+            <!-- Dynamic sources added via JS -->
+          </select>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label" for="examCategorySelect">סינון לפי נושא / קטגוריה:</label>
+          <select id="examCategorySelect" class="form-select">
+            <option value="ALL">כל הנושאים</option>
+            <!-- Dynamic categories added via JS -->
+          </select>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">כמות שאלות במבחן:</label>
+          <div class="pill-group">
+            <label class="pill-option">
+              <input type="radio" name="examCount" value="10" checked>
+              <span class="pill-badge">10 שאלות (מהיר)</span>
+            </label>
+            <label class="pill-option">
+              <input type="radio" name="examCount" value="25">
+              <span class="pill-badge">25 שאלות</span>
+            </label>
+            <label class="pill-option">
+              <input type="radio" name="examCount" value="50">
+              <span class="pill-badge">50 שאלות (חצי מבחן)</span>
+            </label>
+            <label class="pill-option">
+              <input type="radio" name="examCount" value="100">
+              <span class="pill-badge">100 שאלות (מבחן מלא)</span>
+            </label>
+            <label class="pill-option">
+              <input type="radio" name="examCount" value="MISTAKES_ONLY" id="examMistakesOption">
+              <span class="pill-badge" id="examMistakesPill">מאגר טעויות בלבד (0)</span>
+            </label>
+          </div>
+        </div>
+
+        <button type="button" class="btn btn-primary btn-block" data-action="start-exam">
+          🚀 התחל מבחן עכשיו
+        </button>
+      </div>
+    </section>
+
+    <!-- SCREEN 2: ACTIVE EXAM -->
+    <section id="screenActiveExam" class="screen">
+      <div class="card">
+        <!-- Progress Bar -->
+        <div class="progress-wrapper">
+          <div class="progress-text">
+            <span id="examProgressCount">שאלה 1 מתוך 25</span>
+            <span id="examAnsweredCount">נענו: 0</span>
+            <button type="button" class="btn-abandon-exam" data-action="confirm-abandon-exam" title="יציאה מהמבחן וחזרה למסך הגדרת מבחן">
+              ✕ יציאה מהמבחן
+            </button>
+          </div>
+          <div class="progress-bar-bg">
+            <div id="examProgressBar" class="progress-bar-fill"></div>
+          </div>
+        </div>
+
+        <!-- Question Header -->
+        <div class="q-header">
+          <div class="q-meta">
+            <span class="badge badge-category" id="examQCategory">קטגוריה</span>
+            <span class="badge badge-source" id="examQSource">מקור</span>
+            <span class="badge badge-unverified" id="examQUnverified" style="display:none;">פתרון משוער</span>
+          </div>
+          <button type="button" class="flag-btn" id="examFlagBtn" data-action="toggle-exam-flag">
+            <span>★</span> סימון לעיון חוזר
+          </button>
+        </div>
+
+        <!-- Question Text -->
+        <div class="q-text" id="examQText">
+          טוען שאלה...
+        </div>
+
+        <!-- Options Container -->
+        <div class="options-list" id="examOptionsContainer">
+          <!-- Dynamically populated -->
+        </div>
+
+        <!-- Footer Navigation -->
+        <div class="q-footer">
+          <button type="button" class="btn btn-secondary" id="btnPrevExam" data-action="prev-exam-question">
+            ➡ לשאלה הקודמת
+          </button>
+
+          <button type="button" class="btn btn-danger" id="btnSubmitExam" data-action="confirm-submit-exam" style="display:none;">
+            ✔ הגש מבחן
+          </button>
+
+          <button type="button" class="btn btn-primary" id="btnNextExam" data-action="next-exam-question">
+            לשאלה הבאה ⬅
+          </button>
+        </div>
+
+        <!-- Quick Question Grid Navigation -->
+        <div class="quick-grid" id="examQuickGrid">
+          <!-- Dynamically populated -->
+        </div>
+      </div>
+    </section>
+
+    <!-- SCREEN 3: EXAM RESULTS -->
+    <section id="screenExamResults" class="screen">
+      <div class="card">
+        <div class="results-hero">
+          <div class="score-circle">
+            <span class="score-value" id="resScoreVal">0%</span>
+            <span class="score-label">ציון סופי</span>
+          </div>
+          <h2 class="card-title" id="resTitleMsg">כל הכבוד!</h2>
+          <p class="card-subtitle" id="resSubtitleMsg">להלן סיכום התוצאות והשאלות שטעית בהן:</p>
+        </div>
+
+        <div class="stats-summary-grid">
+          <div class="stat-metric-card">
+            <div class="stat-metric-val u-text-success" id="resCorrectCount">0</div>
+            <div class="stat-metric-label">תשובות נכונות</div>
+          </div>
+          <div class="stat-metric-card">
+            <div class="stat-metric-val u-text-danger" id="resWrongCount">0</div>
+            <div class="stat-metric-label">שגיאות (נוספו למאגר)</div>
+          </div>
+          <div class="stat-metric-card">
+            <div class="stat-metric-val" id="resTotalCount">0</div>
+            <div class="stat-metric-label">סך הכל שאלות</div>
+          </div>
+        </div>
+
+        <!-- Saved Exam Release Banner -->
+        <div id="savedExamResultsBanner" class="saved-results-banner" style="display:none;">
+          <div>
+            <div class="saved-results-banner-title">
+              🎉 סיימת בהצלחה מבחן שלם שהיה שמור בנפרד!
+            </div>
+            <div class="saved-results-banner-desc">
+              רוצה להחזיר את שאלות המבחן למאגר הכללי כדי שיופיעו שוב בערבוב של מבחני התרגול והלמידה?
+            </div>
+          </div>
+          <button type="button" class="btn btn-success" data-action="release-saved-from-results">
+            🔓 שחרר שאלות למאגר הכללי
+          </button>
+        </div>
+
+        <div class="results-actions">
+          <button type="button" class="btn btn-primary" id="btnRetryWrong" data-action="retry-wrong-questions">
+            🔁 תרגל עכשיו רק את השגיאות
+          </button>
+          <button type="button" class="btn btn-outline" data-action="reset-exam-to-setup">
+            📝 מבחן חדש
+          </button>
+          <button type="button" class="btn btn-outline" data-action="switch-tab" data-tab="stats">
+            📊 צפה בסטטיסטיקה המלאה
+          </button>
+        </div>
+
+        <h3 class="section-subhead">פירוט והסברים לשאלות המבחן:</h3>
+        <div id="examReviewList">
+          <!-- Dynamically populated review questions -->
+        </div>
+      </div>
+    </section>
+
+    <!-- SCREEN 3.5: SAVED EXAMS ZONE (מבחנים שמורים מחוץ למאגר) -->
+    <section id="screenSavedExams" class="screen">
+      <div class="card">
+        <div class="u-mb-md">
+          <h2 class="card-title u-mb-xs">📦 ניהול מבחנים שמורים (שמירה מחוץ למאגר)</h2>
+          <p class="card-subtitle u-mb-0">
+            נעלו עד 3 שחזורים מלאים למועד מאוחר יותר. שאלות של מבחן שמור <strong>יבודדו מחוץ למאגר</strong> ולא יופיעו במבחני תרגול מעורבבים או במצב למידה, כדי שתוכלו לבצע סימולציית מבחן אמיתית ונקייה.
+          </p>
+        </div>
+
+        <!-- Metrics Banner -->
+        <div class="saved-metrics-bar">
+          <div class="saved-metric-chip">
+            <span class="saved-metric-num" id="savedSlotsCount">0 / 3</span>
+            <span class="saved-metric-lbl">מבחנים שמורים</span>
+          </div>
+          <div class="saved-metric-chip">
+            <span class="saved-metric-num u-text-primary" id="savedQuarantinedCount">0</span>
+            <span class="saved-metric-lbl">שאלות שמורות בבידוד</span>
+          </div>
+          <div class="saved-metric-chip">
+            <span class="saved-metric-num u-text-success" id="savedActivePoolCount">1,079</span>
+            <span class="saved-metric-lbl">שאלות לתרגול יומיומי</span>
+          </div>
+        </div>
+
+        <!-- Add Exam Card / Controls -->
+        <div class="saved-add-card" id="savedAddSection">
+          <h3 class="saved-add-title">
+            ➕ הוספת מבחן מלא לשמירה (מחוץ למאגר)
+          </h3>
+          <p class="saved-add-desc">
+            בחרו מבחן מלא מתוך רשימת המבחנים הקיימים. שאלותיו יוקצו מיד למבחן זה וייגרעו ממאגר התרגול והלמידה:
+          </p>
+          <div class="saved-add-controls">
+            <select id="savedExamSourceSelect" class="form-select u-flex-1" aria-label="בחירת מבחן לשמירה">
+              <!-- Populated dynamically via JS -->
+            </select>
+            <button type="button" class="btn btn-primary u-nowrap" data-action="add-saved-exam">
+              🔒 שמור ונעל מבחן זה
+            </button>
+          </div>
+        </div>
+
+        <!-- Full Limit Message (shown when 3/3 are used) -->
+        <div id="savedLimitReachedNotice" class="saved-limit-notice" style="display:none;">
+          🔒 הגעת למכסה המרבית של 3 מבחנים שמורים. כדי לשמור מבחן אחר, יש לשחרר תחילה את אחד המבחנים הקיימים חזרה למאגר הכללי.
+        </div>
+
+        <!-- List of Saved Slots -->
+        <h3 class="saved-list-heading">
+          המבחנים השמורים שלך (עד 3):
+        </h3>
+        <div id="savedExamsList" class="saved-slots-grid">
+          <!-- Populated dynamically via JS -->
+        </div>
+      </div>
+    </section>
+
+    <!-- SCREEN 4: STUDY / PRACTICE MODE -->
+    <section id="screenStudyMode" class="screen">
+      <div class="card">
+        <div class="study-header-bar">
+          <div>
+            <h2 class="card-title u-mb-xs">מצב למידה ואימון</h2>
+            <p class="card-subtitle u-mb-0">משוב מיידי והסבר מפורט על כל שאלה מיד בעת הבחירה.</p>
+          </div>
+          <div class="study-filters">
+            <select id="studyCategoryFilter" class="form-select" data-change-action="study-category-filter" aria-label="סינון לפי קטגוריה במצב למידה">
+              <option value="ALL">כל הנושאים</option>
+              <!-- Populated via JS -->
+            </select>
+            <button type="button" class="btn btn-outline" id="btnStudyMistakesOnly" data-action="toggle-study-mistakes">
+              🎯 מאגר טעויות (<span id="studyMistakesCount">0</span>)
+            </button>
+          </div>
+        </div>
+
+        <!-- Question Box -->
+        <div class="q-header">
+          <div class="q-meta">
+            <span class="badge badge-category" id="studyQCategory">קטגוריה</span>
+            <span class="badge badge-source" id="studyQSource">מקור</span>
+            <span class="badge badge-unverified" id="studyQUnverified" style="display:none;">פתרון משוער</span>
+          </div>
+          <div class="q-header-actions">
+            <button type="button" class="btn-copy-ai" id="btnCopyStudyAI" data-action="copy-study-ai" title="העתק שאלה ופרומפט מובנה להתייעצות עם מודל AI (ChatGPT, Claude, Gemini)">
+              <span class="copy-ai-icon">📋</span>
+              <span class="copy-ai-label">העתק שאלה ל-AI</span>
+            </button>
+            <div class="study-progress-counter">
+              שאלה <span id="studyCurrentIndex">1</span> מתוך <span id="studyTotalCount">0</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="q-text" id="studyQText">
+          טוען שאלה לתרגול...
+        </div>
+
+        <div class="options-list" id="studyOptionsContainer">
+          <!-- Populated dynamically -->
+        </div>
+
+        <!-- Immediate Explanation Box -->
+        <div class="explanation-box" id="studyExplanationBox">
+          <div class="explanation-header" id="studyExplanationHeader">
+            💡 הסבר ונימוק פדגוגי:
+          </div>
+          <div class="explanation-body" id="studyExplanationText">
+            נימוק...
+          </div>
+        </div>
+
+        <!-- Footer -->
+        <div class="q-footer u-mt-lg">
+          <button type="button" class="btn btn-secondary" data-action="prev-study-question">
+            ➡ לשאלה הקודמת
+          </button>
+          <button type="button" class="btn btn-primary" data-action="next-study-question">
+            לשאלה הבאה ⬅
+          </button>
+        </div>
+      </div>
+    </section>
+
+    <!-- SCREEN 5: STATISTICS & ANALYTICS -->
+    <section id="screenStats" class="screen">
+      <div class="card">
+        <h2 class="card-title">דשבורד סטטיסטיקה והתקדמות</h2>
+        <p class="card-subtitle">מעקב ביצועים וניתוח נקודות תורפה לפי 6 קטגוריות הליבה של הקורס.</p>
+
+        <!-- Insights Banner -->
+        <div class="insight-banner" id="statsInsightBanner">
+          <div class="insight-icon">💡</div>
+          <div class="insight-text">
+            <h4 id="statsInsightTitle">ניתוח מוכנות:</h4>
+            <p id="statsInsightDesc">תרגל מבחנים ושאלות כדי לקבל ניתוח נקודות לחיזוק.</p>
+          </div>
+        </div>
+
+        <!-- Global Metrics Grid -->
+        <div class="stats-summary-grid">
+          <div class="stat-metric-card">
+            <div class="stat-metric-val" id="statAccuracyVal">0%</div>
+            <div class="stat-metric-label">אחוז הצלחה מצטבר</div>
+          </div>
+          <div class="stat-metric-card">
+            <div class="stat-metric-val" id="statTotalAnswered">0</div>
+            <div class="stat-metric-label">שאלות שנענו</div>
+          </div>
+          <div class="stat-metric-card">
+            <div class="stat-metric-val u-text-danger" id="statMistakesActive">0</div>
+            <div class="stat-metric-label">שאלות במאגר הטעויות</div>
+          </div>
+          <div class="stat-metric-card">
+            <div class="stat-metric-val" id="statExamsCompleted">0</div>
+            <div class="stat-metric-label">מבחנים שהוגשו</div>
+          </div>
+        </div>
+
+        <h3 class="section-subhead">שליטה לפי נושאי לימוד (קטגוריות):</h3>
+        <div id="categoryStatsBars">
+          <!-- Dynamically populated category progress bars -->
+        </div>
+
+        <div id="statsCloudSyncInfo" class="stats-cloud-sync-info">
+          <span class="u-text-muted">💾 הנתונים נשמרים מקומית בדפדפן. לחץ למעלה על 'סנכרון ענן' כדי לסנכרן בין מכשירים.</span>
+        </div>
+        <div class="stats-footer-actions">
+          <button type="button" class="btn btn-outline btn-outline-danger" data-action="confirm-reset-stats">
+            🗑️ איפוס כל נתוני הסטטיסטיקה
+          </button>
+          <button type="button" class="btn btn-primary" data-action="practice-weakest-category">
+            🎯 תרגל עכשיו את הנושא החלש ביותר
+          </button>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <footer>
+    מערכת סימולציה ותרגול לקורס הדרכה קלינית בסיעוד &bull; נבנה בהתאמה אישית &bull; סנכרון ענן בזמן אמת (Google) ותמיכה אופליין
+  </footer>
+
+  <!-- Mobile Bottom Navigation Bar (Active on Mobile Screens <= 640px) -->
+  <nav class="mobile-bottom-nav" id="mobileBottomNav" aria-label="ניווט ראשי למכשירים ניידים">
+    <button type="button" class="bnav-btn active" id="bNavExam" data-action="switch-tab" data-tab="exam" aria-label="מצב מבחן">
+      <div class="bnav-icon-box">
+        <span class="bnav-icon">📝</span>
+      </div>
+      <span class="bnav-label">מבחן</span>
+    </button>
+    <button type="button" class="bnav-btn" id="bNavStudy" data-action="switch-tab" data-tab="study" aria-label="מצב למידה">
+      <div class="bnav-icon-box">
+        <span class="bnav-icon">💡</span>
+      </div>
+      <span class="bnav-label">למידה</span>
+    </button>
+    <button type="button" class="bnav-btn" id="bNavSaved" data-action="switch-tab" data-tab="saved-exams" aria-label="מבחנים שמורים">
+      <div class="bnav-icon-box">
+        <span class="bnav-icon">📦</span>
+        <span class="bnav-badge bnav-badge-info" id="bNavSavedBadge" style="display:none;">0/3</span>
+      </div>
+      <span class="bnav-label">שמורים</span>
+    </button>
+    <button type="button" class="bnav-btn" id="bNavStats" data-action="switch-tab" data-tab="stats" aria-label="סטטיסטיקה">
+      <div class="bnav-icon-box">
+        <span class="bnav-icon">📊</span>
+        <span class="bnav-badge bnav-badge-danger" id="bNavMistakesBadge" style="display:none;">0</span>
+      </div>
+      <span class="bnav-label">סטטיסטיקה</span>
+    </button>
+  </nav>
+
+  <!-- Global App Toast Notification -->
+  <div id="appGlobalToast" class="app-toast" role="status" aria-live="polite"></div>
+
+  <!-- Application Module Entrypoint -->
+  <script type="module" src="./js/main.js"></script>
+</body>
+</html>
