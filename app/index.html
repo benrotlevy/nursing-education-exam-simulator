@@ -25,7 +25,7 @@
 
         <!-- Cloud Auth / Sync Section -->
         <div class="cloud-auth-bar" id="cloudAuthBar">
-          <button class="btn-google-auth" id="btnGoogleSignIn" onclick="window.triggerGoogleSignIn()" title="התחבר עם חשבון Google כדי לשמור ולסנכרן את הטעויות והסטטיסטיקות בין הטלפון למחשב">
+          <button type="button" class="btn-google-auth" id="btnGoogleSignIn" data-action="google-sign-in" title="התחבר עם חשבון Google כדי לשמור ולסנכרן את הטעויות והסטטיסטיקות בין הטלפון למחשב">
             <svg class="google-icon" viewBox="0 0 24 24" width="18" height="18">
               <path fill="#4285F4" d="M23.745 12.27c0-.7-.06-1.4-.19-2.07H12v4.51h6.6c-.29 1.52-1.14 2.82-2.4 3.68v3.05h3.88c2.27-2.09 3.665-5.17 3.665-9.17z"/>
               <path fill="#34A853" d="M12 24c3.24 0 5.95-1.08 7.93-2.91l-3.88-3.05c-1.08.72-2.45 1.16-4.05 1.16-3.12 0-5.77-2.1-6.72-4.93H1.25v3.15C3.26 21.36 7.33 24 12 24z"/>
@@ -41,7 +41,7 @@
               <span class="user-name" id="userName">משתמש</span>
               <span class="sync-status-indicator" id="syncStatusIndicator">☁️ סנכרון ענן פעיל</span>
             </div>
-            <button class="btn-signout" onclick="window.triggerGoogleSignOut()" title="התנתק מהחשבון">התנתק</button>
+            <button type="button" class="btn-signout" data-action="google-sign-out" title="התנתק מהחשבון">התנתק</button>
           </div>
         </div>
       </div>
@@ -55,17 +55,17 @@
       </div>
 
       <nav class="nav-tabs">
-        <button class="tab-btn active" id="tabExam" onclick="switchTab('exam')">
+        <button type="button" class="tab-btn active" id="tabExam" data-action="switch-tab" data-tab="exam">
           📝 מצב מבחן
         </button>
-        <button class="tab-btn" id="tabStudy" onclick="switchTab('study')">
+        <button type="button" class="tab-btn" id="tabStudy" data-action="switch-tab" data-tab="study">
           💡 מצב למידה
         </button>
-        <button class="tab-btn" id="tabSavedExams" onclick="switchTab('saved-exams')">
+        <button type="button" class="tab-btn" id="tabSavedExams" data-action="switch-tab" data-tab="saved-exams">
           📦 מבחנים שמורים
           <span class="saved-counter-badge" id="navSavedBadge">0/3</span>
         </button>
-        <button class="tab-btn" id="tabStats" onclick="switchTab('stats')">
+        <button type="button" class="tab-btn" id="tabStats" data-action="switch-tab" data-tab="stats">
           📊 סטטיסטיקה
           <span class="mistakes-counter-badge" id="navMistakesBadge" style="display:none;">0 טעויות</span>
         </button>
@@ -81,7 +81,7 @@
         <p class="card-subtitle">בחר את תנאי המבחן. השאלות והמסיחים יתערבבו באופן רנדומלי לחלוטין בכל פעם.</p>
 
         <div class="form-group">
-          <label class="form-label">מקור השאלות:</label>
+          <label class="form-label" for="examSourceSelect">מקור השאלות:</label>
           <select id="examSourceSelect" class="form-select">
             <option value="ALL">כל המאגר מעורבב (מומלץ ביותר)</option>
             <!-- Dynamic sources added via JS -->
@@ -89,7 +89,7 @@
         </div>
 
         <div class="form-group">
-          <label class="form-label">סינון לפי נושא / קטגוריה:</label>
+          <label class="form-label" for="examCategorySelect">סינון לפי נושא / קטגוריה:</label>
           <select id="examCategorySelect" class="form-select">
             <option value="ALL">כל הנושאים</option>
             <!-- Dynamic categories added via JS -->
@@ -122,7 +122,7 @@
           </div>
         </div>
 
-        <button class="btn btn-primary btn-block" onclick="startExam()">
+        <button type="button" class="btn btn-primary btn-block" data-action="start-exam">
           🚀 התחל מבחן עכשיו
         </button>
       </div>
@@ -136,7 +136,7 @@
           <div class="progress-text">
             <span id="examProgressCount">שאלה 1 מתוך 25</span>
             <span id="examAnsweredCount">נענו: 0</span>
-            <button class="btn-abandon-exam" onclick="confirmAbandonExam()" title="יציאה מהמבחן וחזרה למסך הגדרת מבחן">
+            <button type="button" class="btn-abandon-exam" data-action="confirm-abandon-exam" title="יציאה מהמבחן וחזרה למסך הגדרת מבחן">
               ✕ יציאה מהמבחן
             </button>
           </div>
@@ -152,7 +152,7 @@
             <span class="badge badge-source" id="examQSource">מקור</span>
             <span class="badge badge-unverified" id="examQUnverified" style="display:none;">פתרון משוער</span>
           </div>
-          <button class="flag-btn" id="examFlagBtn" onclick="toggleExamFlag()">
+          <button type="button" class="flag-btn" id="examFlagBtn" data-action="toggle-exam-flag">
             <span>★</span> סימון לעיון חוזר
           </button>
         </div>
@@ -169,15 +169,15 @@
 
         <!-- Footer Navigation -->
         <div class="q-footer">
-          <button class="btn btn-secondary" id="btnPrevExam" onclick="prevExamQuestion()">
+          <button type="button" class="btn btn-secondary" id="btnPrevExam" data-action="prev-exam-question">
             ➡ לשאלה הקודמת
           </button>
 
-          <button class="btn btn-danger" id="btnSubmitExam" onclick="confirmSubmitExam()" style="display:none;">
+          <button type="button" class="btn btn-danger" id="btnSubmitExam" data-action="confirm-submit-exam" style="display:none;">
             ✔ הגש מבחן
           </button>
 
-          <button class="btn btn-primary" id="btnNextExam" onclick="nextExamQuestion()">
+          <button type="button" class="btn btn-primary" id="btnNextExam" data-action="next-exam-question">
             לשאלה הבאה ⬅
           </button>
         </div>
@@ -226,19 +226,19 @@
               רוצה להחזיר את שאלות המבחן למאגר הכללי כדי שיופיעו שוב בערבוב של מבחני התרגול והלמידה?
             </div>
           </div>
-          <button class="btn btn-success" onclick="releaseSavedExamFromResults()">
+          <button type="button" class="btn btn-success" data-action="release-saved-from-results">
             🔓 שחרר שאלות למאגר הכללי
           </button>
         </div>
 
         <div class="results-actions">
-          <button class="btn btn-primary" id="btnRetryWrong" onclick="retryWrongExamQuestions()">
+          <button type="button" class="btn btn-primary" id="btnRetryWrong" data-action="retry-wrong-questions">
             🔁 תרגל עכשיו רק את השגיאות
           </button>
-          <button class="btn btn-outline" onclick="resetExamToSetup()">
+          <button type="button" class="btn btn-outline" data-action="reset-exam-to-setup">
             📝 מבחן חדש
           </button>
-          <button class="btn btn-outline" onclick="switchTab('stats')">
+          <button type="button" class="btn btn-outline" data-action="switch-tab" data-tab="stats">
             📊 צפה בסטטיסטיקה המלאה
           </button>
         </div>
@@ -285,10 +285,10 @@
             בחרו מבחן מלא מתוך רשימת המבחנים הקיימים. שאלותיו יוקצו מיד למבחן זה וייגרעו ממאגר התרגול והלמידה:
           </p>
           <div class="saved-add-controls">
-            <select id="savedExamSourceSelect" class="form-select u-flex-1">
+            <select id="savedExamSourceSelect" class="form-select u-flex-1" aria-label="בחירת מבחן לשמירה">
               <!-- Populated dynamically via JS -->
             </select>
-            <button class="btn btn-primary u-nowrap" onclick="addSelectedExamToSavedZone()">
+            <button type="button" class="btn btn-primary u-nowrap" data-action="add-saved-exam">
               🔒 שמור ונעל מבחן זה
             </button>
           </div>
@@ -318,11 +318,11 @@
             <p class="card-subtitle u-mb-0">משוב מיידי והסבר מפורט על כל שאלה מיד בעת הבחירה.</p>
           </div>
           <div class="study-filters">
-            <select id="studyCategoryFilter" class="form-select" onchange="onStudyFilterChange()">
+            <select id="studyCategoryFilter" class="form-select" data-change-action="study-category-filter" aria-label="סינון לפי קטגוריה במצב למידה">
               <option value="ALL">כל הנושאים</option>
               <!-- Populated via JS -->
             </select>
-            <button class="btn btn-outline" id="btnStudyMistakesOnly" onclick="toggleStudyMistakesOnly()">
+            <button type="button" class="btn btn-outline" id="btnStudyMistakesOnly" data-action="toggle-study-mistakes">
               🎯 מאגר טעויות (<span id="studyMistakesCount">0</span>)
             </button>
           </div>
@@ -336,7 +336,7 @@
             <span class="badge badge-unverified" id="studyQUnverified" style="display:none;">פתרון משוער</span>
           </div>
           <div class="q-header-actions">
-            <button type="button" class="btn-copy-ai" id="btnCopyStudyAI" onclick="copyCurrentStudyQuestionForAI()" title="העתק שאלה ופרומפט מובנה להתייעצות עם מודל AI (ChatGPT, Claude, Gemini)">
+            <button type="button" class="btn-copy-ai" id="btnCopyStudyAI" data-action="copy-study-ai" title="העתק שאלה ופרומפט מובנה להתייעצות עם מודל AI (ChatGPT, Claude, Gemini)">
               <span class="copy-ai-icon">📋</span>
               <span class="copy-ai-label">העתק שאלה ל-AI</span>
             </button>
@@ -366,10 +366,10 @@
 
         <!-- Footer -->
         <div class="q-footer u-mt-lg">
-          <button class="btn btn-secondary" onclick="prevStudyQuestion()">
+          <button type="button" class="btn btn-secondary" data-action="prev-study-question">
             ➡ לשאלה הקודמת
           </button>
-          <button class="btn btn-primary" onclick="nextStudyQuestion()">
+          <button type="button" class="btn btn-primary" data-action="next-study-question">
             לשאלה הבאה ⬅
           </button>
         </div>
@@ -420,10 +420,10 @@
           <span class="u-text-muted">💾 הנתונים נשמרים מקומית בדפדפן. לחץ למעלה על 'סנכרון ענן' כדי לסנכרן בין מכשירים.</span>
         </div>
         <div class="stats-footer-actions">
-          <button class="btn btn-outline btn-outline-danger" onclick="confirmResetStats()">
+          <button type="button" class="btn btn-outline btn-outline-danger" data-action="confirm-reset-stats">
             🗑️ איפוס כל נתוני הסטטיסטיקה
           </button>
-          <button class="btn btn-primary" onclick="practiceWeakestCategory()">
+          <button type="button" class="btn btn-primary" data-action="practice-weakest-category">
             🎯 תרגל עכשיו את הנושא החלש ביותר
           </button>
         </div>
@@ -437,26 +437,26 @@
 
   <!-- Mobile Bottom Navigation Bar (Active on Mobile Screens <= 640px) -->
   <nav class="mobile-bottom-nav" id="mobileBottomNav" aria-label="ניווט ראשי למכשירים ניידים">
-    <button class="bnav-btn active" id="bNavExam" onclick="switchTab('exam')" aria-label="מצב מבחן">
+    <button type="button" class="bnav-btn active" id="bNavExam" data-action="switch-tab" data-tab="exam" aria-label="מצב מבחן">
       <div class="bnav-icon-box">
         <span class="bnav-icon">📝</span>
       </div>
       <span class="bnav-label">מבחן</span>
     </button>
-    <button class="bnav-btn" id="bNavStudy" onclick="switchTab('study')" aria-label="מצב למידה">
+    <button type="button" class="bnav-btn" id="bNavStudy" data-action="switch-tab" data-tab="study" aria-label="מצב למידה">
       <div class="bnav-icon-box">
         <span class="bnav-icon">💡</span>
       </div>
       <span class="bnav-label">למידה</span>
     </button>
-    <button class="bnav-btn" id="bNavSaved" onclick="switchTab('saved-exams')" aria-label="מבחנים שמורים">
+    <button type="button" class="bnav-btn" id="bNavSaved" data-action="switch-tab" data-tab="saved-exams" aria-label="מבחנים שמורים">
       <div class="bnav-icon-box">
         <span class="bnav-icon">📦</span>
         <span class="bnav-badge bnav-badge-info" id="bNavSavedBadge" style="display:none;">0/3</span>
       </div>
       <span class="bnav-label">שמורים</span>
     </button>
-    <button class="bnav-btn" id="bNavStats" onclick="switchTab('stats')" aria-label="סטטיסטיקה">
+    <button type="button" class="bnav-btn" id="bNavStats" data-action="switch-tab" data-tab="stats" aria-label="סטטיסטיקה">
       <div class="bnav-icon-box">
         <span class="bnav-icon">📊</span>
         <span class="bnav-badge bnav-badge-danger" id="bNavMistakesBadge" style="display:none;">0</span>
@@ -468,1761 +468,8 @@
   <!-- Global App Toast Notification -->
   <div id="appGlobalToast" class="app-toast" role="status" aria-live="polite"></div>
 
-  <!-- Application Logic -->
-  <script>
-    /* ========================================================
-       STATE MANAGEMENT & LOCAL STORAGE
-       ======================================================== */
-    const STORAGE_KEY_MISTAKES = "nursing_exam_mistakes_v1";
-    const STORAGE_KEY_STATS = "nursing_exam_stats_v1";
-    const STORAGE_KEY_STUDY_STATE = "nursing_study_state_v1";
-    const STORAGE_KEY_EXAM_STATE = "nursing_exam_state_v1";
-    const STORAGE_KEY_ACTIVE_TAB = "nursing_active_tab_v1";
-    const STORAGE_KEY_SAVED_EXAMS = "nursing_saved_exams_v1";
-
-    let state = {
-      allQuestions: [],
-      sources: [],
-      categories: [
-        "תיאוריות למידה ולמידת מבוגרים",
-        "מיומנויות פסיכומוטוריות וסימולציה",
-        "משוב, הערכה ורפלקציה",
-        "תפקיד המדריך ויחסי מדריך-סטודנט",
-        "הסטודנט המתקשה ותוכניות התערבות",
-        "אתיקה, חוק ובטיחות המטופל"
-      ],
-      mistakes: new Set(), // Set of question IDs
-      savedExams: [], // Array of up to 3 saved exam objects: { id, sourceName, title, questionCount, questionIds, savedAt, status, score, completedAt }
-      userStats: {
-        totalAnswered: 0,
-        totalCorrect: 0,
-        examsCompleted: 0,
-        categoryStats: {} // { catName: { correct: 0, total: 0 } }
-      },
-      // Active Exam
-      activeExamScreen: 'SETUP', // 'SETUP', 'ACTIVE', 'RESULTS'
-      currentExam: {
-        questions: [],
-        currentIndex: 0,
-        userAnswers: {}, // { qIndex: selectedShuffledIndex }
-        flagged: new Set(),
-        eliminated: {}, // { [qIndex]: Set([optIdx]) }
-        shuffledOptionsCache: {} // { qIndex: { options: [], correctIndex: 0 } }
-      },
-      // Active Study
-      currentStudy: {
-        questions: [],
-        currentIndex: 0,
-        mistakesOnly: false,
-        selectedCategory: "ALL",
-        shuffledOptionsCache: {},
-        userAnswers: {} // { [studyQIndex]: selectedOptIdx }
-      }
-    };
-
-    /* ========================================================
-       SHUFFLE ENGINE (FISHER-YATES)
-       ======================================================== */
-    function shuffleArray(arr) {
-      const copy = [...arr];
-      for (let i = copy.length - 1; i > 0; i--) {
-        const j = Math.floor(Math.random() * (i + 1));
-        [copy[i], copy[j]] = [copy[j], copy[i]];
-      }
-      return copy;
-    }
-
-    /**
-     * Shuffles options of a question dynamically, keeping track of the new correct index.
-     * Guarantees that the options order is randomized every single time!
-     */
-    function getShuffledQuestionOptions(q) {
-      const indexedOptions = q.options.map((optText, origIndex) => ({
-        text: optText,
-        isCorrect: origIndex === q.correctIndex
-      }));
-
-      const shuffled = shuffleArray(indexedOptions);
-      const newCorrectIndex = shuffled.findIndex(item => item.isCorrect);
-
-      return {
-        options: shuffled.map(item => item.text),
-        correctIndex: newCorrectIndex
-      };
-    }
-
-    /* ========================================================
-       INITIALIZATION
-       ======================================================== */
-    function bootstrapApplication() {
-      loadStorage();
-      initQuestions();
-
-      // Restore Study Mode session if saved
-      const restoredStudy = restoreStudySession();
-      if (!restoredStudy) {
-        initStudyMode();
-      }
-
-      // Restore Exam Mode session if saved
-      restoreExamSession();
-
-      renderStats();
-      renderSavedExamsUI();
-
-      // Restore active tab
-      let initialTab = 'exam';
-      try {
-        const savedTab = sessionStorage.getItem(STORAGE_KEY_ACTIVE_TAB);
-        if (savedTab && ['exam', 'study', 'saved-exams', 'stats'].includes(savedTab)) {
-          initialTab = savedTab;
-        }
-      } catch (e) {}
-
-      switchTab(initialTab);
-    }
-
-    window.addEventListener("DOMContentLoaded", () => {
-      if (Array.isArray(window.EXAM_QUESTIONS) && window.EXAM_QUESTIONS.length > 0) {
-        bootstrapApplication();
-        return;
-      }
-
-      fetch("./data/questions.json")
-        .then(res => {
-          if (!res.ok) throw new Error(`HTTP ${res.status}`);
-          return res.json();
-        })
-        .then(payload => {
-          window.EXAM_QUESTIONS = Array.isArray(payload) ? payload : payload.questions || [];
-          bootstrapApplication();
-        })
-        .catch(err => {
-          console.error("Failed to load ./data/questions.json:", err);
-          bootstrapApplication();
-        });
-    });
-
-    function saveStudySession() {
-      try {
-        const study = state.currentStudy;
-        const sessionData = {
-          currentIndex: study.currentIndex,
-          mistakesOnly: study.mistakesOnly,
-          selectedCategory: study.selectedCategory,
-          userAnswers: study.userAnswers || {},
-          questionIds: study.questions.map(q => q.id),
-          shuffledOptionsCache: study.shuffledOptionsCache || {}
-        };
-        sessionStorage.setItem(STORAGE_KEY_STUDY_STATE, JSON.stringify(sessionData));
-      } catch (e) {
-        console.warn("Failed to save study session:", e);
-      }
-    }
-
-    function restoreStudySession() {
-      try {
-        const raw = sessionStorage.getItem(STORAGE_KEY_STUDY_STATE);
-        if (!raw) return false;
-        const data = JSON.parse(raw);
-        if (!data.questionIds || data.questionIds.length === 0) return false;
-
-        const qMap = new Map(state.allQuestions.map(q => [q.id, q]));
-        const restoredQuestions = data.questionIds.map(id => qMap.get(id)).filter(Boolean);
-        if (restoredQuestions.length === 0) return false;
-
-        state.currentStudy = {
-          questions: restoredQuestions,
-          currentIndex: Math.min(data.currentIndex || 0, restoredQuestions.length - 1),
-          mistakesOnly: !!data.mistakesOnly,
-          selectedCategory: data.selectedCategory || "ALL",
-          shuffledOptionsCache: data.shuffledOptionsCache || {},
-          userAnswers: data.userAnswers || {}
-        };
-
-        const catSelect = document.getElementById("studyCategoryFilter");
-        if (catSelect) catSelect.value = state.currentStudy.selectedCategory;
-        const btnMistakes = document.getElementById("btnStudyMistakesOnly");
-        if (btnMistakes) {
-          if (state.currentStudy.mistakesOnly) {
-            btnMistakes.classList.add("btn-primary");
-            btnMistakes.classList.remove("btn-outline");
-          } else {
-            btnMistakes.classList.remove("btn-primary");
-            btnMistakes.classList.add("btn-outline");
-          }
-        }
-        return true;
-      } catch (e) {
-        console.warn("Failed to restore study session:", e);
-        return false;
-      }
-    }
-
-    function saveExamSession() {
-      try {
-        const exam = state.currentExam;
-        if (!exam || !exam.questions || exam.questions.length === 0 || state.activeExamScreen === 'SETUP') {
-          sessionStorage.removeItem(STORAGE_KEY_EXAM_STATE);
-          return;
-        }
-        const serializedEliminated = {};
-        if (exam.eliminated) {
-          Object.keys(exam.eliminated).forEach(k => {
-            if (exam.eliminated[k] && exam.eliminated[k].size > 0) {
-              serializedEliminated[k] = Array.from(exam.eliminated[k]);
-            }
-          });
-        }
-        const sessionData = {
-          activeExamScreen: state.activeExamScreen,
-          currentIndex: exam.currentIndex,
-          userAnswers: exam.userAnswers || {},
-          flagged: Array.from(exam.flagged || []),
-          eliminated: serializedEliminated,
-          questionIds: exam.questions.map(q => q.id),
-          shuffledOptionsCache: exam.shuffledOptionsCache || {}
-        };
-        sessionStorage.setItem(STORAGE_KEY_EXAM_STATE, JSON.stringify(sessionData));
-      } catch (e) {
-        console.warn("Failed to save exam session:", e);
-      }
-    }
-
-    function restoreExamSession() {
-      try {
-        const raw = sessionStorage.getItem(STORAGE_KEY_EXAM_STATE);
-        if (!raw) return false;
-        const data = JSON.parse(raw);
-        if (!data.questionIds || data.questionIds.length === 0) return false;
-
-        const qMap = new Map(state.allQuestions.map(q => [q.id, q]));
-        const restoredQuestions = data.questionIds.map(id => qMap.get(id)).filter(Boolean);
-        if (restoredQuestions.length === 0) return false;
-
-        const restoredEliminated = {};
-        if (data.eliminated) {
-          Object.keys(data.eliminated).forEach(k => {
-            restoredEliminated[k] = new Set(data.eliminated[k]);
-          });
-        }
-
-        state.activeExamScreen = data.activeExamScreen || 'ACTIVE';
-        state.currentExam = {
-          questions: restoredQuestions,
-          currentIndex: Math.min(data.currentIndex || 0, restoredQuestions.length - 1),
-          userAnswers: data.userAnswers || {},
-          flagged: new Set(data.flagged || []),
-          eliminated: restoredEliminated,
-          shuffledOptionsCache: data.shuffledOptionsCache || {}
-        };
-        return true;
-      } catch (e) {
-        console.warn("Failed to restore exam session:", e);
-        return false;
-      }
-    }
-
-    function loadStorage() {
-      try {
-        const savedMistakes = localStorage.getItem(STORAGE_KEY_MISTAKES);
-        if (savedMistakes) {
-          state.mistakes = new Set(JSON.parse(savedMistakes));
-        }
-        const savedStats = localStorage.getItem(STORAGE_KEY_STATS);
-        if (savedStats) {
-          state.userStats = JSON.parse(savedStats);
-        }
-        const savedExamsRaw = localStorage.getItem(STORAGE_KEY_SAVED_EXAMS);
-        if (savedExamsRaw) {
-          try {
-            state.savedExams = JSON.parse(savedExamsRaw);
-          } catch (e) {
-            state.savedExams = [];
-          }
-        } else {
-          state.savedExams = [];
-        }
-      } catch (e) {
-        console.error("Failed to load local storage:", e);
-      }
-      updateMistakesUI();
-      updateHeaderCounter();
-    }
-
-    function saveMistakes() {
-      try {
-        localStorage.setItem(STORAGE_KEY_MISTAKES, JSON.stringify(Array.from(state.mistakes)));
-        updateMistakesUI();
-        if (window.cloudSync && typeof window.cloudSync.schedulePush === 'function') {
-          window.cloudSync.schedulePush();
-        }
-      } catch (e) {
-        console.error("Failed to save mistakes:", e);
-      }
-    }
-
-    function saveStats() {
-      try {
-        localStorage.setItem(STORAGE_KEY_STATS, JSON.stringify(state.userStats));
-        if (window.cloudSync && typeof window.cloudSync.schedulePush === 'function') {
-          window.cloudSync.schedulePush();
-        }
-      } catch (e) {
-        console.error("Failed to save stats:", e);
-      }
-    }
-
-    function saveSavedExams() {
-      try {
-        localStorage.setItem(STORAGE_KEY_SAVED_EXAMS, JSON.stringify(state.savedExams));
-        updateHeaderCounter();
-        if (window.cloudSync && typeof window.cloudSync.schedulePush === 'function') {
-          window.cloudSync.schedulePush();
-        }
-      } catch (e) {
-        console.error("Failed to save saved exams:", e);
-      }
-    }
-
-    function getQuarantinedQuestionIdSet() {
-      const set = new Set();
-      if (Array.isArray(state.savedExams)) {
-        state.savedExams.forEach(slot => {
-          if (slot && Array.isArray(slot.questionIds)) {
-            slot.questionIds.forEach(id => set.add(id));
-          }
-        });
-      }
-      return set;
-    }
-
-    function updateHeaderCounter() {
-      const quarantinedSet = getQuarantinedQuestionIdSet();
-      const quarantinedCount = quarantinedSet.size;
-      const totalCount = state.allQuestions ? state.allQuestions.length : 0;
-      const activeCount = Math.max(0, totalCount - quarantinedCount);
-      const savedCount = state.savedExams ? state.savedExams.length : 0;
-
-      const headerEl = document.getElementById("totalQuestionsHeader");
-      if (headerEl) {
-        if (quarantinedCount === 0) {
-          headerEl.textContent = `מאגר פעיל: ${totalCount} שאלות מאומתות`;
-        } else {
-          headerEl.textContent = `מאגר פעיל: ${activeCount} שאלות (${quarantinedCount} שמורות ב-${savedCount} מבחנים) • ${totalCount} סה"כ`;
-        }
-      }
-
-      const navSavedBadge = document.getElementById("navSavedBadge");
-      if (navSavedBadge) {
-        navSavedBadge.textContent = `${savedCount}/3`;
-      }
-
-      const bNavSavedBadge = document.getElementById("bNavSavedBadge");
-      if (bNavSavedBadge) {
-        bNavSavedBadge.textContent = `${savedCount}/3`;
-        bNavSavedBadge.style.display = savedCount > 0 ? "inline-block" : "none";
-      }
-
-      if (typeof updateMobileSectionIndicator === 'function') {
-        updateMobileSectionIndicator();
-      }
-    }
-
-    function getAvailableFullExams() {
-      const countsBySource = {};
-      if (Array.isArray(state.allQuestions)) {
-        state.allQuestions.forEach(q => {
-          if (q.source) {
-            countsBySource[q.source] = (countsBySource[q.source] || 0) + 1;
-          }
-        });
-      }
-      return Object.entries(countsBySource)
-        .filter(([src, count]) => count >= 20)
-        .sort((a, b) => b[1] - a[1])
-        .map(([src, count]) => ({
-          sourceName: src,
-          questionCount: count
-        }));
-    }
-
-    function renderSavedExamsUI() {
-      const listEl = document.getElementById("savedExamsList");
-      const slotsCountEl = document.getElementById("savedSlotsCount");
-      const quarantinedCountEl = document.getElementById("savedQuarantinedCount");
-      const activePoolCountEl = document.getElementById("savedActivePoolCount");
-      const addSectionEl = document.getElementById("savedAddSection");
-      const limitNoticeEl = document.getElementById("savedLimitReachedNotice");
-      const selectEl = document.getElementById("savedExamSourceSelect");
-
-      const savedCount = state.savedExams ? state.savedExams.length : 0;
-      const quarantinedSet = getQuarantinedQuestionIdSet();
-      const quarantinedCount = quarantinedSet.size;
-      const totalCount = state.allQuestions ? state.allQuestions.length : 0;
-      const activeCount = Math.max(0, totalCount - quarantinedCount);
-
-      if (slotsCountEl) slotsCountEl.textContent = `${savedCount} / 3`;
-      if (quarantinedCountEl) quarantinedCountEl.textContent = quarantinedCount;
-      if (activePoolCountEl) activePoolCountEl.textContent = activeCount;
-
-      updateHeaderCounter();
-
-      // Show / hide limit notice
-      if (savedCount >= 3) {
-        if (addSectionEl) addSectionEl.style.display = "none";
-        if (limitNoticeEl) limitNoticeEl.style.display = "block";
-      } else {
-        if (addSectionEl) addSectionEl.style.display = "block";
-        if (limitNoticeEl) limitNoticeEl.style.display = "none";
-
-        // Populate dropdown with available complete exams (>= 20 questions) that are not already saved
-        if (selectEl) {
-          selectEl.innerHTML = "";
-          const alreadySavedSources = new Set(state.savedExams.map(s => s.sourceName));
-          const availableExams = getAvailableFullExams().filter(e => !alreadySavedSources.has(e.sourceName));
-
-          if (availableExams.length === 0) {
-            selectEl.innerHTML = `<option value="">אין מבחנים נוספים זמינים לשמירה</option>`;
-          } else {
-            availableExams.forEach(e => {
-              const opt = document.createElement("option");
-              opt.value = e.sourceName;
-              opt.textContent = `${e.sourceName} (${e.questionCount} שאלות)`;
-              selectEl.appendChild(opt);
-            });
-          }
-        }
-      }
-
-      // Render slots list
-      if (!listEl) return;
-      listEl.innerHTML = "";
-
-      if (savedCount === 0) {
-        listEl.innerHTML = `
-          <div style="text-align:center; padding:36px 20px; background:#f8fafc; border:1px dashed #cbd5e1; border-radius:var(--radius-md); color:var(--text-muted);">
-            <div style="font-size:36px; margin-bottom:8px;">📦</div>
-            <div style="font-size:1.05rem; font-weight:700; color:#334155; margin-bottom:4px;">עדיין לא שמרת מבחנים בצד</div>
-            <div style="font-size:0.88rem;">בחר מבחן מהתפריט למעלה ולחץ על "שמור ונעל מבחן זה" כדי לבודד אותו למועד מאוחר יותר.</div>
-          </div>
-        `;
-        return;
-      }
-
-      state.savedExams.forEach((slot, idx) => {
-        const card = document.createElement("div");
-        card.className = "saved-slot-card";
-
-        let statusBadge = "";
-        if (slot.status === 'COMPLETED') {
-          statusBadge = `<span class="badge" style="background:#dcfce7; color:#166534; font-weight:800;">✔ הושלם (ציון: ${slot.score}%)</span>`;
-        } else {
-          statusBadge = `<span class="badge" style="background:#e0f2fe; color:#0369a1; font-weight:800;">🔒 שמור ומבודד • טרם נפתר</span>`;
-        }
-
-        const dateStr = slot.savedAt ? new Date(slot.savedAt).toLocaleDateString('he-IL') : '';
-
-        card.innerHTML = `
-          <div class="saved-slot-info">
-            <div class="saved-slot-title">
-              <span>📋 ${escapeHTML(slot.title)}</span>
-              ${statusBadge}
-            </div>
-            <div class="saved-slot-meta">
-              <span>🔢 ${slot.questionCount} שאלות מבודדות</span>
-              <span>📅 נשמר בתאריך: ${dateStr}</span>
-            </div>
-          </div>
-          <div class="saved-slot-actions">
-            <button class="btn btn-primary" onclick="startSavedExam('${slot.id}')">
-              🚀 ${slot.status === 'COMPLETED' ? 'תרגל שוב מבחן מלא זה' : 'התחל מבחן מלא עכשיו'}
-            </button>
-            <button class="btn btn-outline" style="border-color:#fca5a5; color:var(--danger);" onclick="releaseSavedExam('${slot.id}')" title="שחרור שאלות מבחן זה חזרה למאגר הכללי">
-              🔓 שחרר שאלות חזרה למאגר
-            </button>
-          </div>
-        `;
-        listEl.appendChild(card);
-      });
-    }
-
-    function addSelectedExamToSavedZone() {
-      if (state.savedExams.length >= 3) {
-        alert("הגעת למכסה המרבית של 3 מבחנים שמורים. שחרר תחילה מבחן קיים כדי לשמור מבחן חדש.");
-        return;
-      }
-
-      const select = document.getElementById("savedExamSourceSelect");
-      const selectedSource = select ? select.value : null;
-      if (!selectedSource) {
-        alert("אנא בחר מבחן לשמירה.");
-        return;
-      }
-
-      // Find all questions belonging to this source
-      const sourceQuestions = state.allQuestions.filter(q => q.source === selectedSource);
-      if (sourceQuestions.length === 0) {
-        alert("לא נמצאו שאלות עבור מבחן זה.");
-        return;
-      }
-
-      const newSaved = {
-        id: "saved_" + Date.now(),
-        sourceName: selectedSource,
-        title: selectedSource,
-        questionCount: sourceQuestions.length,
-        questionIds: sourceQuestions.map(q => q.id),
-        savedAt: new Date().toISOString(),
-        status: "READY",
-        score: null,
-        completedAt: null
-      };
-
-      state.savedExams.push(newSaved);
-      saveSavedExams();
-      renderSavedExamsUI();
-      initStudyMode();
-
-      showToast(`המבחן '${selectedSource}' נשמר בהצלחה! ${sourceQuestions.length} שאלות בודדו מחוץ למאגר.`);
-    }
-
-    function releaseSavedExam(savedId) {
-      const item = state.savedExams.find(s => s.id === savedId);
-      if (!item) return;
-
-      if (!confirm(`האם ברצונך לשחרר את שאלות המבחן '${item.title}' (${item.questionCount} שאלות) חזרה למאגר הכללי?\nהשאלות יחזרו מיד להופיע בערבוב של מבחני התרגול ובמצב למידה.`)) {
-        return;
-      }
-
-      state.savedExams = state.savedExams.filter(s => s.id !== savedId);
-      saveSavedExams();
-      renderSavedExamsUI();
-      initStudyMode();
-
-      showToast(`המבחן שוחרר! ${item.questionCount} שאלות הוחזרו בהצלחה למאגר התרגול והלמידה.`);
-    }
-
-    function startSavedExam(savedId) {
-      const savedItem = state.savedExams.find(s => s.id === savedId);
-      if (!savedItem) {
-        alert("מבחן שמור לא נמצא.");
-        return;
-      }
-
-      const qMap = new Map(state.allQuestions.map(q => [q.id, q]));
-      const examQuestions = savedItem.questionIds.map(id => qMap.get(id)).filter(Boolean);
-
-      if (examQuestions.length === 0) {
-        alert("שגיאה בטעינת שאלות המבחן השמור.");
-        return;
-      }
-
-      // Shuffle questions order for this run
-      const shuffledQuestions = shuffleArray(examQuestions);
-
-      state.activeExamScreen = 'ACTIVE';
-      state.currentExam = {
-        isSavedExam: true,
-        savedExamId: savedId,
-        savedExamTitle: savedItem.title,
-        questions: shuffledQuestions,
-        currentIndex: 0,
-        userAnswers: {},
-        flagged: new Set(),
-        eliminated: {},
-        shuffledOptionsCache: {}
-      };
-      saveExamSession();
-
-      document.querySelectorAll(".tab-btn").forEach(b => b.classList.remove("active"));
-      document.querySelectorAll(".bnav-btn").forEach(b => b.classList.remove("active"));
-      document.getElementById("tabExam")?.classList.add("active");
-      document.getElementById("bNavExam")?.classList.add("active");
-      updateMobileSectionIndicator('exam');
-      document.querySelectorAll(".screen").forEach(s => s.classList.remove("active"));
-      document.getElementById("screenActiveExam").classList.add("active");
-
-      renderExamQuickGrid();
-      renderCurrentExamQuestion();
-    }
-
-    function releaseSavedExamFromResults() {
-      if (!state.currentExam || !state.currentExam.savedExamId) return;
-      const savedId = state.currentExam.savedExamId;
-      const item = state.savedExams.find(s => s.id === savedId);
-      const qCount = item ? item.questionCount : 0;
-
-      state.savedExams = state.savedExams.filter(s => s.id !== savedId);
-      saveSavedExams();
-      renderSavedExamsUI();
-      initStudyMode();
-
-      const banner = document.getElementById("savedExamResultsBanner");
-      if (banner) banner.style.display = "none";
-
-      showToast(`המבחן שוחרר! ${qCount} שאלות חזרו למאגר התרגול והלמידה.`);
-    }
-
-    function updateMistakesUI() {
-      const count = state.mistakes.size;
-      const navBadge = document.getElementById("navMistakesBadge");
-      const bNavMistakesBadge = document.getElementById("bNavMistakesBadge");
-      const pillCount = document.getElementById("examMistakesPill");
-      const studyCount = document.getElementById("studyMistakesCount");
-
-      if (navBadge) {
-        navBadge.textContent = `${count} טעויות לחיזוק`;
-        navBadge.style.display = count > 0 ? "inline-block" : "none";
-      }
-      if (bNavMistakesBadge) {
-        bNavMistakesBadge.textContent = count;
-        bNavMistakesBadge.style.display = count > 0 ? "inline-block" : "none";
-      }
-      if (pillCount) {
-        pillCount.textContent = `מאגר טעויות בלבד (${count})`;
-      }
-      if (studyCount) {
-        studyCount.textContent = count;
-      }
-
-      if (typeof updateMobileSectionIndicator === 'function') {
-        updateMobileSectionIndicator();
-      }
-    }
-
-    function initQuestions() {
-      if (window.EXAM_QUESTIONS && Array.isArray(window.EXAM_QUESTIONS)) {
-        state.allQuestions = window.EXAM_QUESTIONS;
-      } else {
-        console.warn("window.EXAM_QUESTIONS not found! Falling back to empty.");
-        state.allQuestions = [];
-      }
-
-      updateHeaderCounter();
-
-      // Extract sources
-      const sourcesSet = new Set(state.allQuestions.map(q => q.source).filter(Boolean));
-      state.sources = Array.from(sourcesSet);
-
-      // Populate source selector
-      const sourceSelect = document.getElementById("examSourceSelect");
-      state.sources.forEach(src => {
-        const opt = document.createElement("option");
-        opt.value = src;
-        opt.textContent = src;
-        sourceSelect.appendChild(opt);
-      });
-
-      // Populate category selectors
-      const examCatSelect = document.getElementById("examCategorySelect");
-      const studyCatSelect = document.getElementById("studyCategoryFilter");
-
-      state.categories.forEach(cat => {
-        const opt1 = document.createElement("option");
-        opt1.value = cat;
-        opt1.textContent = cat;
-        examCatSelect.appendChild(opt1);
-
-        const opt2 = document.createElement("option");
-        opt2.value = cat;
-        opt2.textContent = cat;
-        studyCatSelect.appendChild(opt2);
-      });
-
-      // Setup initial study questions
-      initStudyMode();
-    }
-
-    /* ========================================================
-       TAB NAVIGATION
-       ======================================================== */
-    function switchTab(tabId) {
-      document.querySelectorAll(".tab-btn").forEach(b => b.classList.remove("active"));
-      document.querySelectorAll(".bnav-btn").forEach(b => b.classList.remove("active"));
-      document.querySelectorAll(".screen").forEach(s => s.classList.remove("active"));
-
-      if (tabId === 'exam') {
-        document.getElementById("tabExam")?.classList.add("active");
-        document.getElementById("bNavExam")?.classList.add("active");
-        if (state.activeExamScreen === 'ACTIVE' && state.currentExam && state.currentExam.questions && state.currentExam.questions.length > 0) {
-          document.getElementById("screenActiveExam").classList.add("active");
-          renderCurrentExamQuestion();
-          renderExamQuickGrid();
-        } else if (state.activeExamScreen === 'RESULTS' && state.currentExam && state.currentExam.questions && state.currentExam.questions.length > 0) {
-          document.getElementById("screenExamResults").classList.add("active");
-        } else {
-          state.activeExamScreen = 'SETUP';
-          document.getElementById("screenExamSetup").classList.add("active");
-        }
-      } else if (tabId === 'study') {
-        document.getElementById("tabStudy")?.classList.add("active");
-        document.getElementById("bNavStudy")?.classList.add("active");
-        document.getElementById("screenStudyMode").classList.add("active");
-        renderCurrentStudyQuestion();
-      } else if (tabId === 'saved-exams') {
-        document.getElementById("tabSavedExams")?.classList.add("active");
-        document.getElementById("bNavSaved")?.classList.add("active");
-        document.getElementById("screenSavedExams").classList.add("active");
-        renderSavedExamsUI();
-      } else if (tabId === 'stats') {
-        document.getElementById("tabStats")?.classList.add("active");
-        document.getElementById("bNavStats")?.classList.add("active");
-        document.getElementById("screenStats").classList.add("active");
-        renderStats();
-      }
-
-      updateMobileSectionIndicator(tabId);
-
-      try {
-        sessionStorage.setItem(STORAGE_KEY_ACTIVE_TAB, tabId);
-      } catch (e) {}
-    }
-
-    function updateMobileSectionIndicator(tabId) {
-      const tag = document.getElementById("mobileSectionTag");
-      const text = document.getElementById("mobileSectionText");
-      if (!tag || !text) return;
-
-      const currentTab = tabId || sessionStorage.getItem(STORAGE_KEY_ACTIVE_TAB) || 'exam';
-      tag.classList.remove("tag-exam", "tag-study", "tag-saved", "tag-stats");
-
-      if (currentTab === 'exam') {
-        tag.classList.add("tag-exam");
-        if (state.activeExamScreen === 'ACTIVE') {
-          const cur = (state.currentExam && state.currentExam.currentIndex !== undefined) ? state.currentExam.currentIndex + 1 : 1;
-          const tot = (state.currentExam && state.currentExam.questions) ? state.currentExam.questions.length : 0;
-          text.textContent = `📝 מבחן פעיל (שאלה ${cur} מתוך ${tot})`;
-        } else if (state.activeExamScreen === 'RESULTS') {
-          text.textContent = `📝 סיכום תוצאות המבחן`;
-        } else {
-          text.textContent = `📝 מצב מבחן: הגדרת תרגול`;
-        }
-      } else if (currentTab === 'study') {
-        tag.classList.add("tag-study");
-        text.textContent = `💡 מצב למידה ואימון (משוב מיידי)`;
-      } else if (currentTab === 'saved-exams') {
-        tag.classList.add("tag-saved");
-        const count = state.savedExams ? state.savedExams.length : 0;
-        text.textContent = `📦 מבחנים שמורים (${count}/3 בשימוש)`;
-      } else if (currentTab === 'stats') {
-        tag.classList.add("tag-stats");
-        const mistakes = state.mistakes ? state.mistakes.size : 0;
-        text.textContent = `📊 סטטיסטיקה וטעויות (${mistakes} טעויות)`;
-      }
-    }
-
-    function confirmAbandonExam() {
-      if (confirm("האם ברצונך לצאת מהמבחן הנוכחי? התשובות של מבחן זה שטרם הוגש יאופסו.")) {
-        resetExamToSetup();
-      }
-    }
-
-    function resetExamToSetup() {
-      state.activeExamScreen = 'SETUP';
-      state.currentExam = {
-        questions: [],
-        currentIndex: 0,
-        userAnswers: {},
-        flagged: new Set(),
-        eliminated: {},
-        shuffledOptionsCache: {}
-      };
-      try {
-        sessionStorage.removeItem(STORAGE_KEY_EXAM_STATE);
-      } catch (e) {}
-      document.querySelectorAll(".screen").forEach(s => s.classList.remove("active"));
-      document.getElementById("screenExamSetup").classList.add("active");
-      document.querySelectorAll(".tab-btn").forEach(b => b.classList.remove("active"));
-      document.querySelectorAll(".bnav-btn").forEach(b => b.classList.remove("active"));
-      document.getElementById("tabExam")?.classList.add("active");
-      document.getElementById("bNavExam")?.classList.add("active");
-      updateMobileSectionIndicator('exam');
-    }
-
-    /* ========================================================
-       EXAM MODE LOGIC
-       ======================================================== */
-    function startExam() {
-      const sourceVal = document.getElementById("examSourceSelect").value;
-      const catVal = document.getElementById("examCategorySelect").value;
-      const countVal = document.querySelector('input[name="examCount"]:checked').value;
-
-      let pool = [...state.allQuestions];
-
-      // Exclude quarantined questions from saved exams
-      const quarantined = getQuarantinedQuestionIdSet();
-      pool = pool.filter(q => !quarantined.has(q.id));
-
-      // Filter by source
-      if (sourceVal !== 'ALL') {
-        pool = pool.filter(q => q.source === sourceVal);
-      }
-
-      // Filter by category
-      if (catVal !== 'ALL') {
-        pool = pool.filter(q => q.category === catVal);
-      }
-
-      // Filter by mistakes if selected
-      if (countVal === 'MISTAKES_ONLY') {
-        pool = pool.filter(q => state.mistakes.has(q.id));
-        if (pool.length === 0) {
-          alert("מאגר הטעויות שלך ריק כרגע! כל הכבוד, נסה מבחן רגיל.");
-          return;
-        }
-      }
-
-      if (pool.length === 0) {
-        alert("לא נמצאו שאלות התואמות לסינון זה. אנא בחר סינון רחב יותר.");
-        return;
-      }
-
-      // Shuffle question order
-      let shuffledQuestions = shuffleArray(pool);
-
-      // Slice to selected count
-      let finalCount = countVal === 'MISTAKES_ONLY' ? shuffledQuestions.length : parseInt(countVal, 10);
-      if (shuffledQuestions.length > finalCount) {
-        shuffledQuestions = shuffledQuestions.slice(0, finalCount);
-      }
-
-      state.activeExamScreen = 'ACTIVE';
-      state.currentExam = {
-        questions: shuffledQuestions,
-        currentIndex: 0,
-        userAnswers: {},
-        flagged: new Set(),
-        eliminated: {},
-        shuffledOptionsCache: {}
-      };
-      saveExamSession();
-
-      document.querySelectorAll(".screen").forEach(s => s.classList.remove("active"));
-      document.getElementById("screenActiveExam").classList.add("active");
-
-      renderExamQuickGrid();
-      renderCurrentExamQuestion();
-    }
-
-    function renderCurrentExamQuestion() {
-      const exam = state.currentExam;
-      const q = exam.questions[exam.currentIndex];
-      if (!q) return;
-
-      // Update progress
-      const total = exam.questions.length;
-      const curNum = exam.currentIndex + 1;
-      document.getElementById("examProgressCount").textContent = `שאלה ${curNum} מתוך ${total}`;
-      const answeredCount = Object.keys(exam.userAnswers).length;
-      document.getElementById("examAnsweredCount").textContent = `נענו: ${answeredCount} מתוך ${total}`;
-      document.getElementById("examProgressBar").style.width = `${(answeredCount / total) * 100}%`;
-      updateMobileSectionIndicator('exam');
-
-      // Update metadata
-      document.getElementById("examQCategory").textContent = q.category || "כללי";
-      document.getElementById("examQSource").textContent = q.source || "שחזור מבחן";
-      document.getElementById("examQUnverified").style.display = q.verified === false ? "inline-flex" : "none";
-
-      // Flag state
-      const flagBtn = document.getElementById("examFlagBtn");
-      if (exam.flagged.has(exam.currentIndex)) {
-        flagBtn.classList.add("flagged");
-        flagBtn.innerHTML = "<span>★</span> מסומן לעיון";
-      } else {
-        flagBtn.classList.remove("flagged");
-        flagBtn.innerHTML = "<span>☆</span> סימון לעיון חוזר";
-      }
-
-      // Question text
-      document.getElementById("examQText").textContent = q.question;
-
-      // Get / Cache Shuffled Options
-      if (!exam.shuffledOptionsCache[exam.currentIndex]) {
-        exam.shuffledOptionsCache[exam.currentIndex] = getShuffledQuestionOptions(q);
-      }
-      const shuffledData = exam.shuffledOptionsCache[exam.currentIndex];
-
-      // Render Options
-      const container = document.getElementById("examOptionsContainer");
-      container.innerHTML = "";
-      const letters = ["א", "ב", "ג", "ד", "ה"];
-
-      const eliminatedSet = (exam.eliminated && exam.eliminated[exam.currentIndex])
-        ? exam.eliminated[exam.currentIndex]
-        : new Set();
-
-      shuffledData.options.forEach((optText, optIdx) => {
-        const item = document.createElement("div");
-        item.className = "option-item";
-        if (exam.userAnswers[exam.currentIndex] === optIdx) {
-          item.classList.add("selected");
-        }
-        const isEliminated = eliminatedSet.has(optIdx);
-        if (isEliminated) {
-          item.classList.add("eliminated");
-        }
-
-        item.innerHTML = `
-          <div class="option-letter">${letters[optIdx] || optIdx + 1}</div>
-          <div class="option-content">${optText}</div>
-          <button type="button" class="btn-eliminate-option" title="${isEliminated ? 'בטל פסילת מסיח' : 'פסול מסיח (סימון קו חוצה)'}" aria-label="פסילת מסיח">
-            ✕
-          </button>
-        `;
-
-        item.onclick = (e) => {
-          if (e.target.closest('.btn-eliminate-option')) return;
-          if (eliminatedSet.has(optIdx)) {
-            eliminatedSet.delete(optIdx);
-          }
-          selectExamOption(optIdx);
-        };
-
-        const btnEliminate = item.querySelector('.btn-eliminate-option');
-        if (btnEliminate) {
-          btnEliminate.onclick = (e) => {
-            e.stopPropagation();
-            toggleEliminateExamOption(optIdx);
-          };
-        }
-
-        container.appendChild(item);
-      });
-
-      // Navigation buttons
-      document.getElementById("btnPrevExam").style.visibility = exam.currentIndex === 0 ? "hidden" : "visible";
-      const isLast = exam.currentIndex === total - 1;
-      document.getElementById("btnNextExam").style.display = isLast ? "none" : "inline-flex";
-      document.getElementById("btnSubmitExam").style.display = isLast ? "inline-flex" : "none";
-
-      updateQuickGridActive();
-    }
-
-    function selectExamOption(shuffledOptIdx) {
-      const exam = state.currentExam;
-      if (exam.eliminated && exam.eliminated[exam.currentIndex]) {
-        exam.eliminated[exam.currentIndex].delete(shuffledOptIdx);
-      }
-      exam.userAnswers[exam.currentIndex] = shuffledOptIdx;
-      saveExamSession();
-      renderCurrentExamQuestion();
-      renderExamQuickGrid();
-    }
-
-    function toggleEliminateExamOption(optIdx) {
-      const exam = state.currentExam;
-      if (!exam.eliminated) exam.eliminated = {};
-      if (!exam.eliminated[exam.currentIndex]) {
-        exam.eliminated[exam.currentIndex] = new Set();
-      }
-      const set = exam.eliminated[exam.currentIndex];
-      if (set.has(optIdx)) {
-        set.delete(optIdx);
-      } else {
-        set.add(optIdx);
-        if (exam.userAnswers[exam.currentIndex] === optIdx) {
-          delete exam.userAnswers[exam.currentIndex];
-        }
-      }
-      saveExamSession();
-      renderCurrentExamQuestion();
-      renderExamQuickGrid();
-    }
-
-    function toggleExamFlag() {
-      const idx = state.currentExam.currentIndex;
-      if (state.currentExam.flagged.has(idx)) {
-        state.currentExam.flagged.delete(idx);
-      } else {
-        state.currentExam.flagged.add(idx);
-      }
-      saveExamSession();
-      renderCurrentExamQuestion();
-      renderExamQuickGrid();
-    }
-
-    function prevExamQuestion() {
-      if (state.currentExam.currentIndex > 0) {
-        state.currentExam.currentIndex--;
-        saveExamSession();
-        renderCurrentExamQuestion();
-      }
-    }
-
-    function nextExamQuestion() {
-      if (state.currentExam.currentIndex < state.currentExam.questions.length - 1) {
-        state.currentExam.currentIndex++;
-        saveExamSession();
-        renderCurrentExamQuestion();
-      }
-    }
-
-    function jumpToExamQuestion(index) {
-      state.currentExam.currentIndex = index;
-      saveExamSession();
-      renderCurrentExamQuestion();
-    }
-
-    function renderExamQuickGrid() {
-      const grid = document.getElementById("examQuickGrid");
-      grid.innerHTML = "";
-      const exam = state.currentExam;
-
-      exam.questions.forEach((_, idx) => {
-        const cell = document.createElement("div");
-        cell.className = "grid-cell";
-        cell.textContent = idx + 1;
-
-        if (exam.userAnswers.hasOwnProperty(idx)) {
-          cell.classList.add("answered");
-        }
-        if (exam.flagged.has(idx)) {
-          cell.classList.add("flagged");
-        }
-        if (idx === exam.currentIndex) {
-          cell.classList.add("active");
-        }
-
-        cell.onclick = () => jumpToExamQuestion(idx);
-        grid.appendChild(cell);
-      });
-    }
-
-    function updateQuickGridActive() {
-      const cells = document.querySelectorAll(".grid-cell");
-      cells.forEach((cell, idx) => {
-        if (idx === state.currentExam.currentIndex) {
-          cell.classList.add("active");
-        } else {
-          cell.classList.remove("active");
-        }
-      });
-    }
-
-    function confirmSubmitExam() {
-      const total = state.currentExam.questions.length;
-      const answered = Object.keys(state.currentExam.userAnswers).length;
-      if (answered < total) {
-        const proceed = confirm(`שים לב: ענית על ${answered} מתוך ${total} שאלות בלבד.\nהאם ברצונך להגיש את המבחן כעת?`);
-        if (!proceed) return;
-      }
-      submitExam();
-    }
-
-    function submitExam() {
-      const exam = state.currentExam;
-      let correctCount = 0;
-      let wrongQuestions = [];
-      const total = exam.questions.length;
-
-      exam.questions.forEach((q, idx) => {
-        const userChoice = exam.userAnswers[idx];
-        if (!exam.shuffledOptionsCache[idx]) {
-          exam.shuffledOptionsCache[idx] = getShuffledQuestionOptions(q);
-        }
-        const shuffledData = exam.shuffledOptionsCache[idx];
-        const isCorrect = userChoice !== undefined && userChoice === shuffledData.correctIndex;
-
-        // Update statistics
-        state.userStats.totalAnswered++;
-        const cat = q.category || "כללי";
-        if (!state.userStats.categoryStats[cat]) {
-          state.userStats.categoryStats[cat] = { correct: 0, total: 0 };
-        }
-        state.userStats.categoryStats[cat].total++;
-
-        if (isCorrect) {
-          correctCount++;
-          state.userStats.totalCorrect++;
-          state.userStats.categoryStats[cat].correct++;
-          // If in mistake bank, remove!
-          if (state.mistakes.has(q.id)) {
-            state.mistakes.delete(q.id);
-          }
-        } else {
-          wrongQuestions.push({ question: q, userChoice, shuffledData });
-          // Add to mistake bank!
-          state.mistakes.add(q.id);
-        }
-      });
-
-      state.userStats.examsCompleted++;
-      saveMistakes();
-      saveStats();
-
-      // Render Results Screen
-      const scorePct = Math.round((correctCount / total) * 100);
-      document.getElementById("resScoreVal").textContent = `${scorePct}%`;
-      document.getElementById("resCorrectCount").textContent = correctCount;
-      document.getElementById("resWrongCount").textContent = total - correctCount;
-      document.getElementById("resTotalCount").textContent = total;
-
-      if (scorePct >= 85) {
-        document.getElementById("resTitleMsg").textContent = "🌟 תוצאה מעולה! מוכנות גבוהה למבחן!";
-      } else if (scorePct >= 70) {
-        document.getElementById("resTitleMsg").textContent = "👍 עבודה טובה! עם עוד קצת תרגול זה יהיה מושלם.";
-      } else {
-        document.getElementById("resTitleMsg").textContent = "💪 התחלה טובה! כדאי לחזור על השאלות שטעית בהן.";
-      }
-
-      state.activeExamScreen = 'RESULTS';
-      saveExamSession();
-
-      // Check if this was a saved exam run
-      if (exam.isSavedExam && exam.savedExamId) {
-        const savedSlot = state.savedExams.find(s => s.id === exam.savedExamId);
-        if (savedSlot) {
-          savedSlot.status = 'COMPLETED';
-          savedSlot.score = scorePct;
-          savedSlot.completedAt = new Date().toISOString();
-          saveSavedExams();
-        }
-        const banner = document.getElementById("savedExamResultsBanner");
-        if (banner) banner.style.display = "flex";
-      } else {
-        const banner = document.getElementById("savedExamResultsBanner");
-        if (banner) banner.style.display = "none";
-      }
-
-      // Render Review List
-      renderExamReviewList(exam);
-
-      document.querySelectorAll(".screen").forEach(s => s.classList.remove("active"));
-      document.getElementById("screenExamResults").classList.add("active");
-      updateMobileSectionIndicator('exam');
-    }
-
-    function renderExamReviewList(exam) {
-      const list = document.getElementById("examReviewList");
-      list.innerHTML = "";
-      const letters = ["א", "ב", "ג", "ד", "ה"];
-
-      exam.questions.forEach((q, idx) => {
-        const userChoice = exam.userAnswers[idx];
-        const shuffledData = exam.shuffledOptionsCache[idx] || getShuffledQuestionOptions(q);
-        const isCorrect = userChoice !== undefined && userChoice === shuffledData.correctIndex;
-
-        const card = document.createElement("div");
-        card.className = `review-item ${isCorrect ? 'was-correct' : 'was-wrong'}`;
-
-        let statusText = isCorrect 
-          ? `<span style="color:var(--success); font-weight:800;">✔ תשובה נכונה</span>` 
-          : `<span style="color:var(--danger); font-weight:800;">✖ שגיאה</span>`;
-
-        let optionsHtml = shuffledData.options.map((opt, oIdx) => {
-          let itemClass = "review-opt-item";
-          let badgeHtml = "";
-          if (oIdx === shuffledData.correctIndex) {
-            itemClass += " opt-correct";
-            badgeHtml = `<span class="option-status-badge badge-correct">✓ תשובה נכונה</span>`;
-          } else if (oIdx === userChoice && !isCorrect) {
-            itemClass += " opt-wrong";
-            badgeHtml = `<span class="option-status-badge badge-wrong">✕ הבחירה שלך</span>`;
-          } else {
-            badgeHtml = `<span class="option-status-badge badge-distractor">✕ מסיח שגוי</span>`;
-          }
-          return `
-            <div class="${itemClass}">
-              <div class="option-letter" style="width:26px; height:26px; font-size:0.82rem;">${letters[oIdx] || oIdx + 1}</div>
-              <div class="option-content" style="flex:1;">${escapeHTML(opt)}</div>
-              ${badgeHtml}
-            </div>
-          `;
-        }).join("");
-
-        card.innerHTML = `
-          <div style="display:flex; justify-content:space-between; margin-bottom:8px;">
-            <span style="font-weight:700; color:var(--text-muted);">שאלה ${idx + 1} &bull; ${q.category}</span>
-            ${statusText}
-          </div>
-          <div style="font-size:1.05rem; font-weight:700; margin-bottom:12px;">${q.question}</div>
-          <div style="margin-bottom:14px;">
-            ${optionsHtml}
-          </div>
-          ${renderExplanationHTML(q)}
-        `;
-        list.appendChild(card);
-      });
-    }
-
-    function escapeHTML(str) {
-      if (!str) return '';
-      return String(str)
-        .replace(/&/g, '&amp;')
-        .replace(/</g, '&lt;')
-        .replace(/>/g, '&gt;')
-        .replace(/"/g, '&quot;');
-    }
-
-    function parseExplanationComponents(detailedText) {
-      if (!detailedText) return { rationale: '', distractors: [] };
-      let rationale = '', distractorRaw = '';
-      const ratMatch = detailedText.match(/•?\s*הרציונל[^\n:]*:\s*([\s\S]*?)(?=•?\s*ניתוח המסיחים|•?\s*(מקור|עיגון) בספרות|$)/);
-      if (ratMatch) rationale = ratMatch[1].trim();
-      const distMatch = detailedText.match(/•?\s*ניתוח המסיחים[^\n:]*:\s*([\s\S]*?)(?=•?\s*(מקור|עיגון) בספרות|$)/);
-      if (distMatch) distractorRaw = distMatch[1].trim();
-
-      if (!rationale && !distractorRaw) {
-        const clean = detailedText
-          .replace(/•?\s*(מקור בספרות|עיגון בספרות|סילבוס)[^\n]*/gi, '')
-          .trim();
-        return { rationale: clean, distractors: [] };
-      }
-
-      let distractors = [];
-      if (distractorRaw) {
-        if (distractorRaw.includes('\n-') || distractorRaw.startsWith('-')) {
-          distractors = distractorRaw.split(/\n?-\s+/).map(d => d.trim()).filter(d => d.length > 1);
-        } else if (distractorRaw.includes(';')) {
-          distractors = distractorRaw.split(';').map(d => d.trim()).filter(d => d.length > 1);
-        } else if (distractorRaw.includes('. ') || distractorRaw.includes('.\n')) {
-          distractors = distractorRaw.split(/(?<=\.)\s+/).map(d => d.trim()).filter(d => d.length > 1);
-        } else {
-          distractors = [distractorRaw];
-        }
-      }
-      return { rationale, distractors };
-    }
-
-    function renderExplanationHTML(q) {
-      const shortText = q.shortExplanation || (q.aiExplanation ? q.aiExplanation.split('\n')[0] : q.explanation) || 'התשובה המסומנת היא התשובה הנכונה.';
-      const detailedText = q.detailedExplanation || q.aiExplanation || q.explanation || '';
-      const origText = q.originalExplanation && q.originalExplanation.trim() && !q.originalExplanation.startsWith('התשובה הנכונה היא:') ? q.originalExplanation.trim() : null;
-
-      let html = '<div class="expl-sections-container">';
-
-      // 1. One-Liner Quick Insight (Always visible immediately)
-      html += `
-        <div class="expl-short-card">
-          <div class="expl-short-badge">💡 בשורה אחת:</div>
-          <div class="expl-short-text">${escapeHTML(shortText)}</div>
-        </div>
-      `;
-
-      // 2. Interactive Accordion for Detailed Explanation & Structured Distractor Breakdown
-      if (detailedText && detailedText.trim() !== shortText.trim()) {
-        const parsed = parseExplanationComponents(detailedText);
-
-        let contentHtml = '';
-        if (parsed.rationale) {
-          contentHtml += `
-            <div class="expl-rationale-block">
-              <div class="expl-block-header">🎯 הרציונל הקליני / פדגוגי:</div>
-              <div class="expl-block-text">${escapeHTML(parsed.rationale).replace(/\n/g, '<br>')}</div>
-            </div>
-          `;
-        }
-
-        if (parsed.distractors && parsed.distractors.length > 0) {
-          const itemsHtml = parsed.distractors.map(d => `
-            <div class="expl-distractor-item">
-              <span class="expl-distractor-icon">✕</span>
-              <span class="expl-distractor-text">${escapeHTML(d)}</span>
-            </div>
-          `).join('');
-
-          contentHtml += `
-            <div class="expl-distractors-block">
-              <div class="expl-distractors-header">🔍 ניתוח המסיחים השגויים (מדוע שאר האפשרויות שגויות):</div>
-              <div class="expl-distractor-list">
-                ${itemsHtml}
-              </div>
-            </div>
-          `;
-        }
-
-        if (!contentHtml) {
-          const fallbackClean = escapeHTML(detailedText)
-            .replace(/•?\s*(מקור בספרות|עיגון בספרות)[^\n]*/gi, '')
-            .replace(/\n/g, '<br>');
-          contentHtml = `<div class="expl-block-text">${fallbackClean}</div>`;
-        }
-
-        html += `
-          <details class="expl-details-accordion">
-            <summary class="expl-accordion-summary">
-              <span class="summary-left">
-                <span>📖</span>
-                <span>הסבר פדגוגי מפורט וניתוח מסיחים</span>
-              </span>
-              <span class="summary-arrow">▼</span>
-            </summary>
-            <div class="expl-details-content">
-              ${contentHtml}
-            </div>
-          </details>
-        `;
-      }
-
-      // 3. Original recovery note (if present)
-      if (origText) {
-        html += `
-          <div class="expl-original-tag">
-            <span class="expl-pill pill-orig">🏷️ הערת שחזור מקורית:</span>
-            <span>${escapeHTML(origText)}</span>
-          </div>
-        `;
-      }
-
-      html += '</div>';
-      return html;
-    }
-
-    function retryWrongExamQuestions() {
-      const wrongList = state.currentExam.questions.filter((q, idx) => {
-        const userChoice = state.currentExam.userAnswers[idx];
-        const shuffled = state.currentExam.shuffledOptionsCache[idx];
-        return userChoice === undefined || userChoice !== shuffled.correctIndex;
-      });
-
-      if (wrongList.length === 0) {
-        alert("לא היו שגיאות במבחן זה! כל הכבוד!");
-        return;
-      }
-
-      state.activeExamScreen = 'ACTIVE';
-      state.currentExam = {
-        questions: shuffleArray(wrongList),
-        currentIndex: 0,
-        userAnswers: {},
-        flagged: new Set(),
-        eliminated: {},
-        shuffledOptionsCache: {}
-      };
-      saveExamSession();
-
-      document.querySelectorAll(".screen").forEach(s => s.classList.remove("active"));
-      document.getElementById("screenActiveExam").classList.add("active");
-      renderExamQuickGrid();
-      renderCurrentExamQuestion();
-    }
-
-    /* ========================================================
-       STUDY / PRACTICE MODE LOGIC
-       ======================================================== */
-    function initStudyMode() {
-      let pool = [...state.allQuestions];
-
-      // Exclude quarantined questions from saved exams
-      const quarantined = getQuarantinedQuestionIdSet();
-      pool = pool.filter(q => !quarantined.has(q.id));
-
-      if (state.currentStudy.mistakesOnly) {
-        pool = pool.filter(q => state.mistakes.has(q.id));
-      } else if (state.currentStudy.selectedCategory !== 'ALL') {
-        pool = pool.filter(q => q.category === state.currentStudy.selectedCategory);
-      }
-
-      state.currentStudy.questions = shuffleArray(pool);
-      state.currentStudy.currentIndex = 0;
-      state.currentStudy.shuffledOptionsCache = {};
-      state.currentStudy.userAnswers = {};
-      saveStudySession();
-    }
-
-    function onStudyFilterChange() {
-      state.currentStudy.selectedCategory = document.getElementById("studyCategoryFilter").value;
-      state.currentStudy.mistakesOnly = false;
-      document.getElementById("btnStudyMistakesOnly").classList.remove("btn-primary");
-      document.getElementById("btnStudyMistakesOnly").classList.add("btn-outline");
-      initStudyMode();
-      renderCurrentStudyQuestion();
-    }
-
-    function toggleStudyMistakesOnly() {
-      state.currentStudy.mistakesOnly = !state.currentStudy.mistakesOnly;
-      const btn = document.getElementById("btnStudyMistakesOnly");
-      if (state.currentStudy.mistakesOnly) {
-        btn.classList.add("btn-primary");
-        btn.classList.remove("btn-outline");
-      } else {
-        btn.classList.remove("btn-primary");
-        btn.classList.add("btn-outline");
-      }
-      initStudyMode();
-      renderCurrentStudyQuestion();
-    }
-
-    function renderCurrentStudyQuestion() {
-      const study = state.currentStudy;
-      const total = study.questions.length;
-
-      document.getElementById("studyTotalCount").textContent = total;
-      const box = document.getElementById("studyExplanationBox");
-
-      if (total === 0) {
-        box.classList.remove("visible");
-        document.getElementById("studyCurrentIndex").textContent = "0";
-        document.getElementById("studyQText").textContent = 
-          study.mistakesOnly ? "מאגר הטעויות שלך ריק כרגע! כל הכבוד 🎉" : "אין שאלות בקטגוריה זו.";
-        document.getElementById("studyOptionsContainer").innerHTML = "";
-        return;
-      }
-
-      const q = study.questions[study.currentIndex];
-      document.getElementById("studyCurrentIndex").textContent = study.currentIndex + 1;
-      document.getElementById("studyQCategory").textContent = q.category || "כללי";
-      document.getElementById("studyQSource").textContent = q.source || "שחזור";
-      document.getElementById("studyQUnverified").style.display = q.verified === false ? "inline-flex" : "none";
-      document.getElementById("studyQText").textContent = q.question;
-
-      // Shuffled Options
-      if (!study.shuffledOptionsCache[study.currentIndex]) {
-        study.shuffledOptionsCache[study.currentIndex] = getShuffledQuestionOptions(q);
-      }
-      const shuffledData = study.shuffledOptionsCache[study.currentIndex];
-
-      const container = document.getElementById("studyOptionsContainer");
-      container.innerHTML = "";
-      const letters = ["א", "ב", "ג", "ד", "ה"];
-
-      // Check if user already answered this study question
-      const prevAnswer = study.userAnswers ? study.userAnswers[study.currentIndex] : undefined;
-      const isAnswered = prevAnswer !== undefined;
-
-      shuffledData.options.forEach((optText, optIdx) => {
-        const item = document.createElement("div");
-        item.className = "option-item";
-        item.id = `studyOpt_${optIdx}`;
-
-        let badgeHtml = '';
-        if (isAnswered) {
-          item.classList.add("disabled");
-          if (optIdx === shuffledData.correctIndex) {
-            item.classList.add("correct");
-            badgeHtml = `<span class="option-status-badge badge-correct">✓ תשובה נכונה</span>`;
-          } else if (optIdx === prevAnswer) {
-            item.classList.add("wrong");
-            badgeHtml = `<span class="option-status-badge badge-wrong">✕ הבחירה שלך</span>`;
-          } else {
-            badgeHtml = `<span class="option-status-badge badge-distractor">✕ מסיח שגוי</span>`;
-          }
-        } else {
-          item.onclick = () => answerStudyQuestion(optIdx);
-        }
-
-        item.innerHTML = `
-          <div class="option-letter">${letters[optIdx] || optIdx + 1}</div>
-          <div class="option-content">${optText}</div>
-          ${badgeHtml}
-        `;
-        container.appendChild(item);
-      });
-
-      // Show explanation if already answered
-      if (isAnswered) {
-        const isCorrect = prevAnswer === shuffledData.correctIndex;
-        const explHeader = document.getElementById("studyExplanationHeader");
-        const explText = document.getElementById("studyExplanationText");
-
-        if (isCorrect) {
-          explHeader.innerHTML = "✅ נכון מאוד! כל הכבוד:";
-          explHeader.style.color = "#166534";
-        } else {
-          explHeader.innerHTML = "❌ לא מדויק. להלן ההסבר המלא:";
-          explHeader.style.color = "#991b1b";
-        }
-
-        explText.innerHTML = renderExplanationHTML(q);
-        box.classList.add("visible");
-      } else {
-        box.classList.remove("visible");
-      }
-    }
-
-    function answerStudyQuestion(selectedOptIdx) {
-      const study = state.currentStudy;
-      if (!study.userAnswers) study.userAnswers = {};
-      study.userAnswers[study.currentIndex] = selectedOptIdx;
-
-      const q = study.questions[study.currentIndex];
-      const shuffledData = study.shuffledOptionsCache[study.currentIndex];
-      const isCorrect = selectedOptIdx === shuffledData.correctIndex;
-
-      // Update statistics
-      state.userStats.totalAnswered++;
-      const cat = q.category || "כללי";
-      if (!state.userStats.categoryStats[cat]) {
-        state.userStats.categoryStats[cat] = { correct: 0, total: 0 };
-      }
-      state.userStats.categoryStats[cat].total++;
-
-      if (isCorrect) {
-        state.userStats.totalCorrect++;
-        state.userStats.categoryStats[cat].correct++;
-        // Remove from mistake bank if present
-        if (state.mistakes.has(q.id)) {
-          state.mistakes.delete(q.id);
-        }
-      } else {
-        // Add to mistake bank
-        state.mistakes.add(q.id);
-      }
-
-      saveMistakes();
-      saveStats();
-      saveStudySession();
-
-      renderCurrentStudyQuestion();
-    }
-
-    function prevStudyQuestion() {
-      if (state.currentStudy.currentIndex > 0) {
-        state.currentStudy.currentIndex--;
-        saveStudySession();
-        renderCurrentStudyQuestion();
-      }
-    }
-
-    /* ========================================================
-       STUDY MODE: AI PROMPT COPY UTILITY (STUDY MODE ONLY)
-       ======================================================== */
-    function formatQuestionForAI(q, options) {
-      const letters = ["א", "ב", "ג", "ד", "ה"];
-      const formattedOptions = options.map((opt, idx) => `  ${letters[idx]}. ${opt}`).join('\n');
-
-      return `שלום! אני לומד/ת למבחן ההסמכה הממשלתי בהדרכה קלינית בסיעוד של משרד הבריאות (מנהל הסיעוד בישראל).
-אשמח לעזרתך כמומחה בכיר בהדרכה קלינית בסיעוד בניתוח השאלה הבאה מתוך מבחני ההסמכה.
-
-═══════════════════════════════════════════════════════════════
-📌 פרטי השאלה:
-• תחום / קטגוריה: ${q.category || 'הדרכה קלינית בסיעוד'}
-• מקור: ${q.source || 'שחזור מבחן ממשלתי'}
-═══════════════════════════════════════════════════════════════
-
-❓ גוף השאלה:
-${q.question}
-
-📋 אפשרויות התשובה:
-${formattedOptions}
-
-═══════════════════════════════════════════════════════════════
-🎯 הנחיות למענה:
-אנא בסס את תשובתך על סילבוס מנהל הסיעוד וספרות החובה הרשמית (ספרו של רמי אבירם, Bastable, Billings & Halstead, הטקסונומיה של בלום, מעגל הלמידה של קולב, מודל השיפוט הקליני של טאנר, חוזרי מנהל הסיעוד וקוד האתיקה לאחיות בישראל).
-
-אנא הצג את תשובתך במבנה הברור הבא:
-1. ✅ התשובה הנכונה ביותר: (ציין את אות התשובה ואת ניסוחה המדויק).
-2. 🎯 הרציונל הפדגוגי/קליני המעמיק: (הסבר מעמיק של העיקרון הפדגוגי המנחה, מדוע פעולה זו נדרשת מהמדריך הקליני, וכיצד היא מקדמת את למידת הסטודנט ובטיחות המטופל).
-3. 🔍 ניתוח ביקורתי של כל אחד מהמסיחים השגויים: (הסבר מפורט לכל מסיח בנפרד – מדוע אינו נכון, מה הפגם בגישה זו או מדוע הוא פחות מתאים).
-4. 📚 עיגון בספרות ובסילבוס: (קישור לתיאוריה, לפרק בספרות המקצועית או להנחיית משרד הבריאות הרלוונטית).
-═══════════════════════════════════════════════════════════════`;
-    }
-
-    async function copyCurrentStudyQuestionForAI() {
-      const study = state.currentStudy;
-      if (!study || !study.questions || study.questions.length === 0) return;
-      const q = study.questions[study.currentIndex];
-      if (!q) return;
-
-      const shuffledData = study.shuffledOptionsCache[study.currentIndex] || getShuffledQuestionOptions(q);
-      const textToCopy = formatQuestionForAI(q, shuffledData.options);
-
-      let copied = false;
-      if (navigator.clipboard && navigator.clipboard.writeText) {
-        try {
-          await navigator.clipboard.writeText(textToCopy);
-          copied = true;
-        } catch (e) {
-          console.warn("navigator.clipboard.writeText failed, using fallback:", e);
-          copied = false;
-        }
-      }
-
-      if (!copied) {
-        copied = fallbackCopyText(textToCopy);
-      }
-
-      if (copied) {
-        showToast("השאלה והפרומפט ל-AI הועתקו בהצלחה! ניתן להדביק ב-ChatGPT/Claude/Gemini");
-        const btn = document.getElementById("btnCopyStudyAI");
-        if (btn) {
-          const origHtml = btn.innerHTML;
-          btn.innerHTML = `<span class="copy-ai-icon">✔</span> <span class="copy-ai-label">הועתק ללוח!</span>`;
-          btn.classList.add("btn-copied");
-          setTimeout(() => {
-            btn.innerHTML = origHtml;
-            btn.classList.remove("btn-copied");
-          }, 2000);
-        }
-      } else {
-        showToast("לא ניתן לגשת ללוח באופן אוטומטי בדפדפן זה");
-      }
-    }
-
-    function fallbackCopyText(text) {
-      const textarea = document.createElement("textarea");
-      textarea.value = text;
-      textarea.setAttribute("readonly", "");
-      textarea.style.position = "fixed";
-      textarea.style.top = "0";
-      textarea.style.left = "-9999px";
-      textarea.style.opacity = "0";
-      document.body.appendChild(textarea);
-      textarea.focus();
-      textarea.select();
-      textarea.setSelectionRange(0, 999999);
-      let success = false;
-      try {
-        success = document.execCommand('copy');
-      } catch (err) {
-        console.warn("fallback document.execCommand failed:", err);
-        success = false;
-      }
-      document.body.removeChild(textarea);
-      return success;
-    }
-
-    function nextStudyQuestion() {
-      if (state.currentStudy.currentIndex < state.currentStudy.questions.length - 1) {
-        state.currentStudy.currentIndex++;
-        saveStudySession();
-        renderCurrentStudyQuestion();
-      } else {
-        // Wrap around with new shuffle!
-        state.currentStudy.questions = shuffleArray(state.currentStudy.questions);
-        state.currentStudy.currentIndex = 0;
-        state.currentStudy.shuffledOptionsCache = {};
-        state.currentStudy.userAnswers = {};
-        saveStudySession();
-        renderCurrentStudyQuestion();
-      }
-    }
-
-    /* ========================================================
-       STATISTICS & DASHBOARD
-       ======================================================== */
-    function renderStats() {
-      const stats = state.userStats;
-      const total = stats.totalAnswered;
-      const correct = stats.totalCorrect;
-      const pct = total > 0 ? Math.round((correct / total) * 100) : 0;
-
-      document.getElementById("statAccuracyVal").textContent = `${pct}%`;
-      document.getElementById("statTotalAnswered").textContent = total;
-      document.getElementById("statMistakesActive").textContent = state.mistakes.size;
-      document.getElementById("statExamsCompleted").textContent = stats.examsCompleted;
-
-      // Render Category Bars
-      const container = document.getElementById("categoryStatsBars");
-      container.innerHTML = "";
-
-      let weakestCat = null;
-      let minPct = 101;
-
-      state.categories.forEach(catName => {
-        const catData = stats.categoryStats[catName] || { correct: 0, total: 0 };
-        const catPct = catData.total > 0 ? Math.round((catData.correct / catData.total) * 100) : 0;
-        const totalInDb = state.allQuestions.filter(q => q.category === catName).length;
-
-        if (catData.total >= 3 && catPct < minPct) {
-          minPct = catPct;
-          weakestCat = catName;
-        }
-
-        let barColor = "var(--primary)";
-        if (catData.total > 0) {
-          if (catPct >= 80) barColor = "var(--success)";
-          else if (catPct >= 65) barColor = "var(--warning)";
-          else barColor = "var(--danger)";
-        }
-
-        const barItem = document.createElement("div");
-        barItem.className = "cat-bar-item";
-        barItem.innerHTML = `
-          <div class="cat-bar-header">
-            <span>${catName} <small style="color:var(--text-muted); font-weight:normal;">(${catData.correct}/${catData.total} שנענו &bull; מתוך ${totalInDb} שאלות במאגר)</small></span>
-            <span style="font-weight:800; color:${barColor}">${catData.total > 0 ? catPct + '%' : 'טרם נבחן'}</span>
-          </div>
-          <div class="cat-bar-bg">
-            <div class="cat-bar-fill" style="width:${catPct}%; background:${barColor}"></div>
-          </div>
-        `;
-        container.appendChild(barItem);
-      });
-
-      // Update Insights
-      const bannerTitle = document.getElementById("statsInsightTitle");
-      const bannerDesc = document.getElementById("statsInsightDesc");
-
-      if (total < 10) {
-        bannerTitle.textContent = "התחלת תרגול טרייה:";
-        bannerDesc.textContent = "פתור לפחות 15-20 שאלות כדי שהמערכת תזהה את תחומי החוזק והחולשה במדויק.";
-      } else if (weakestCat && minPct < 75) {
-        bannerTitle.textContent = `🚨 המלצה ממוקדת לחיזוק:`;
-        bannerDesc.textContent = `זוהה אחוז הצלחה נמוך יחסית (${minPct}%) בנושא: "${weakestCat}". מומלץ לתרגל נושא זה במצב למידה.`;
-      } else if (state.mistakes.size > 5) {
-        bannerTitle.textContent = `📌 מאגר טעויות ממתין לך:`;
-        bannerDesc.textContent = `יש לך ${state.mistakes.size} שאלות במאגר הטעויות. חזרה עליהן כעת תקבע את הידע לקראת המבחן!`;
-      } else {
-        bannerTitle.textContent = `🏆 שליטה גבוהה בחומר!`;
-        bannerDesc.textContent = `כל הכבוד! הישג מרשים בכל הנושאים. המשך לתרגל מבחנים שלמים לשמירה על חדות.`;
-      }
-    }
-
-    function practiceWeakestCategory() {
-      let weakestCat = null;
-      let minPct = 101;
-
-      state.categories.forEach(catName => {
-        const catData = state.userStats.categoryStats[catName];
-        if (catData && catData.total > 0) {
-          const p = Math.round((catData.correct / catData.total) * 100);
-          if (p < minPct) {
-            minPct = p;
-            weakestCat = catName;
-          }
-        }
-      });
-
-      if (!weakestCat) {
-        weakestCat = state.categories[0];
-      }
-
-      document.getElementById("studyCategoryFilter").value = weakestCat;
-      state.currentStudy.selectedCategory = weakestCat;
-      state.currentStudy.mistakesOnly = false;
-      initStudyMode();
-      switchTab('study');
-    }
-
-    function confirmResetStats() {
-      const confirmReset = confirm("האם אתה בטוח שברצונך לאפס את כל נתוני הסטטיסטיקה ומאגר הטעויות?");
-      if (confirmReset) {
-        localStorage.removeItem(STORAGE_KEY_MISTAKES);
-        localStorage.removeItem(STORAGE_KEY_STATS);
-        state.mistakes = new Set();
-        state.userStats = {
-          totalAnswered: 0,
-          totalCorrect: 0,
-          examsCompleted: 0,
-          categoryStats: {}
-        };
-        updateMistakesUI();
-        renderStats();
-        if (window.cloudSync && typeof window.cloudSync.resetCloudData === 'function') {
-          window.cloudSync.resetCloudData();
-        }
-        alert("הנתונים אופסו בהצלחה.");
-      }
-    }
-
-    function showToast(message) {
-      let toast = document.getElementById("appGlobalToast");
-      if (!toast) {
-        toast = document.createElement("div");
-        toast.id = "appGlobalToast";
-        toast.className = "app-toast";
-        document.body.appendChild(toast);
-      }
-      toast.textContent = message;
-      toast.classList.add("visible");
-      setTimeout(() => {
-        toast.classList.remove("visible");
-      }, 3500);
-    }
-    window.showToast = showToast;
-  </script>
+  <!-- Application Module Entrypoint -->
+  <script type="module" src="./js/main.js"></script>
 
   <!-- Firebase Cloud Sync (Modular SDK v11) -->
   <script type="module">
