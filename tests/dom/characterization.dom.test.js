@@ -4,6 +4,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { Window } from 'happy-dom';
+import { mountApplication } from '../../app/js/main.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -36,24 +37,14 @@ function getSampleQuestions() {
 }
 
 /**
- * Boots the application inside a fresh happy-dom Window instance.
- * Works seamlessly both with the v1 monolith (inline <script>) and with v2 modular scripts.
+ * Boots the application inside a fresh happy-dom Window instance using `mountApplication`.
  */
 function createAppTestEnv() {
   const htmlPath = resolveIndexHtmlPath();
   const rawHtml = fs.readFileSync(htmlPath, 'utf8');
 
-  // Strip external <script src="..."> and <script type="module"> tags before document.write
-  const inlineScripts = [];
-  const htmlWithoutScripts = rawHtml.replace(
-    /<script\b([^>]*)>([\s\S]*?)<\/script>/gi,
-    (_match, attrs, body) => {
-      if (!/src=/i.test(attrs) && !/type=["']module["']/i.test(attrs) && body.trim()) {
-        inlineScripts.push(body);
-      }
-      return '';
-    }
-  );
+  // Strip external <script> tags before document.write
+  const htmlWithoutScripts = rawHtml.replace(/<script\b[^>]*>[\s\S]*?<\/script>/gi, '');
 
   const window = new Window({
     url: 'http://127.0.0.1:4173/',
@@ -68,9 +59,6 @@ function createAppTestEnv() {
   const document = window.document;
   document.write(htmlWithoutScripts);
 
-  // Inject question bank
-  window.EXAM_QUESTIONS = getSampleQuestions();
-
   // Stub confirm / alert so flows can be tested without blocking
   const dialogs = { alerts: [], confirms: [] };
   window.alert = (msg) => {
@@ -80,6 +68,7 @@ function createAppTestEnv() {
     dialogs.confirms.push(msg);
     return true;
   };
+  globalThis.confirm = window.confirm;
 
   // Stub clipboard
   let clipboardText = '';
@@ -93,13 +82,17 @@ function createAppTestEnv() {
     },
   });
 
-  // Execute inline script inside window context
-  for (const code of inlineScripts) {
-    window.eval(code);
-  }
+  const questions = getSampleQuestions();
+  window.EXAM_QUESTIONS = questions;
 
-  // Trigger DOMContentLoaded
-  document.dispatchEvent(new window.Event('DOMContentLoaded', { bubbles: true }));
+  mountApplication({
+    window,
+    document,
+    localStorage: window.localStorage,
+    sessionStorage: window.sessionStorage,
+    navigator: window.navigator,
+    preloadedQuestions: questions,
+  });
 
   return {
     window,

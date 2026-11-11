@@ -57,8 +57,8 @@ describe('Step 6 Modular CSS Architecture & Selector Integrity', () => {
       .map(([, relPath]) => fs.readFileSync(path.resolve(stylesDir, relPath), 'utf8'))
       .join('\n');
 
-    // Extract static HTML before <script>
-    const htmlBeforeScript = indexHtml.split('<script>')[0];
+    // Extract static HTML before <script
+    const htmlBeforeScript = indexHtml.split('<script')[0];
     const classAttrRegex = /\bclass=["']([^"']+)["']/g;
     const usedClasses = new Set();
     for (const [, classList] of htmlBeforeScript.matchAll(classAttrRegex)) {
@@ -84,7 +84,7 @@ describe('Step 6 Modular CSS Architecture & Selector Integrity', () => {
   });
 
   it('eliminates static presentation inline styles from HTML markup', () => {
-    const htmlBeforeScript = indexHtml.split('<script>')[0];
+    const htmlBeforeScript = indexHtml.split('<script')[0];
     const styleAttrs = [...htmlBeforeScript.matchAll(/\bstyle=["']([^"']+)["']/g)].map((m) => m[1]);
 
     // Only initial hidden state (`display:none;`) is permitted on JS-toggled elements until Step 9
