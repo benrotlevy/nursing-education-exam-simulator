@@ -59,24 +59,23 @@ The repository separates **deployable web application assets** (`app/`), **autom
 │       │   ├── dom.js                # Auto-escaping html`` template tag & DOM utilities
 │       │   ├── toast.js              # Non-blocking status toast
 │       │   ├── dialog.js             # Accessible <dialog> modal replacement for alert/confirm
-│       │   └── components/
-│       │       └── explanation-card.js
+│       │   └── explanation-card.js   # Shared pedagogical explanation card renderer
 │       └── features/
 │           ├── exam/
-│           │   ├── exam.controller.js
-│           │   └── exam.view.js
+│           │   ├── exam-controller.js
+│           │   └── exam-view.js
 │           ├── study/
-│           │   ├── study.controller.js
-│           │   └── study.view.js
+│           │   ├── study-controller.js
+│           │   └── study-view.js
 │           ├── saved-exams/
-│           │   ├── saved-exams.controller.js
-│           │   └── saved-exams.view.js
+│           │   ├── saved-exams-controller.js
+│           │   └── saved-exams-view.js
 │           ├── stats/
-│           │   ├── stats.controller.js
-│           │   └── stats.view.js
+│           │   ├── stats-controller.js
+│           │   └── stats-view.js
 │           └── auth/
-│               ├── auth.controller.js
-│               └── auth.view.js
+│               ├── auth-controller.js
+│               └── auth-view.js
 ├── tests/
 │   ├── unit/                         # Pure domain & core unit tests (node:test)
 │   ├── integration/                  # Store + storage persistence & cloud merge tests
