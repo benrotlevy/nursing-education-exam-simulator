@@ -1,6 +1,6 @@
 {
   "name": "nursing-education-exam-simulator",
-  "version": "2.0.0-alpha.0",
+  "version": "2.0.0",
   "private": true,
   "description": "Clinical Preceptorship Nursing Exam Simulator (Ministry of Health Israel)",
   "type": "module",
@@ -8,9 +8,10 @@
     "node": ">=20.0.0"
   },
   "scripts": {
+    "start": "node tools/serve.js",
     "serve": "node tools/serve.js",
-    "lint": "eslint --no-error-on-unmatched-pattern app/ tools/ tests/ eslint.config.js playwright.config.js && prettier --no-error-on-unmatched-pattern --check \"app/**/*.{js,css,html}\" \"tools/**/*.js\" \"tests/**/*.js\" \"docs/standards/**/*.md\" \"docs/adr/**/*.md\" \"docs/STPR.md\"",
-    "format": "prettier --no-error-on-unmatched-pattern --write \"app/**/*.{js,css,html}\" \"tools/**/*.js\" \"tests/**/*.js\" \"docs/standards/**/*.md\" \"docs/adr/**/*.md\" \"docs/STPR.md\"",
+    "lint": "eslint --no-error-on-unmatched-pattern app/ tools/ tests/ eslint.config.js playwright.config.js && prettier --no-error-on-unmatched-pattern --check \"app/**/*.{js,css,html}\" \"tools/**/*.js\" \"tests/**/*.js\" \"docs/standards/**/*.md\" \"docs/adr/**/*.md\" \"docs/STPR.md\" \"README.md\" \"CONTRIBUTING.md\" \"CHANGELOG.md\"",
+    "format": "prettier --no-error-on-unmatched-pattern --write \"app/**/*.{js,css,html}\" \"tools/**/*.js\" \"tests/**/*.js\" \"docs/standards/**/*.md\" \"docs/adr/**/*.md\" \"docs/STPR.md\" \"README.md\" \"CONTRIBUTING.md\" \"CHANGELOG.md\"",
     "test:unit": "node --test tests/unit",
     "test:integration": "node --test tests/integration",
     "test:data": "node --test tests/data",
