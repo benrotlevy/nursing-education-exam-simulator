@@ -92,6 +92,10 @@ function createAppTestEnv() {
     sessionStorage: window.sessionStorage,
     navigator: window.navigator,
     preloadedQuestions: questions,
+    confirmAction: (opts) => {
+      dialogs.confirms.push(typeof opts === 'string' ? opts : opts?.message || '');
+      return true;
+    },
   });
 
   return {
