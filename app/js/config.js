@@ -30,3 +30,14 @@ export const LIMITS = Object.freeze({
 });
 
 export const OPTION_LETTERS = Object.freeze(['א', 'ב', 'ג', 'ד']);
+
+export const DEFAULT_AVATAR_URL = 'https://www.gravatar.com/avatar/?d=mp';
+
+export const FIREBASE_CONFIG = Object.freeze({
+  apiKey: 'AIzaSyAoy9RhCjtYn0xQ7tmmdqVdecsg8NWCtbM',
+  authDomain: 'nursing-exam-simulator.firebaseapp.com',
+  projectId: 'nursing-exam-simulator',
+  storageBucket: 'nursing-exam-simulator.firebasestorage.app',
+  messagingSenderId: '756220661476',
+  appId: '1:756220661476:web:2598724629ebb0dbea26f1',
+});
