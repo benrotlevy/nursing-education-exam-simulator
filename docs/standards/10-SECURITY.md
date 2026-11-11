@@ -18,10 +18,10 @@ Once all inline `<script>`, inline `<style>`, and inline `onclick="..."` handler
   content="
   default-src 'self';
   script-src 'self' https://www.gstatic.com https://apis.google.com;
-  style-src 'self' https://fonts.googleapis.com;
+  style-src 'self' 'unsafe-inline' https://fonts.googleapis.com;
   font-src 'self' https://fonts.gstatic.com;
-  img-src 'self' data: https://*.googleusercontent.com;
-  connect-src 'self' https://*.googleapis.com https://*.firebaseio.com https://*.firebaseapp.com;
+  img-src 'self' data: https://*.googleusercontent.com https://www.gravatar.com;
+  connect-src 'self' https://*.googleapis.com https://*.firebaseio.com https://*.firebaseapp.com https://www.gstatic.com;
   frame-src https://*.firebaseapp.com https://accounts.google.com;
   object-src 'none';
   base-uri 'self';

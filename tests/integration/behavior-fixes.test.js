@@ -223,4 +223,37 @@ describe('Step 11 Behavioral Fixes — Accessible <dialog>, Timestamped Sync & C
     assert.equal(okFallback, true);
     assert.equal(fallbackCopyTextToClipboard('טקסט בדיקה 3', win.document), true);
   });
+
+  it('switches to Study Mode filtered by the weakest category when Practice Weakest Category is clicked [STATS-03, A11Y-01]', () => {
+    const { document, app } = createFullAppEnv();
+
+    // Verify CSP meta tag in app/index.html
+    const cspMeta = document.querySelector('meta[http-equiv="Content-Security-Policy"]');
+    assert.ok(cspMeta, 'Expected Content-Security-Policy meta tag in app/index.html');
+    const cspContent = cspMeta.getAttribute('content') || '';
+    const scriptSrc = cspContent
+      .split(';')
+      .map((s) => s.trim())
+      .find((s) => s.startsWith('script-src'));
+    assert.ok(scriptSrc && !scriptSrc.includes("'unsafe-inline'"));
+
+    // Seed category stats so "משוב, הערכה ורפלקציה" is the weakest category (20% accuracy)
+    app.store.setState({
+      userStats: {
+        totalAnswered: 10,
+        totalCorrect: 6,
+        examsCompleted: 1,
+        lastResetAt: 0,
+        categoryStats: {
+          'תיאוריות למידה ולמידת מבוגרים': { total: 5, correct: 5 },
+          'משוב, הערכה ורפלקציה': { total: 5, correct: 1 },
+        },
+      },
+    });
+
+    app.statsController.practiceWeakestCategory();
+    assert.equal(app.store.getState().activeTab, 'study');
+    assert.equal(app.store.getState().currentStudy.selectedCategory, 'משוב, הערכה ורפלקציה');
+    assert.equal(document.getElementById('studyCategoryFilter').value, 'משוב, הערכה ורפלקציה');
+  });
 });

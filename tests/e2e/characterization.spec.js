@@ -5,6 +5,7 @@ test.describe('Characterization E2E Suite (Laptop, Tablet, Pixel 10 Pro XL, Gala
     page,
   }) => {
     await page.goto('/');
+    await expect(page.locator('#totalQuestionsHeader')).toContainText('1079');
     const viewport = page.viewportSize();
     const isSmartphone = viewport && viewport.width <= 640;
 
@@ -51,6 +52,7 @@ test.describe('Characterization E2E Suite (Laptop, Tablet, Pixel 10 Pro XL, Gala
     page,
   }) => {
     await page.goto('/');
+    await expect(page.locator('#totalQuestionsHeader')).toContainText('1079');
 
     // Start 10-question exam
     await page.locator('#screenExamSetup button.btn-primary').click();
@@ -91,6 +93,7 @@ test.describe('Characterization E2E Suite (Laptop, Tablet, Pixel 10 Pro XL, Gala
   }) => {
     await context.grantPermissions(['clipboard-read', 'clipboard-write']);
     await page.goto('/');
+    await expect(page.locator('#totalQuestionsHeader')).toContainText('1079');
 
     const viewport = page.viewportSize();
     const isSmartphone = viewport && viewport.width <= 640;
@@ -134,5 +137,53 @@ test.describe('Characterization E2E Suite (Laptop, Tablet, Pixel 10 Pro XL, Gala
     await page.locator('#appModalConfirmBtn').click();
     await expect(page.locator('#savedSlotsCount')).toHaveText('0 / 3');
     await expect(page.locator('#totalQuestionsHeader')).toContainText('1079');
+  });
+
+  test('verifies CSP meta tag, RTL/ARIA landmarks, Practice Weakest Category, and Stats Reset across viewports [STATS-03, STATS-04, A11Y-01]', async ({
+    page,
+  }) => {
+    await page.goto('/');
+    await expect(page.locator('#totalQuestionsHeader')).toContainText('1079');
+
+    // 1. Verify RTL document attributes and landmarks [A11Y-01]
+    await expect(page.locator('html')).toHaveAttribute('lang', 'he');
+    await expect(page.locator('html')).toHaveAttribute('dir', 'rtl');
+    await expect(page.locator('header')).toBeVisible();
+    await expect(page.locator('main')).toBeVisible();
+    await expect(page.locator('footer')).toBeVisible();
+
+    // 2. Verify Content-Security-Policy meta tag forbids unsafe-inline scripts
+    const cspContent = await page
+      .locator('meta[http-equiv="Content-Security-Policy"]')
+      .getAttribute('content');
+    expect(cspContent).toBeTruthy();
+    const scriptSrcDirective =
+      cspContent
+        ?.split(';')
+        .map((d) => d.trim())
+        .find((d) => d.startsWith('script-src')) || '';
+    expect(scriptSrcDirective).toContain("'self'");
+    expect(scriptSrcDirective).not.toContain("'unsafe-inline'");
+
+    // 3. Answer a question in Study Mode so a category has >= 1 answered, then test Practice Weakest Category [STATS-03]
+    const viewport = page.viewportSize();
+    const isSmartphone = viewport && viewport.width <= 640;
+    await page.locator(isSmartphone ? '#bNavStudy' : '#tabStudy').click();
+    await page.locator('#studyOptionsContainer .option-item').first().click();
+
+    await page.locator(isSmartphone ? '#bNavStats' : '#tabStats').click();
+    await expect(page.locator('#screenStats')).toBeVisible();
+    await expect(page.locator('#statTotalAnswered')).toHaveText('1');
+
+    await page.locator('[data-action="practice-weakest-category"]').click();
+    await expect(page.locator('#screenStudyMode')).toBeVisible();
+    await expect(page.locator('#studyCategoryFilter')).not.toHaveValue('ALL');
+
+    // 4. Navigate back to Stats and reset statistics via accessible <dialog> [STATS-04]
+    await page.locator(isSmartphone ? '#bNavStats' : '#tabStats').click();
+    await page.locator('[data-action="confirm-reset-stats"]').click();
+    await expect(page.locator('#appModalDialog')).toBeVisible();
+    await page.locator('#appModalConfirmBtn').click();
+    await expect(page.locator('#statTotalAnswered')).toHaveText('0');
   });
 });
