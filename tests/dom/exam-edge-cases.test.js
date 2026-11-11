@@ -1,4 +1,4 @@
-import { describe, it, beforeEach } from 'node:test';
+import { describe, it } from 'node:test';
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import path from 'node:path';
@@ -338,7 +338,7 @@ describe('Exam Flow Edge Cases & Lifecycle Verification (EXAM-11..13, PERF-01)',
       };
 
       // Step 2: Mount app with this saved session in sessionStorage (simulating reload)
-      const { win, document, app } = createTestDOM({
+      const { document, app } = createTestDOM({
         [STORAGE_KEYS.EXAM_SESSION]: initialPayload,
         [STORAGE_KEYS.ACTIVE_TAB]: 'exam',
       });
