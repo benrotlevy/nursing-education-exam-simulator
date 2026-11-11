@@ -1,0 +1,182 @@
+rules_version = '2';
+
+// ===============================================================
+// Assumed Data Model
+// ===============================================================
+//
+// This security rules file enforces the data structure for the
+// Clinical Preceptorship Nursing Exam Simulator (v2).
+//
+// Collection: users
+// Document ID: {userId} (Must match the authenticated user's UID: request.auth.uid)
+// Fields:
+//   - schemaVersion: int (optional, if present must equal 2) - Client state schema version
+//   - email: string (optional, max 320 chars) - User's Google Sign-In email address (PII)
+//   - displayName: string (optional, max 200 chars) - User's Google Sign-In display name (PII)
+//   - mistakes: list (required, max 2000 items) - List of question IDs currently in the mistakes bank
+//   - mistakeTimestamps: map (optional, max 2000 keys) - Per-question monotonic timestamps and tombstones for SYNC-02 conflict resolution
+//   - userStats: map (required, allowed keys: ['totalAnswered', 'totalCorrect', 'examsCompleted', 'categoryStats', 'lastResetAt']) - Cumulative performance metrics
+//       - totalAnswered: number (required, >= 0)
+//       - totalCorrect: number (required, >= 0)
+//       - examsCompleted: number (required, >= 0)
+//       - categoryStats: map (required, max 50 keys)
+//       - lastResetAt: number (optional, >= 0)
+//   - savedExams: list (required, max 3 items) - Reserved exam slots in the Quarantine Zone (SAVED-01..SAVED-05)
+//   - updatedAt: string | int | timestamp (required, if string max 64 chars, if int >= 0) - Last cloud sync timestamp
+//
+// ===============================================================
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // ===============================================================
+    // Helper Functions
+    // ===============================================================
+
+    // Check if the request is from an authenticated Firebase Auth user
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+
+    // Check if the authenticated user owns the document at /users/{userId}
+    function isOwner(userId) {
+      return isAuthenticated() && request.auth.uid == userId;
+    }
+
+    // Verify UID field (if present) matches the authenticated user on create
+    function uidUnchanged() {
+      return !('uid' in request.resource.data) ||
+        request.resource.data.uid == request.auth.uid;
+    }
+
+    // Ensure UID field (if present) is not modified on update
+    function uidNotModified() {
+      return !('uid' in request.resource.data) ||
+        request.resource.data.uid == resource.data.uid;
+    }
+
+    // Validate that all required top-level fields exist on the document
+    function hasRequiredFields(fields) {
+      return request.resource.data.keys().hasAll(fields);
+    }
+
+    // Validate that the document contains ONLY the whitelisted top-level fields
+    function hasOnlyAllowedFields(fields) {
+      return request.resource.data.keys().hasOnly(fields);
+    }
+
+    // Validate that a list field is a valid list and within maximum length bounds
+    function isValidList(listVal, maxSize) {
+      return listVal is list && listVal.size() <= maxSize;
+    }
+
+    // Validate an optional string field (if present, must be a string within [minLen, maxLen])
+    function isValidOptionalString(data, field, minLen, maxLen) {
+      return !(field in data) ||
+        (data[field] is string &&
+         data[field].size() >= minLen &&
+         data[field].size() <= maxLen);
+    }
+
+    // Validate optional schemaVersion (if present, must be integer 2)
+    function isValidSchemaVersion(data) {
+      return !('schemaVersion' in data) ||
+        (data.schemaVersion is int && data.schemaVersion == 2);
+    }
+
+    // Validate optional mistakeTimestamps map (SYNC-02 tombstone metadata)
+    function isValidMistakeTimestamps(data) {
+      return !('mistakeTimestamps' in data) ||
+        (data.mistakeTimestamps is map && data.mistakeTimestamps.size() <= 2000);
+    }
+
+    // Validate the nested userStats map structure, allowed keys, and non-negative counters
+    function isValidUserStats(stats) {
+      return stats is map &&
+        stats.keys().hasOnly([
+          'totalAnswered',
+          'totalCorrect',
+          'examsCompleted',
+          'categoryStats',
+          'lastResetAt'
+        ]) &&
+        stats.keys().hasAll([
+          'totalAnswered',
+          'totalCorrect',
+          'examsCompleted',
+          'categoryStats'
+        ]) &&
+        (stats.totalAnswered is int || stats.totalAnswered is float) &&
+        stats.totalAnswered >= 0 &&
+        stats.totalAnswered <= 10000000 &&
+        (stats.totalCorrect is int || stats.totalCorrect is float) &&
+        stats.totalCorrect >= 0 &&
+        stats.totalCorrect <= 10000000 &&
+        (stats.examsCompleted is int || stats.examsCompleted is float) &&
+        stats.examsCompleted >= 0 &&
+        stats.examsCompleted <= 1000000 &&
+        stats.categoryStats is map &&
+        stats.categoryStats.size() <= 50 &&
+        (!('lastResetAt' in stats) ||
+          ((stats.lastResetAt is int || stats.lastResetAt is float) &&
+           stats.lastResetAt >= 0));
+    }
+
+    // Validate updatedAt field (supports ISO-8601 string, epoch ms int, or Firestore timestamp)
+    function isValidUpdatedAt(val) {
+      return (val is string && val.size() >= 1 && val.size() <= 64) ||
+        (val is int && val >= 0) ||
+        (val is timestamp);
+    }
+
+    // ===============================================================
+    // Domain Validators (Applied on BOTH create and update)
+    // ===============================================================
+
+    function isValidUserDocument(data) {
+      return hasOnlyAllowedFields([
+          'schemaVersion',
+          'email',
+          'displayName',
+          'mistakes',
+          'mistakeTimestamps',
+          'userStats',
+          'savedExams',
+          'updatedAt'
+        ]) &&
+        hasRequiredFields([
+          'mistakes',
+          'userStats',
+          'savedExams',
+          'updatedAt'
+        ]) &&
+        isValidSchemaVersion(data) &&
+        isValidOptionalString(data, 'email', 0, 320) &&
+        isValidOptionalString(data, 'displayName', 0, 200) &&
+        isValidList(data.mistakes, 2000) &&
+        isValidMistakeTimestamps(data) &&
+        isValidUserStats(data.userStats) &&
+        isValidList(data.savedExams, 3) &&
+        isValidUpdatedAt(data.updatedAt);
+    }
+
+    // ===============================================================
+    // Collection Rules
+    // ===============================================================
+
+    // User Progress & Quarantine Zone Documents
+    // Strictly private to the authenticated document owner (protects PII such as email/displayName)
+    match /users/{userId} {
+      allow read: if isOwner(userId);
+      allow create: if isOwner(userId) && uidUnchanged() && isValidUserDocument(request.resource.data);
+      allow update: if isOwner(userId) && uidNotModified() && isValidUserDocument(request.resource.data);
+      // Users reset progress via in-place update (resetCloudData), never by deleting the document
+      allow delete: if false;
+    }
+
+    // Default Deny: Explicitly reject reads and writes to all other collections and subcollections
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+}

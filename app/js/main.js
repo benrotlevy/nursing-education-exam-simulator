@@ -19,6 +19,7 @@ import { populateStudyCategorySelector } from './features/study/study-view.js';
 import { createStudyController } from './features/study/study-controller.js';
 import { createSavedExamsController } from './features/saved-exams/saved-exams-controller.js';
 import { createStatsController } from './features/stats/stats-controller.js';
+import { createAuthController } from './features/auth/auth-controller.js';
 
 export function mountApplication({
   window = globalThis.window,
@@ -28,6 +29,8 @@ export function mountApplication({
   navigator = globalThis.navigator,
   fetchFn = globalThis.fetch,
   preloadedQuestions = null,
+  firebaseSdk = null,
+  autoInitCloudSync = false,
 } = {}) {
   const store = createStore(createInitialState());
   const storage = createStorageAdapter({ localStorage, sessionStorage });
@@ -120,7 +123,9 @@ export function mountApplication({
   }
 
   function notifyCloudSyncPush() {
-    if (window?.cloudSync && typeof window.cloudSync.schedulePush === 'function') {
+    if (controllers.auth) {
+      controllers.auth.schedulePush();
+    } else if (window?.cloudSync && typeof window.cloudSync.schedulePush === 'function') {
       window.cloudSync.schedulePush();
     }
   }
@@ -183,9 +188,25 @@ export function mountApplication({
     },
     onStatsReset: () => {
       updateMistakesUI();
-      if (window?.cloudSync && typeof window.cloudSync.resetCloudData === 'function') {
+      if (controllers.auth) {
+        controllers.auth.resetCloudData();
+      } else if (window?.cloudSync && typeof window.cloudSync.resetCloudData === 'function') {
         window.cloudSync.resetCloudData();
       }
+    },
+  });
+
+  const authController = createAuthController({
+    document,
+    store,
+    storage,
+    toast,
+    firebaseSdk,
+    onRemoteMerged: () => {
+      updateMistakesUI();
+      updateHeaderCounter();
+      statsController.renderStats();
+      savedExamsController.renderSavedExamsUI();
     },
   });
 
@@ -193,6 +214,7 @@ export function mountApplication({
   controllers.study = studyController;
   controllers.savedExams = savedExamsController;
   controllers.stats = statsController;
+  controllers.auth = authController;
 
   function bootstrapWithQuestions(questions = []) {
     const progress = storage.loadProgress();
@@ -293,14 +315,10 @@ export function mountApplication({
     'confirm-reset-stats': () => statsController.confirmResetStats(),
     'practice-weakest-category': () => statsController.practiceWeakestCategory(),
     'google-sign-in': () => {
-      if (typeof window?.triggerGoogleSignIn === 'function') {
-        window.triggerGoogleSignIn();
-      }
+      authController.signIn();
     },
     'google-sign-out': () => {
-      if (typeof window?.triggerGoogleSignOut === 'function') {
-        window.triggerGoogleSignOut();
-      }
+      authController.signOut();
     },
   });
 
@@ -310,6 +328,10 @@ export function mountApplication({
 
   // Expose programmatic API on window for tests and Cloud Sync integration
   if (window) {
+    window.cloudSync = authController.cloudSync;
+    window.triggerGoogleSignIn = () => authController.signIn();
+    window.triggerGoogleSignOut = () => authController.signOut();
+
     window.app = {
       store,
       storage,
@@ -320,6 +342,8 @@ export function mountApplication({
       studyController,
       savedExamsController,
       statsController,
+      authController,
+      cloudSync: authController.cloudSync,
       updateHeaderCounter,
       updateMistakesUI,
     };
@@ -376,6 +400,10 @@ export function mountApplication({
       });
   }
 
+  if (autoInitCloudSync || firebaseSdk) {
+    authController.init();
+  }
+
   return window?.app;
 }
 
@@ -386,8 +414,10 @@ if (
   !window.__DISABLE_AUTO_MOUNT__
 ) {
   if (document.readyState === 'loading') {
-    window.addEventListener('DOMContentLoaded', () => mountApplication());
+    window.addEventListener('DOMContentLoaded', () =>
+      mountApplication({ autoInitCloudSync: true })
+    );
   } else {
-    mountApplication();
+    mountApplication({ autoInitCloudSync: true });
   }
 }

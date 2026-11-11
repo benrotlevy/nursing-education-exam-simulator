@@ -91,6 +91,20 @@
   border: 1px solid var(--border);
 }
 
+.cloud-sync-active-title {
+  color: #16a34a;
+  font-weight: 700;
+}
+
+.cloud-sync-active-sub {
+  color: #15803d;
+}
+
+.sync-indicator-flashing {
+  color: #15803d;
+  font-weight: 700;
+}
+
 .stats-footer-actions {
   padding-top: 16px;
   border-top: 1px solid var(--border);
