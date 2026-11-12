@@ -2,6 +2,7 @@
 
 - **Requirement**: `STORE-01` (LocalStorage Quota Limit Fallback)
 - **Severity**: High (Data Loss & UX Degradation on Storage-Constrained / Private Browsing Devices)
+- **Status**: Resolved in v3.0
 - **Component**: `app/js/core/storage.js`
 - **Failing Suite**: `tests/integration/storage-quota.test.js`
 

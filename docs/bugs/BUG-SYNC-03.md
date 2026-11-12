@@ -3,7 +3,7 @@
 - **Defect ID**: `BUG-SYNC-03`
 - **Requirement**: `SYNC-06` (Auth Sign-Out Listener Teardown & Timer Cleanup)
 - **Severity**: Medium / Memory Leak & Lifecycle
-- **Status**: Open / Discovered in v3.0 Test Expansion
+- **Status**: Resolved in v3.0
 - **Detected By**: Worker 1 (`test/v3-cloud-sync`)
 - **Failing Suite**: `tests/integration/cloud-sync-resilience.test.js` -> `cancels pending push debounce timer via clearTimeout on auth signOut [SYNC-06]`
 

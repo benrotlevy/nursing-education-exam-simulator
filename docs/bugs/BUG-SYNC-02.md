@@ -3,7 +3,7 @@
 - **Defect ID**: `BUG-SYNC-02`
 - **Requirement**: `SYNC-04` (Offline Network Disconnect & Push Error Resilience)
 - **Severity**: Low / API Conformance
-- **Status**: Open / Discovered in v3.0 Test Expansion
+- **Status**: Resolved in v3.0
 - **Detected By**: Worker 1 (`test/v3-cloud-sync`)
 - **Failing Suite**: `tests/integration/cloud-sync-resilience.test.js` -> `exposes cloudSync.syncPush method per SYNC-04 specification [SYNC-04]`
 
