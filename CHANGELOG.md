@@ -6,6 +6,39 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 
 ---
 
+## [2.1.0] - 2026-11-12
+
+### Added
+
+- **Version 3.0 Automated Test Suite Expansion (16 Target Requirements)**:
+  - Added 11 new automated test suites covering edge cases, network resilience, accessibility, and responsive stress:
+    - `tests/integration/cloud-sync-resilience.test.js` (`SYNC-04`, `SYNC-05`, `SYNC-06`)
+    - `tests/integration/firestore-rules.test.js` (`SEC-04`)
+    - `tests/integration/storage-quota.test.js` (`STORE-01`)
+    - `tests/integration/saved-exams-defense.test.js` (`SAVED-06`)
+    - `tests/dom/exam-edge-cases.test.js` (`EXAM-11`, `EXAM-12`, `EXAM-13`, `PERF-01`)
+    - `tests/dom/study-filters.test.js` (`STUDY-07`)
+    - `tests/dom/aria-live.test.js` (`A11Y-03`)
+    - `tests/unit/exam-retry.test.js` (`EXAM-12`)
+    - `tests/unit/study-navigation.test.js` (`STUDY-06`)
+    - `tests/e2e/accessibility.spec.js` (`A11Y-02`)
+    - `tests/e2e/responsive-stress.spec.js` (`UX-01`)
+  - Automated test coverage expanded to 124 Node.js tests across 47 suites, and 48 Playwright E2E matrix specs across 4 device profiles.
+
+### Fixed
+
+- **Cloud Sync & Resilience**: Resolved offline network status degradation (`BUG-SYNC-01`), exposed debounced `syncPush` API (`BUG-SYNC-02`), and resolved Firestore listener & timer leaks on auth sign-out (`BUG-SYNC-03`).
+- **Storage Graceful Degradation**: Added in-memory fallback and quota alert when localStorage throws `QuotaExceededError` (`BUG-STORE-01`).
+- **Exam Edge Cases & Performance**: Added active exam abandon button ID (`BUG-EXAM-01`), aligned 100% score retry toast text (`BUG-EXAM-02`), and optimized 100-question batch review card rendering to `< 170ms` (`BUG-PERF-01`).
+- **Accessibility & Mobile UX**: Added accessible radio inputs and keyboard event delegation (`BUG-A11Y-01`), added ARIA live status regions for toast alerts and study explanations (`BUG-A11Y-02`), and enlarged mobile touch targets to 46×46px (`BUG-UX-01`).
+
+### Changed
+
+- **Dependencies Upgrade**:
+  - Updated all devDependencies to their latest versions: `@eslint/js` (`^10.0.1`), `@playwright/test` (`^1.65.0`), `eslint` (`^10.14.0`), `globals` (`^17.14.0`), `happy-dom` (`^21.0.4`), and `prettier` (`^3.10.0`).
+
+---
+
 ## [2.0.0] - 2026-11-11
 
 ### Added

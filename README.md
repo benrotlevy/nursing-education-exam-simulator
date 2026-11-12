@@ -1,23 +1,23 @@
-# מערכת תרגול למבחן על-בסיסי בהדרכה קלינית (Clinical Preceptorship Exam Simulator — v2.0.0)
+# מערכת תרגול למבחן על-בסיסי בהדרכה קלינית (Clinical Preceptorship Exam Simulator — v2.1.0)
 
 מערכת ווב מודולרית לתרגול ולהכנה למבחן הגמר/על-בסיסי בקורס הדרכה קלינית בסיעוד (מנהל הסיעוד, משרד הבריאות).
 המערכת כתובה ב-**Pure Vanilla HTML5, CSS3 (`@layer`), ו-ES2022+ Modules** ללא תלות ב-Bundler או Framework חיצוני, פועלת בדפדפן על גבי GitHub Pages וכוללת סנכרון ענן מאובטח בזמן אמת דרך **Google Cloud / Firebase v11**.
 
 ---
 
-## ⚡ סטטוס גרסה `v2.0.0` (Full-Stack Engineering Architecture)
+## ⚡ סטטוס גרסה `v2.1.0` (Full-Stack Engineering Architecture)
 
 - **מאגר שאלות קנוני ומאומת (`1,079` שאלות):**
   - **894 שאלות מאומתות רשמית (`verified: true`)** מתוך מפתחות תשובות רשמיים, סימוני מרקר וערעורים (כולל שחזור ממשלתי 2023 — 100 שאלות, שחזור ממשלתי 2021 — 13 שאלות מלאות, שחזורי 2024, מבחן מסכם הדסה 2023 ושאלונים ממשלתיים).
   - **185 שאלות משוחזרות (`verified: false`)** בעלות פתרון פדגוגי מנומק מבוסס סילבוס משרד הבריאות (כולל 50 שאלות מבחן בית מאוקטובר 2024 תחת תגית שקופה `פתרון משוער`).
   - **261 שאלות עם תשובה בודדת** המתועדות בנפרד ב-[`docs/single_answer_questions.md`](./docs/single_answer_questions.md) לפיתוח מסיחים עתידי.
-- **ארכיטקטורת `v2.0.0` מודולרית ומופרדת שכבות:**
+- **ארכיטקטורת `v2.1.0` מודולרית ומופרדת שכבות:**
   - קובץ ה-HTML המונוליתי מ-`v1.0.0` (`~4,200` שורות) פוצל ל-`app/index.html` סמנטי ונקי (`478` שורות ללא אף `<script>` או `<style>` מוטמעים), **16 קובצי CSS** תחת `@layer tokens, base, layout, components, features, utilities`, ו-**27 מודולי ES2022+** בשכבות `core/`, `domain/`, `services/`, `ui/`, ו-`features/`.
   - קובץ הנתונים בזמן ריצה (`app/data/questions.json`) עבר דה-דופליקציה אוטומטית באמצעות `tools/build-questions.js` וצומצם מ-**4.31 MB** ל-**2.29 MB** (חיסכון של **46.7%** ברוחב הפס ללא אובדן מידע פדגוגי).
 - **אבטחה, נגישות ובדיקות אוטומטיות מקצה לקצה:**
   - מדיניות אבטחת תוכן קפדנית (`Content-Security-Policy`) החוסמת הרצת סקריפטים מוטמעים (`script-src` ללא `'unsafe-inline'`), סינון XSS אוטומטי (`escapeHTML` / `html`), וחוקי אבטחה ב-[`firestore.rules`](./firestore.rules).
   - החלפת חלונות `alert()` / `confirm()` חוסמים ברכיב `<dialog>` נגיש (`app/js/ui/dialog.js`) ובהתראות Toast (`app/js/ui/toast.js`).
-  - **63 בדיקות Unit, Data, Integration ו-DOM** (`node:test` + `happy-dom`) + **20 בדיקות Playwright E2E** על פני 4 פרופילי מסך (`Laptop 1440×900`, `Tablet 768×1024`, `Pixel 10 Pro XL 448×998`, `Galaxy S25 360×780`).
+  - **124 בדיקות Unit, Data, Integration ו-DOM** (`node:test` + `happy-dom`) + **48 בדיקות Playwright E2E** על פני 4 פרופילי מסך (`Laptop 1440×900`, `Tablet 768×1024`, `Pixel 10 Pro XL 448×998`, `Galaxy S25 360×780`) ב-100% הצלחה (0 כישלונות, 0 דילוגים).
 
 ---
 
