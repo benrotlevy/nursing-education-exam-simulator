@@ -51,6 +51,7 @@ export function createCloudSyncService({
   debounceMs = 600,
   setTimeoutFn = globalThis.setTimeout,
   clearTimeoutFn = globalThis.clearTimeout,
+  window = globalThis.window,
 } = {}) {
   let sdk = firebaseSdk;
   let auth = null;
@@ -60,6 +61,15 @@ export function createCloudSyncService({
   let pushDebounceTimer = null;
   let isReceivingRemoteUpdate = false;
   let initialized = false;
+
+  // Automatically flush pending offline mutations when network connectivity is restored
+  if (window && typeof window.addEventListener === 'function') {
+    window.addEventListener('online', () => {
+      if (auth && auth.currentUser) {
+        schedulePush();
+      }
+    });
+  }
 
   if (storage && toast) {
     if (typeof storage.bindToast === 'function') {

@@ -277,6 +277,51 @@ describe('app/js/services/cloud-sync.js — Cloud Sync Resilience, Debouncing & 
       );
     });
 
+    it('flushes pending changes automatically when window "online" event fires [SYNC-04]', async () => {
+      const localStorage = createMemoryStorage();
+      const sessionStorage = createMemoryStorage();
+      const store = createStore(createInitialState());
+      const storage = createStorageAdapter({ localStorage, sessionStorage });
+      const fakeSdk = createFakeFirebaseSdk();
+      const listeners = new Map();
+      const fakeWindow = {
+        addEventListener: (event, handler) => {
+          listeners.set(event, handler);
+        },
+      };
+
+      const cloudSync = createCloudSyncService({
+        firebaseSdk: fakeSdk,
+        store,
+        storage,
+        window: fakeWindow,
+        debounceMs: 5,
+      });
+
+      await cloudSync.init();
+      await cloudSync.signIn();
+
+      // Clear calls from initial sign in
+      const callsBefore = fakeSdk.getSetDocCalls().length;
+
+      // Mutate local state
+      store.setState({
+        mistakes: new Set(['q_offline_1']),
+        mistakeTimestamps: { q_offline_1: { updatedAt: Date.now(), removed: false } },
+      });
+
+      // Trigger 'online' event handler
+      const onlineHandler = listeners.get('online');
+      assert.ok(onlineHandler, 'Expected "online" event listener to be registered');
+      onlineHandler();
+
+      // Wait for debounced push
+      await new Promise((r) => setTimeout(r, 20));
+
+      const callsAfter = fakeSdk.getSetDocCalls().length;
+      assert.ok(callsAfter > callsBefore, 'Expected cloud push to occur after coming online');
+    });
+
     it('exposes cloudSync.syncPush method per SYNC-04 specification [SYNC-04]', async () => {
       const localStorage = createMemoryStorage();
       const sessionStorage = createMemoryStorage();

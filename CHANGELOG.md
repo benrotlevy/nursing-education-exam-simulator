@@ -6,6 +6,16 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 
 ---
 
+## [2.1.3] - 2026-11-12
+
+### Added
+
+- **Automatic Online Reconnection Sync Trigger (`SYNC-04`)**:
+  - Registered native `window.addEventListener('online', ...)` in `app/js/services/cloud-sync.js` to immediately schedule a cloud push whenever network connectivity is restored, ensuring offline progress syncs to Firestore without waiting for user interaction or page reload.
+  - Added unit test in `tests/integration/cloud-sync-resilience.test.js` validating automatic flush on `'online'` event.
+
+---
+
 ## [2.1.2] - 2026-11-12
 
 ### Added
