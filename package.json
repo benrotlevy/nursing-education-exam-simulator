@@ -1,6 +1,6 @@
 {
   "name": "nursing-education-exam-simulator",
-  "version": "2.1.1",
+  "version": "2.1.2",
   "private": true,
   "description": "Clinical Preceptorship Nursing Exam Simulator (Ministry of Health Israel)",
   "type": "module",

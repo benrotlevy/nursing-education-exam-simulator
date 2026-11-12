@@ -423,11 +423,12 @@ if (
   typeof document !== 'undefined' &&
   !window.__DISABLE_AUTO_MOUNT__
 ) {
+  const firebaseSdk = window.__E2E_FIREBASE_SDK__ || null;
   if (document.readyState === 'loading') {
     window.addEventListener('DOMContentLoaded', () =>
-      mountApplication({ autoInitCloudSync: true })
+      mountApplication({ autoInitCloudSync: true, firebaseSdk })
     );
   } else {
-    mountApplication({ autoInitCloudSync: true });
+    mountApplication({ autoInitCloudSync: true, firebaseSdk });
   }
 }

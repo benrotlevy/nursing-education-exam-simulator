@@ -22,6 +22,9 @@ async function loadFirebaseFromCdn() {
     initializeApp: appMod.initializeApp,
     getAuth: authMod.getAuth,
     signInWithPopup: authMod.signInWithPopup,
+    signInWithRedirect: authMod.signInWithRedirect,
+    getRedirectResult: authMod.getRedirectResult,
+    browserPopupRedirectResolver: authMod.browserPopupRedirectResolver,
     signOut: authMod.signOut,
     GoogleAuthProvider: authMod.GoogleAuthProvider,
     onAuthStateChanged: authMod.onAuthStateChanged,
@@ -314,6 +317,18 @@ export function createCloudSyncService({
           handleAuthUserChange(user);
         });
       }
+
+      if (auth && typeof sdk.getRedirectResult === 'function') {
+        try {
+          const redirectRes = await sdk.getRedirectResult(auth);
+          if (redirectRes?.user) {
+            toast?.showToast('התחברת בהצלחה! מסנכרן עם הענן ☁️');
+          }
+        } catch (redirectErr) {
+          console.warn('Redirect sign-in result notice:', redirectErr);
+        }
+      }
+
       return true;
     } catch (err) {
       console.warn('Firebase initialization failed:', err);
@@ -339,12 +354,20 @@ export function createCloudSyncService({
     } catch (err) {
       console.error('Firebase Sign-in error:', err);
       if (err?.code === 'auth/popup-blocked') {
+        if (typeof sdk.signInWithRedirect === 'function') {
+          try {
+            await sdk.signInWithRedirect(auth, provider);
+            return true;
+          } catch (redirectErr) {
+            console.error('Firebase Redirect Sign-in fallback failed:', redirectErr);
+          }
+        }
         reportError(
           'הדפדפן חסם את חלון ההתחברות. אנא אשר פתיחת חלונות קופצים (Popups) בדפדפן עבור אתר זה ונסה שוב.'
         );
       } else if (err?.code === 'auth/unauthorized-domain') {
         reportError(
-          'דומיין לא מאושר ב-Firebase! יש להוסיף את הדומיין ב-Firebase Console תחת Authentication -> Settings -> Authorized Domains.'
+          'דומיין לא מאושר ב-Firebase! יש לוודא שהדומיין מופיע ב-Firebase Console תחת Authorized Domains וברשימת ה-HTTP referrers של מפתח ה-API ב-Google Cloud Console.'
         );
       } else if (err?.code !== 'auth/popup-closed-by-user') {
         reportError('שגיאה בהתחברות: ' + (err?.message || err?.code || 'Unknown error'));

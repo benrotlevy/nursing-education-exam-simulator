@@ -6,6 +6,19 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 
 ---
 
+## [2.1.2] - 2026-11-12
+
+### Added
+
+- **Interactive Auth Lifecycle Playwright E2E Suite (`tests/e2e/auth-flow.spec.js`)**:
+  - Full automated end-to-end verification of Google Sign-in and Sign-out lifecycle across all 4 target devices: Laptop, Tablet, Pixel 10 Pro XL, and Galaxy S25.
+  - Verifies `#btnGoogleSignIn` hiding, `#userPill` appearance with authenticated name and avatar, toast notifications, Statistics dashboard active badge sync, and clean sign-out reversion.
+- **Mobile Redirect Fallback in Cloud Sync Service**:
+  - Added modular support for `signInWithRedirect` and `getRedirectResult` in `app/js/services/cloud-sync.js` to automatically fall back when mobile browsers block popups (`auth/popup-blocked`).
+  - Added unit test in `tests/integration/cloud-sync.test.js` validating redirect fallback.
+
+---
+
 ## [2.1.1] - 2026-11-12
 
 ### Fixed

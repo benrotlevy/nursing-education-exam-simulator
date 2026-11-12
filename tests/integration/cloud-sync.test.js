@@ -207,4 +207,34 @@ describe('app/js/services/cloud-sync.js — Firebase Auth & Cloud Sync Service (
     assert.deepEqual(resetWrite.data.mistakes, []);
     assert.equal(resetWrite.data.schemaVersion, 2);
   });
+
+  it('falls back to signInWithRedirect when signInWithPopup throws auth/popup-blocked', async () => {
+    const localStorage = createMemoryStorage();
+    const sessionStorage = createMemoryStorage();
+    const store = createStore(createInitialState());
+    const storage = createStorageAdapter({ localStorage, sessionStorage });
+
+    let redirectCalled = false;
+    const fakeSdk = createFakeFirebaseSdk(null);
+    fakeSdk.signInWithPopup = async () => {
+      const err = new Error('Popup blocked');
+      err.code = 'auth/popup-blocked';
+      throw err;
+    };
+    fakeSdk.signInWithRedirect = async () => {
+      redirectCalled = true;
+    };
+
+    const cloudSync = createCloudSyncService({
+      firebaseSdk: fakeSdk,
+      store,
+      storage,
+      debounceMs: 5,
+    });
+
+    await cloudSync.init();
+    const signedIn = await cloudSync.signIn();
+    assert.equal(signedIn, true);
+    assert.equal(redirectCalled, true);
+  });
 });
