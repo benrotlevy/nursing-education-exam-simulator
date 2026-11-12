@@ -3,7 +3,7 @@
 - **Defect ID**: `BUG-EXAM-01`
 - **Requirement ID**: `EXAM-11` (Active Exam Abandonment Lifecycle & Storage Purge)
 - **Severity**: Medium
-- **Status**: Open / Discovered in Test Expansion v3.0
+- **Status**: Resolved in v3.0
 - **Reported By**: Worker 2 (Exam Flow Test Worker)
 - **Date**: 2026-11-12
 - **Affected File**: `app/index.html` (Line 143)

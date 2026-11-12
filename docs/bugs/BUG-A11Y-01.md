@@ -2,7 +2,7 @@
 
 **Requirement**: `A11Y-02` (Full Keyboard-Only Navigation Workflow)  
 **Severity**: High (Accessibility / WCAG 2.1 Level A & AA Non-Conformance)  
-**Status**: Open  
+**Status**: Resolved in v3.0  
 **Affected Files**:
 
 - `app/styles/components/forms.css` (lines 43–45)

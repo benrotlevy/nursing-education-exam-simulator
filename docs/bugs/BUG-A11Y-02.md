@@ -2,7 +2,7 @@
 
 **Requirement**: `A11Y-03` (ARIA Live Region & Screen Reader Politeness)  
 **Severity**: Medium-High (Screen Reader Accessibility / WCAG 2.1 AA Non-Conformance)  
-**Status**: Open  
+**Status**: Resolved in v3.0  
 **Affected Files**:
 
 - `app/index.html` (lines 362–369, line 473)
