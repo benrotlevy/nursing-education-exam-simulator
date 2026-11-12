@@ -3,7 +3,7 @@
 - **Defect ID**: `BUG-PERF-01`
 - **Requirement ID**: `PERF-01` (100-Question Exam Results Batch Card Rendering Benchmark)
 - **Severity**: Medium / Performance Bottleneck
-- **Status**: Open / Discovered in Test Expansion v3.0
+- **Status**: Resolved in v3.0
 - **Reported By**: Worker 2 (Exam Flow Test Worker)
 - **Date**: 2026-11-12
 - **Affected File**: `app/js/features/exam/exam-view.js` (`renderExamReviewList()`, lines 216–270)
