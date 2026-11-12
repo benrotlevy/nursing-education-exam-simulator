@@ -6,6 +6,17 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 
 ---
 
+## [2.1.4] - 2026-11-12
+
+### Fixed
+
+- **Immediate Cloud Push for Offline Progress on Re-Authentication (`SYNC-04`)**:
+  - Removed the `isReceivingRemoteUpdate` lock in `app/js/services/cloud-sync.js` that was erroneously aborting `schedulePush()` calls executed immediately after `applyRemotePayload()` on user sign-in.
+  - Guarantees that any mistakes or exam progress recorded while signed out or offline are merged with existing cloud data and promptly pushed to Firestore so other connected browsers update in real-time.
+  - Added automated integration test in `tests/integration/cloud-sync-resilience.test.js` validating the full offline-to-sign-in merge and push lifecycle.
+
+---
+
 ## [2.1.3] - 2026-11-12
 
 ### Added

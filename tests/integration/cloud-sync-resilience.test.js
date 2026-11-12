@@ -576,5 +576,69 @@ describe('app/js/services/cloud-sync.js — Cloud Sync Resilience, Debouncing & 
         'No orphaned debounce timers should remain active after signOut'
       );
     });
+
+    it('pushes merged offline progress to Firestore after sign-in when cloud doc already exists [SYNC-04]', async () => {
+      const localStorage = createMemoryStorage();
+      const sessionStorage = createMemoryStorage();
+      const store = createStore(createInitialState());
+      const storage = createStorageAdapter({ localStorage, sessionStorage });
+
+      // Cloud already has 5 mistakes
+      const initialCloudDoc = {
+        schemaVersion: 2,
+        email: 'nurse-offline@hospital.org',
+        displayName: 'אחות',
+        mistakes: ['q1', 'q2', 'q3', 'q4', 'q5'],
+        mistakeTimestamps: {
+          q1: { updatedAt: 1000, removed: false },
+          q2: { updatedAt: 1000, removed: false },
+          q3: { updatedAt: 1000, removed: false },
+          q4: { updatedAt: 1000, removed: false },
+          q5: { updatedAt: 1000, removed: false },
+        },
+        userStats: {
+          totalAnswered: 5,
+          totalCorrect: 0,
+          examsCompleted: 0,
+          lastResetAt: 0,
+          categoryStats: {},
+        },
+        savedExams: [],
+        updatedAt: new Date(1000).toISOString(),
+      };
+
+      const fakeSdk = createFakeFirebaseSdk({ initialDocData: initialCloudDoc });
+      const cloudSync = createCloudSyncService({
+        firebaseSdk: fakeSdk,
+        store,
+        storage,
+        debounceMs: 5,
+      });
+
+      // User has 1 offline mistake before sign-in (total 6 when merged)
+      store.setState({
+        mistakes: new Set(['q6_offline']),
+        mistakeTimestamps: { q6_offline: { updatedAt: 2000, removed: false } },
+      });
+
+      await cloudSync.init();
+      await cloudSync.signIn();
+
+      // Wait for debounced push triggered on sign-in
+      await new Promise((r) => setTimeout(r, 30));
+
+      const setDocCalls = fakeSdk.getSetDocCalls();
+      assert.ok(setDocCalls.length > 0, 'Expected cloud push to occur after sign-in');
+      const lastCall = setDocCalls[setDocCalls.length - 1];
+      assert.ok(
+        lastCall.data.mistakes.includes('q6_offline'),
+        'Expected merged offline mistake "q6_offline" to be pushed to Firestore'
+      );
+      assert.equal(
+        lastCall.data.mistakes.length,
+        6,
+        'Expected all 6 mistakes to be pushed to Firestore'
+      );
+    });
   });
 });

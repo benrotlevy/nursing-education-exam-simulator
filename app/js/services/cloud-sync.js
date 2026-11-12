@@ -59,7 +59,6 @@ export function createCloudSyncService({
   let provider = null;
   let unsubscribeSnapshot = null;
   let pushDebounceTimer = null;
-  let isReceivingRemoteUpdate = false;
   let initialized = false;
 
   // Automatically flush pending offline mutations when network connectivity is restored
@@ -100,48 +99,41 @@ export function createCloudSyncService({
 
   function applyRemotePayload(remote) {
     if (!remote || !store) return;
-    isReceivingRemoteUpdate = true;
-    try {
-      const state = store.getState();
-      const merged = mergeCloudAndLocalProgress(
-        {
-          mistakes: state.mistakes,
-          mistakeTimestamps: state.mistakeTimestamps,
-          userStats: state.userStats,
-          savedExams: state.savedExams,
-        },
-        remote
-      );
+    const state = store.getState();
+    const merged = mergeCloudAndLocalProgress(
+      {
+        mistakes: state.mistakes,
+        mistakeTimestamps: state.mistakeTimestamps,
+        userStats: state.userStats,
+        savedExams: state.savedExams,
+      },
+      remote
+    );
 
-      store.setState(
-        {
-          mistakes: merged.mistakes,
-          mistakeTimestamps: merged.mistakeTimestamps,
-          userStats: merged.userStats,
-          savedExams: merged.savedExams,
-        },
-        'cloud-sync/merge-remote'
-      );
+    store.setState(
+      {
+        mistakes: merged.mistakes,
+        mistakeTimestamps: merged.mistakeTimestamps,
+        userStats: merged.userStats,
+        savedExams: merged.savedExams,
+      },
+      'cloud-sync/merge-remote'
+    );
 
-      if (storage) {
-        storage.saveProgress({
-          mistakes: merged.mistakes,
-          mistakeTimestamps: merged.mistakeTimestamps,
-          savedExams: merged.savedExams,
-          userStats: merged.userStats,
-        });
-      }
+    if (storage) {
+      storage.saveProgress({
+        mistakes: merged.mistakes,
+        mistakeTimestamps: merged.mistakeTimestamps,
+        savedExams: merged.savedExams,
+        userStats: merged.userStats,
+      });
+    }
 
-      if (typeof onRemoteMerged === 'function') {
-        onRemoteMerged(merged);
-      }
-      if (typeof onSyncFlash === 'function') {
-        onSyncFlash();
-      }
-    } finally {
-      setTimeoutFn(() => {
-        isReceivingRemoteUpdate = false;
-      }, 300);
+    if (typeof onRemoteMerged === 'function') {
+      onRemoteMerged(merged);
+    }
+    if (typeof onSyncFlash === 'function') {
+      onSyncFlash();
     }
   }
 
@@ -208,7 +200,7 @@ export function createCloudSyncService({
   }
 
   function schedulePush() {
-    if (!sdk || !auth || !auth.currentUser || isReceivingRemoteUpdate) return;
+    if (!sdk || !auth || !auth.currentUser) return;
     clearTimeoutFn(pushDebounceTimer);
     pushDebounceTimer = setTimeoutFn(() => {
       pushNow();
