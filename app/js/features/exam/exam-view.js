@@ -226,7 +226,6 @@ export function renderExamResultsView({
 export function renderExamReviewList({ document = globalThis.document, exam } = {}) {
   const list = document?.getElementById('examReviewList');
   if (!list || !exam || !Array.isArray(exam.questions)) return;
-  list.innerHTML = '';
 
   const cardsHtml = exam.questions
     .map((q, idx) => {
@@ -278,11 +277,5 @@ export function renderExamReviewList({ document = globalThis.document, exam } = 
     })
     .join('');
 
-  const fragment = document.createDocumentFragment();
-  const wrapper = document.createElement('div');
-  wrapper.innerHTML = cardsHtml;
-  while (wrapper.firstChild) {
-    fragment.appendChild(wrapper.firstChild);
-  }
-  list.appendChild(fragment);
+  list.innerHTML = cardsHtml;
 }

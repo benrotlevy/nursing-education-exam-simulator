@@ -1,4 +1,15 @@
 /* Floating Toast Notification */
+.app-toast-container {
+  position: fixed;
+  bottom: 24px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: var(--z-toast);
+  pointer-events: none;
+  display: flex;
+  justify-content: center;
+}
+
 .app-toast {
   position: fixed;
   bottom: 24px;
@@ -25,6 +36,7 @@
 }
 
 @media (max-width: 640px) {
+  .app-toast-container,
   .app-toast {
     bottom: 76px;
   }
