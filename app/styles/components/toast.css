@@ -1,33 +1,41 @@
 /* Floating Toast Notification */
 .app-toast-container {
   position: fixed;
-  bottom: 24px;
-  left: 50%;
-  transform: translateX(-50%);
+  bottom: 28px;
+  left: 0;
+  right: 0;
   z-index: var(--z-toast);
   pointer-events: none;
   display: flex;
   justify-content: center;
+  align-items: center;
+  padding: 0 16px;
+  box-sizing: border-box;
 }
 
 .app-toast {
   position: fixed;
-  bottom: 24px;
+  bottom: 28px;
   left: 50%;
-  transform: translateX(-50%) translateY(30px);
+  transform: translateX(-50%) translateY(20px);
   background: #0f172a;
   color: #ffffff;
   padding: 12px 24px;
   border-radius: 9999px;
   font-size: 0.92rem;
   font-weight: 700;
-  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.25);
+  line-height: 1.45;
+  text-align: center;
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.28);
   z-index: var(--z-toast);
   opacity: 0;
   transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
   pointer-events: none;
-  white-space: nowrap;
-  border: 1px solid rgba(255, 255, 255, 0.1);
+  white-space: normal;
+  word-break: break-word;
+  max-width: min(560px, calc(100vw - 32px));
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  box-sizing: border-box;
 }
 
 .app-toast.visible {
@@ -35,9 +43,39 @@
   transform: translateX(-50%) translateY(0);
 }
 
+/* When hosted inside .app-toast-container, container manages viewport anchoring */
+.app-toast-container .app-toast {
+  position: relative;
+  bottom: auto;
+  left: auto;
+  transform: translateY(20px);
+  max-width: min(560px, 100%);
+}
+
+.app-toast-container .app-toast.visible {
+  transform: translateY(0);
+}
+
 @media (max-width: 640px) {
   .app-toast-container,
   .app-toast {
-    bottom: 76px;
+    bottom: 84px;
+  }
+
+  .app-toast-container {
+    padding: 0 14px;
+  }
+
+  .app-toast {
+    font-size: 0.88rem;
+    padding: 11px 18px;
+    border-radius: 18px;
+    box-shadow: 0 8px 20px rgba(0, 0, 0, 0.3);
+    max-width: calc(100vw - 28px);
+  }
+
+  .app-toast-container .app-toast {
+    bottom: auto;
+    max-width: 100%;
   }
 }

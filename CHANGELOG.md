@@ -31,6 +31,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 - **Storage Graceful Degradation**: Added in-memory fallback and quota alert when localStorage throws `QuotaExceededError` (`BUG-STORE-01`).
 - **Exam Edge Cases & Performance**: Added active exam abandon button ID (`BUG-EXAM-01`), aligned 100% score retry toast text (`BUG-EXAM-02`), and optimized 100-question batch review card rendering to `< 170ms` (`BUG-PERF-01`).
 - **Accessibility & Mobile UX**: Added accessible radio inputs and keyboard event delegation (`BUG-A11Y-01`), added ARIA live status regions for toast alerts and study explanations (`BUG-A11Y-02`), and enlarged mobile touch targets to 46×46px (`BUG-UX-01`).
+- **Toast Notification Mobile Responsiveness**: Fixed long toast messages (e.g., saving full exams with 70+ character titles) cutting off past screen edges on mobile viewports like Pixel 10 Pro XL. Enabled responsive text wrapping (`white-space: normal`, `word-break: break-word`), viewport container bounds, 18px rounded card styling, and elevated mobile bottom placement (`bottom: 84px`) to guarantee zero collision with the mobile bottom navigation bar; added `tests/e2e/saved-exam-toast.spec.js` running across all 4 supported device viewports.
 
 ### Changed
 
