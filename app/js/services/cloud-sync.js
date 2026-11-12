@@ -106,6 +106,7 @@ export function createCloudSyncService({
         mistakeTimestamps: state.mistakeTimestamps,
         userStats: state.userStats,
         savedExams: state.savedExams,
+        releasedSavedExams: state.releasedSavedExams,
       },
       remote
     );
@@ -116,6 +117,7 @@ export function createCloudSyncService({
         mistakeTimestamps: merged.mistakeTimestamps,
         userStats: merged.userStats,
         savedExams: merged.savedExams,
+        releasedSavedExams: merged.releasedSavedExams,
       },
       'cloud-sync/merge-remote'
     );
@@ -125,6 +127,7 @@ export function createCloudSyncService({
         mistakes: merged.mistakes,
         mistakeTimestamps: merged.mistakeTimestamps,
         savedExams: merged.savedExams,
+        releasedSavedExams: merged.releasedSavedExams,
         userStats: merged.userStats,
       });
     }

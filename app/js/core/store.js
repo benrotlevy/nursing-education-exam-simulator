@@ -18,6 +18,7 @@ export function createInitialState() {
     mistakes: new Set(),
     mistakeTimestamps: {},
     savedExams: [],
+    releasedSavedExams: {},
     userStats: {
       totalAnswered: 0,
       totalCorrect: 0,

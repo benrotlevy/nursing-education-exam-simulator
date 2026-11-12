@@ -238,6 +238,7 @@ export function mountApplication({
         mistakes: progress.mistakes,
         mistakeTimestamps: progress.mistakeTimestamps,
         savedExams: progress.savedExams,
+        releasedSavedExams: progress.releasedSavedExams || {},
         userStats: progress.userStats,
       },
       'app/bootstrap-progress'

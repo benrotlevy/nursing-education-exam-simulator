@@ -640,5 +640,83 @@ describe('app/js/services/cloud-sync.js — Cloud Sync Resilience, Debouncing & 
         'Expected all 6 mistakes to be pushed to Firestore'
       );
     });
+
+    it('does not resurrect an exam released offline when logging in to an existing cloud account [SYNC-01, SYNC-04]', async () => {
+      const localStorage = createMemoryStorage();
+      const sessionStorage = createMemoryStorage();
+      const store = createStore(createInitialState());
+      const storage = createStorageAdapter({ localStorage, sessionStorage });
+
+      // Cloud document currently has 1 saved exam
+      const initialCloudDoc = {
+        schemaVersion: 2,
+        email: 'nurse-saved-test@hospital.org',
+        displayName: 'אחות בדיקות',
+        mistakes: [],
+        mistakeTimestamps: {},
+        userStats: {
+          totalAnswered: 0,
+          totalCorrect: 0,
+          examsCompleted: 0,
+          lastResetAt: 0,
+          categoryStats: {},
+        },
+        savedExams: [
+          {
+            id: 'saved_offline_target',
+            sourceName: 'שחזור מבחן ממשלתי 2023',
+            title: 'שחזור מבחן ממשלתי 2023',
+            questionCount: 100,
+            questionIds: ['q1', 'q2'],
+            savedAt: new Date(1000).toISOString(),
+            status: 'READY',
+            score: null,
+            completedAt: null,
+          },
+        ],
+        updatedAt: new Date(1000).toISOString(),
+      };
+
+      const fakeSdk = createFakeFirebaseSdk({ initialDocData: initialCloudDoc });
+      const cloudSync = createCloudSyncService({
+        firebaseSdk: fakeSdk,
+        store,
+        storage,
+        debounceMs: 5,
+      });
+
+      // User was offline and released this exam at timestamp 2000 (after savedAt=1000)
+      store.setState({
+        savedExams: [],
+        releasedSavedExams: {
+          saved_offline_target: 2000,
+          'שחזור מבחן ממשלתי 2023': 2000,
+        },
+      });
+
+      await cloudSync.init();
+      await cloudSync.signIn();
+
+      // Wait for debounced push triggered on sign-in
+      await new Promise((r) => setTimeout(r, 30));
+
+      // Assert local store does NOT resurrect the saved exam
+      const currentState = store.getState();
+      assert.equal(
+        currentState.savedExams.length,
+        0,
+        'Expected savedExams to remain 0 after sign-in (not resurrected)'
+      );
+
+      // Assert cloud doc was updated with the empty savedExams list
+      const setDocCalls = fakeSdk.getSetDocCalls();
+      assert.ok(setDocCalls.length > 0, 'Expected cloud push to occur after sign-in');
+      const lastCall = setDocCalls[setDocCalls.length - 1];
+      assert.deepStrictEqual(
+        lastCall.data.savedExams,
+        [],
+        'Expected cloud document savedExams to be empty after offline release merge'
+      );
+    });
   });
 });

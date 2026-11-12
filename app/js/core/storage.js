@@ -110,6 +110,7 @@ export function createStorageAdapter({
           mistakes: new Set(),
           mistakeTimestamps: {},
           savedExams: [],
+          releasedSavedExams: {},
           userStats: defaults.userStats,
         };
       }
@@ -120,6 +121,10 @@ export function createStorageAdapter({
           ? { ...data.mistakeTimestamps }
           : {};
       const savedExams = Array.isArray(data.savedExams) ? data.savedExams.slice(0, 3) : [];
+      const releasedSavedExams =
+        data.releasedSavedExams && typeof data.releasedSavedExams === 'object'
+          ? { ...data.releasedSavedExams }
+          : {};
       const rawStats = data.userStats && typeof data.userStats === 'object' ? data.userStats : {};
 
       return {
@@ -127,6 +132,7 @@ export function createStorageAdapter({
         mistakes: new Set(mistakeIds),
         mistakeTimestamps,
         savedExams,
+        releasedSavedExams,
         userStats: {
           totalAnswered: Number(rawStats.totalAnswered) || 0,
           totalCorrect: Number(rawStats.totalCorrect) || 0,
@@ -144,17 +150,25 @@ export function createStorageAdapter({
         mistakes: new Set(),
         mistakeTimestamps: {},
         savedExams: [],
+        releasedSavedExams: {},
         userStats: defaults.userStats,
       };
     }
   }
 
-  function saveProgress({ mistakes, mistakeTimestamps = {}, savedExams = [], userStats }) {
+  function saveProgress({
+    mistakes,
+    mistakeTimestamps = {},
+    savedExams = [],
+    releasedSavedExams = {},
+    userStats,
+  }) {
     const payload = {
       schemaVersion: SCHEMA_VERSION,
       mistakes: Array.from(mistakes instanceof Set ? mistakes : []),
       mistakeTimestamps,
       savedExams,
+      releasedSavedExams,
       userStats,
     };
     try {

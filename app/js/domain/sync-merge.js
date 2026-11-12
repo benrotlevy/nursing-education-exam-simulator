@@ -173,16 +173,44 @@ export function mergeCloudAndLocalProgress(local = {}, remote = {}) {
     };
   }
 
-  const savedExams = Array.isArray(remote.savedExams)
-    ? remote.savedExams.slice(0, 3)
-    : Array.isArray(local.savedExams)
-      ? local.savedExams.slice(0, 3)
-      : [];
+  // Reconcile savedExams respecting releasedSavedExams tombstones
+  const localSaved = Array.isArray(local.savedExams) ? local.savedExams : [];
+  const remoteSaved = Array.isArray(remote.savedExams) ? remote.savedExams : [];
+  const releasedMap =
+    local.releasedSavedExams && typeof local.releasedSavedExams === 'object'
+      ? local.releasedSavedExams
+      : {};
+
+  // A remote saved exam is considered deleted if local releasedSavedExams has a tombstone
+  // newer than or matching its savedAt timestamp (or matching its ID/sourceName)
+  const activeRemoteSaved = remoteSaved.filter((slot) => {
+    if (!slot) return false;
+    const releasedTimestamp = Number(releasedMap[slot.id] || releasedMap[slot.sourceName] || 0);
+    if (!releasedTimestamp) return true;
+    const slotSavedAt = slot.savedAt ? new Date(slot.savedAt).getTime() : 0;
+    return slotSavedAt > releasedTimestamp;
+  });
+
+  // Combine local and active remote saved exams without duplicates (matched by id or sourceName)
+  const combinedSaved = [...localSaved];
+  for (const rSlot of activeRemoteSaved) {
+    if (!rSlot) continue;
+    const existsInLocal = combinedSaved.some(
+      (lSlot) =>
+        lSlot.id === rSlot.id || (lSlot.sourceName && lSlot.sourceName === rSlot.sourceName)
+    );
+    if (!existsInLocal) {
+      combinedSaved.push(rSlot);
+    }
+  }
+
+  const savedExams = combinedSaved.slice(0, 3);
 
   return {
     mistakes: mergedMistakes,
     mistakeTimestamps: mergedTimestamps,
     userStats: mergedStats,
     savedExams,
+    releasedSavedExams: releasedMap,
   };
 }

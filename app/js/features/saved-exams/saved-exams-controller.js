@@ -46,11 +46,23 @@ export function createSavedExamsController({
       return false;
     }
 
-    store.setState({ savedExams: result.savedExams }, 'saved-exams/reserve');
+    const nextReleased = { ...(state.releasedSavedExams || {}) };
+    if (selectedSource) {
+      delete nextReleased[selectedSource];
+    }
+    if (result.slot?.id) {
+      delete nextReleased[result.slot.id];
+    }
+
+    store.setState(
+      { savedExams: result.savedExams, releasedSavedExams: nextReleased },
+      'saved-exams/reserve'
+    );
     storage.saveProgress({
       mistakes: state.mistakes,
       mistakeTimestamps: state.mistakeTimestamps,
       savedExams: result.savedExams,
+      releasedSavedExams: nextReleased,
       userStats: state.userStats,
     });
 
@@ -68,11 +80,22 @@ export function createSavedExamsController({
   function executeReleaseSavedExam(savedId, item) {
     const state = store.getState();
     const rel = releaseSavedExamSlot(state.savedExams, savedId);
-    store.setState({ savedExams: rel.savedExams }, 'saved-exams/release');
+    const now = Date.now();
+    const nextReleased = {
+      ...(state.releasedSavedExams || {}),
+      [savedId]: now,
+      ...(item?.sourceName ? { [item.sourceName]: now } : {}),
+    };
+
+    store.setState(
+      { savedExams: rel.savedExams, releasedSavedExams: nextReleased },
+      'saved-exams/release'
+    );
     storage.saveProgress({
       mistakes: state.mistakes,
       mistakeTimestamps: state.mistakeTimestamps,
       savedExams: rel.savedExams,
+      releasedSavedExams: nextReleased,
       userStats: state.userStats,
     });
 
@@ -144,14 +167,25 @@ export function createSavedExamsController({
     const state = store.getState();
     if (!state.currentExam || !state.currentExam.savedExamId) return false;
     const savedId = state.currentExam.savedExamId;
+    const item = state.savedExams.find((s) => s.id === savedId);
     const rel = releaseSavedExamSlot(state.savedExams, savedId);
     const qCount = rel.removedSlot ? rel.removedSlot.questionCount : 0;
+    const now = Date.now();
+    const nextReleased = {
+      ...(state.releasedSavedExams || {}),
+      [savedId]: now,
+      ...(item?.sourceName ? { [item.sourceName]: now } : {}),
+    };
 
-    store.setState({ savedExams: rel.savedExams }, 'saved-exams/release-from-results');
+    store.setState(
+      { savedExams: rel.savedExams, releasedSavedExams: nextReleased },
+      'saved-exams/release-from-results'
+    );
     storage.saveProgress({
       mistakes: state.mistakes,
       mistakeTimestamps: state.mistakeTimestamps,
       savedExams: rel.savedExams,
+      releasedSavedExams: nextReleased,
       userStats: state.userStats,
     });
 

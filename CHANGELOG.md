@@ -6,6 +6,19 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 
 ---
 
+## [2.1.5] - 2026-11-12
+
+### Fixed
+
+- **Offline Saved Exam Release Tombstone Tracking (`SYNC-01`, `SYNC-04`)**:
+  - Implemented `releasedSavedExams` tombstone tracking in client state (`store.js`) and persistent browser storage (`storage.js`) to record release timestamps when exams are released from the saved quarantine pool.
+  - Refactored `mergeCloudAndLocalProgress` in `app/js/domain/sync-merge.js` to cross-reference `remote.savedExams` against local release tombstones, discarding exams released offline after their `savedAt` timestamp instead of letting stale remote arrays unconditionally overwrite offline deletions.
+  - Immediately pushes the reconciled, clean `savedExams` list to Firestore upon re-authentication, preventing resurrected exams from lingering across devices.
+  - Maintained strict conformance with Firestore security rules (`hasOnlyAllowedFields`), keeping tombstones exclusively client-side.
+  - Added automated integration test in `tests/integration/cloud-sync-resilience.test.js` verifying offline release reconciliation and cloud update.
+
+---
+
 ## [2.1.4] - 2026-11-12
 
 ### Fixed
