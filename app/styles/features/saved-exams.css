@@ -21,6 +21,8 @@
   font-size: 1.6rem;
   font-weight: 800;
   color: #0f172a;
+  direction: ltr;
+  unicode-bidi: isolate;
 }
 
 .saved-metric-lbl {

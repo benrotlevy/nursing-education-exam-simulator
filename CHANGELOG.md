@@ -6,6 +6,23 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 
 ---
 
+## [2.1.1] - 2026-11-12
+
+### Fixed
+
+- **RTL Bidirectional Isolation for Statistics Cloud Sync Banner**:
+  - Resolved BiDi algorithm inversion in `app/js/features/auth/auth-view.js` where adjacent LTR text runs (the English brand `Google:` and user Latin display names or email addresses) merged, pushing the word `Google:` to the opposite side of the user's name.
+  - Wrapped `Google` and user `displayLabel` in `<bdi>` elements (`<bdi>Google</bdi>:` and `<bdi class="user-display-name">...`) ensuring strict directional boundary isolation and natural RTL progression: `☁️ מחובר לחשבון Google: <שם/אימייל> • סנכרון ענן פעיל`.
+- **Saved Exams Quarantine Slot Metric Layout**:
+  - Enforced `direction: ltr; unicode-bidi: isolate;` on `.saved-metric-num` in `app/styles/features/saved-exams.css` preventing slash fractions (e.g. `2 / 3`) from visually flipping to `3 / 2` in RTL layout.
+
+### Added
+
+- Added `tests/e2e/auth-stats-rtl.spec.js` automated Playwright E2E suite verifying bidirectional text layout and element ordering across all 4 target devices: Laptop (`1440×900`), Tablet (`768×1024`), Pixel 10 Pro XL (`448×998`), and Galaxy S25 (`360×780`).
+- Added unit/DOM assertion in `tests/dom/auth-view.test.js` validating bidirectional `<bdi>` DOM tags and XSS safety in `#statsCloudSyncInfo`.
+
+---
+
 ## [2.1.0] - 2026-11-12
 
 ### Added

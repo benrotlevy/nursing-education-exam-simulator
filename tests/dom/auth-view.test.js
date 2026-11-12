@@ -56,6 +56,32 @@ describe('app/js/features/auth/auth-view.js & firestore.rules — Auth UI Securi
     assert.equal(avatarEl.getAttribute('src'), DEFAULT_AVATAR_URL);
   });
 
+  it('renders Google brand and displayLabel inside isolated <bdi> elements to prevent RTL BiDi inversion', () => {
+    const htmlContent = fs.readFileSync(path.join(ROOT_DIR, 'app/index.html'), 'utf8');
+    const win = new Window();
+    win.document.write(htmlContent);
+
+    renderAuthUI({
+      document: win.document,
+      user: {
+        uid: 'u2',
+        displayName: 'Benjamin Rotlevy',
+        email: 'benjamin@example.com',
+      },
+    });
+
+    const statsCloudBadge = win.document.getElementById('statsCloudSyncInfo');
+    const titleSpan = statsCloudBadge.querySelector('.cloud-sync-active-title');
+    assert.ok(titleSpan, 'Expected .cloud-sync-active-title element');
+    assert.equal(titleSpan.querySelector('bdi')?.textContent, 'Google');
+    assert.ok(titleSpan.textContent.includes('מחובר לחשבון'));
+    assert.ok(titleSpan.textContent.includes(':'));
+
+    const nameBdi = statsCloudBadge.querySelector('.user-display-name');
+    assert.ok(nameBdi, 'Expected .user-display-name <bdi> element');
+    assert.equal(nameBdi.textContent, 'Benjamin Rotlevy');
+  });
+
   it('enforces least-privilege owner isolation and schema validation in firestore.rules [SEC-03]', () => {
     const rulesPath = path.join(ROOT_DIR, 'firestore.rules');
     assert.ok(fs.existsSync(rulesPath), 'Expected firestore.rules to exist at repository root');

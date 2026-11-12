@@ -48,7 +48,7 @@ export function renderAuthUI({ document = globalThis.document, user = null } = {
       avatarEl.src = sanitizeAvatarUrl(user.photoURL);
     }
     if (statsCloudBadge) {
-      statsCloudBadge.innerHTML = `<span class="cloud-sync-active-title">☁️ מחובר לחשבון Google:</span> <span>${escapeHTML(displayLabel)}</span> &bull; <span class="cloud-sync-active-sub">סנכרון ענן פעיל</span>`;
+      statsCloudBadge.innerHTML = `<span class="cloud-sync-active-title">☁️ מחובר לחשבון <bdi>Google</bdi>:</span> <bdi class="user-display-name">${escapeHTML(displayLabel)}</bdi> &bull; <span class="cloud-sync-active-sub">סנכרון ענן פעיל</span>`;
     }
   } else {
     if (btn) btn.style.display = 'inline-flex';
