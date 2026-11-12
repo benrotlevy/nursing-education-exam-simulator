@@ -41,6 +41,11 @@ export function renderActiveExamQuestion({ document = globalThis.document, exam 
   const q = exam.questions[exam.currentIndex];
   if (!q) return;
 
+  const abandonBtn = document?.querySelector('.btn-abandon-exam');
+  if (abandonBtn && !abandonBtn.id) {
+    abandonBtn.id = 'btnAbandonExam';
+  }
+
   const total = exam.questions.length;
   const curNum = exam.currentIndex + 1;
   const progressCountEl = document?.getElementById('examProgressCount');
@@ -100,13 +105,18 @@ export function renderActiveExamQuestion({ document = globalThis.document, exam 
       item.setAttribute('data-action', 'select-exam-option');
       item.setAttribute('data-index', String(optIdx));
 
-      if (exam.userAnswers?.[exam.currentIndex] === optIdx) {
+      const isSelected = exam.userAnswers?.[exam.currentIndex] === optIdx;
+      if (isSelected) {
         item.classList.add('selected');
       }
       const isEliminated = eliminatedSet.has(optIdx);
       if (isEliminated) {
         item.classList.add('eliminated');
       }
+
+      item.tabIndex = 0;
+      item.setAttribute('role', 'button');
+      item.setAttribute('aria-pressed', isSelected ? 'true' : 'false');
 
       const letter = OPTION_LETTERS[optIdx] || String(optIdx + 1);
       item.innerHTML = `
@@ -216,55 +226,56 @@ export function renderExamResultsView({
 export function renderExamReviewList({ document = globalThis.document, exam } = {}) {
   const list = document?.getElementById('examReviewList');
   if (!list || !exam || !Array.isArray(exam.questions)) return;
-  list.innerHTML = '';
 
-  exam.questions.forEach((q, idx) => {
-    const userChoice = exam.userAnswers?.[idx];
-    const shuffledData = exam.shuffledOptionsCache?.[idx] || getShuffledQuestionOptions(q);
-    const isCorrect = userChoice !== undefined && userChoice === shuffledData.correctIndex;
+  const cardsHtml = exam.questions
+    .map((q, idx) => {
+      const userChoice = exam.userAnswers?.[idx];
+      const shuffledData = exam.shuffledOptionsCache?.[idx] || getShuffledQuestionOptions(q);
+      const isCorrect = userChoice !== undefined && userChoice === shuffledData.correctIndex;
 
-    const card = document.createElement('div');
-    card.className = `review-item ${isCorrect ? 'was-correct' : 'was-wrong'}`;
+      const statusText = isCorrect
+        ? '<span class="u-text-success u-fw-800">✔ תשובה נכונה</span>'
+        : '<span class="u-text-danger u-fw-800">✖ שגיאה</span>';
 
-    const statusText = isCorrect
-      ? '<span class="u-text-success u-fw-800">✔ תשובה נכונה</span>'
-      : '<span class="u-text-danger u-fw-800">✖ שגיאה</span>';
+      const optionsHtml = shuffledData.options
+        .map((opt, oIdx) => {
+          let itemClass = 'review-opt-item';
+          let badgeHtml;
+          if (oIdx === shuffledData.correctIndex) {
+            itemClass += ' opt-correct';
+            badgeHtml = '<span class="option-status-badge badge-correct">✓ תשובה נכונה</span>';
+          } else if (oIdx === userChoice && !isCorrect) {
+            itemClass += ' opt-wrong';
+            badgeHtml = '<span class="option-status-badge badge-wrong">✕ הבחירה שלך</span>';
+          } else {
+            badgeHtml = '<span class="option-status-badge badge-distractor">✕ מסיח שגוי</span>';
+          }
+          const letter = OPTION_LETTERS[oIdx] || String(oIdx + 1);
+          return `
+            <div class="${itemClass}">
+              <div class="option-letter">${escapeHTML(letter)}</div>
+              <div class="option-content">${escapeHTML(opt)}</div>
+              ${badgeHtml}
+            </div>
+          `;
+        })
+        .join('');
 
-    const optionsHtml = shuffledData.options
-      .map((opt, oIdx) => {
-        let itemClass = 'review-opt-item';
-        let badgeHtml;
-        if (oIdx === shuffledData.correctIndex) {
-          itemClass += ' opt-correct';
-          badgeHtml = '<span class="option-status-badge badge-correct">✓ תשובה נכונה</span>';
-        } else if (oIdx === userChoice && !isCorrect) {
-          itemClass += ' opt-wrong';
-          badgeHtml = '<span class="option-status-badge badge-wrong">✕ הבחירה שלך</span>';
-        } else {
-          badgeHtml = '<span class="option-status-badge badge-distractor">✕ מסיח שגוי</span>';
-        }
-        const letter = OPTION_LETTERS[oIdx] || String(oIdx + 1);
-        return `
-          <div class="${itemClass}">
-            <div class="option-letter">${escapeHTML(letter)}</div>
-            <div class="option-content">${escapeHTML(opt)}</div>
-            ${badgeHtml}
+      return `
+        <div class="review-item ${isCorrect ? 'was-correct' : 'was-wrong'}">
+          <div class="review-item-header">
+            <span class="review-item-meta">שאלה ${idx + 1} &bull; ${escapeHTML(q.category)}</span>
+            ${statusText}
           </div>
-        `;
-      })
-      .join('');
+          <div class="review-item-question">${escapeHTML(q.question)}</div>
+          <div class="review-item-options">
+            ${optionsHtml}
+          </div>
+          ${renderExplanationHTML(q)}
+        </div>
+      `;
+    })
+    .join('');
 
-    card.innerHTML = `
-      <div class="review-item-header">
-        <span class="review-item-meta">שאלה ${idx + 1} &bull; ${escapeHTML(q.category)}</span>
-        ${statusText}
-      </div>
-      <div class="review-item-question">${escapeHTML(q.question)}</div>
-      <div class="review-item-options">
-        ${optionsHtml}
-      </div>
-      ${renderExplanationHTML(q)}
-    `;
-    list.appendChild(card);
-  });
+  list.innerHTML = cardsHtml;
 }

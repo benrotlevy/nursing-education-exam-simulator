@@ -302,7 +302,7 @@ export function createRetryWrongExamSession(exam, rng = Math.random) {
   if (wrongList.length === 0) {
     return {
       ok: false,
-      message: 'לא היו שגיאות במבחן זה! כל הכבוד!',
+      message: 'אין שאלות שגויות לתרגול חוזר!',
     };
   }
 

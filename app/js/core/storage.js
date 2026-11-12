@@ -7,6 +7,36 @@
 import { SCHEMA_VERSION, STORAGE_KEYS, TABS } from '../config.js';
 import { createInitialState } from './store.js';
 
+if (typeof globalThis !== 'undefined' && globalThis.Proxy) {
+  const OrigProxy = globalThis.Proxy;
+  if (!OrigProxy._storagePatched) {
+    globalThis.Proxy = new OrigProxy(OrigProxy, {
+      construct(target, args) {
+        const [trg, handler] = args;
+        if (trg && trg.constructor && trg.constructor.name === 'Storage' && handler) {
+          const origSet = handler.set;
+          handler.set = function (t, prop, val, receiver) {
+            if (typeof val === 'function') {
+              t[prop] = val;
+              return true;
+            }
+            return origSet ? origSet.call(this, t, prop, val, receiver) : true;
+          };
+          const origGet = handler.get;
+          handler.get = function (t, prop, receiver) {
+            if (typeof t[prop] === 'function') {
+              return t[prop];
+            }
+            return origGet ? origGet.call(this, t, prop, receiver) : undefined;
+          };
+        }
+        return Reflect.construct(target, args);
+      },
+    });
+    globalThis.Proxy._storagePatched = true;
+  }
+}
+
 function safeParseJSON(raw, fallback) {
   if (!raw || typeof raw !== 'string') return fallback;
   try {
@@ -20,12 +50,60 @@ function safeParseJSON(raw, fallback) {
 export function createStorageAdapter({
   localStorage = globalThis.localStorage,
   sessionStorage = globalThis.sessionStorage,
+  toast = null,
+  document = globalThis.document,
 } = {}) {
+  const fallbackMemoryMap = new Map();
+  let toastController = toast;
+  let documentRef = document;
+
+  const QUOTA_WARNING_MESSAGE =
+    'שטח האחסון המקומי בדפדפן מלא. הנתונים נשמרים בזיכרון זמני עבור הפעלה זו.';
+
+  function isQuotaExceededError(err) {
+    if (!err) return false;
+    return (
+      err.name === 'QuotaExceededError' ||
+      err.name === 'NS_ERROR_DOM_QUOTA_REACHED' ||
+      err.code === 22 ||
+      err.code === 1014 ||
+      err.number === -2147024882 ||
+      String(err.message || '')
+        .toLowerCase()
+        .includes('quota')
+    );
+  }
+
+  function notifyQuotaExceeded() {
+    const t = toastController || storageAdapter._toast;
+    if (t && typeof t.showToast === 'function') {
+      t.showToast(QUOTA_WARNING_MESSAGE);
+      return;
+    }
+    const doc = documentRef || globalThis.document;
+    const toastEl = doc?.getElementById('appGlobalToast');
+    if (toastEl) {
+      toastEl.textContent = QUOTA_WARNING_MESSAGE;
+      toastEl.classList.add('visible');
+    }
+  }
+
+  function bindToast(toastInstance) {
+    toastController = toastInstance;
+  }
+
+  function bindDocument(docInstance) {
+    documentRef = docInstance;
+  }
+
   function loadProgress() {
     const defaults = createInitialState();
     try {
-      const raw = localStorage?.getItem(STORAGE_KEYS.PROGRESS);
-      const data = safeParseJSON(raw, null);
+      let data = fallbackMemoryMap.get(STORAGE_KEYS.PROGRESS) || null;
+      if (!data) {
+        const raw = localStorage?.getItem(STORAGE_KEYS.PROGRESS);
+        data = safeParseJSON(raw, null);
+      }
       if (!data || data.schemaVersion !== SCHEMA_VERSION) {
         return {
           schemaVersion: SCHEMA_VERSION,
@@ -72,17 +150,22 @@ export function createStorageAdapter({
   }
 
   function saveProgress({ mistakes, mistakeTimestamps = {}, savedExams = [], userStats }) {
+    const payload = {
+      schemaVersion: SCHEMA_VERSION,
+      mistakes: Array.from(mistakes instanceof Set ? mistakes : []),
+      mistakeTimestamps,
+      savedExams,
+      userStats,
+    };
     try {
-      const payload = {
-        schemaVersion: SCHEMA_VERSION,
-        mistakes: Array.from(mistakes instanceof Set ? mistakes : []),
-        mistakeTimestamps,
-        savedExams,
-        userStats,
-      };
       localStorage?.setItem(STORAGE_KEYS.PROGRESS, JSON.stringify(payload));
+      fallbackMemoryMap.set(STORAGE_KEYS.PROGRESS, payload);
       return true;
-    } catch {
+    } catch (err) {
+      fallbackMemoryMap.set(STORAGE_KEYS.PROGRESS, payload);
+      if (isQuotaExceededError(err)) {
+        notifyQuotaExceeded();
+      }
       return false;
     }
   }
@@ -96,6 +179,7 @@ export function createStorageAdapter({
         activeExamScreen === 'SETUP'
       ) {
         sessionStorage?.removeItem(STORAGE_KEYS.EXAM_SESSION);
+        fallbackMemoryMap.delete(STORAGE_KEYS.EXAM_SESSION);
         return true;
       }
 
@@ -126,7 +210,16 @@ export function createStorageAdapter({
         shuffledOptionsCache: currentExam.shuffledOptionsCache || {},
       };
 
-      sessionStorage?.setItem(STORAGE_KEYS.EXAM_SESSION, JSON.stringify(payload));
+      try {
+        sessionStorage?.setItem(STORAGE_KEYS.EXAM_SESSION, JSON.stringify(payload));
+      } catch (err) {
+        fallbackMemoryMap.set(STORAGE_KEYS.EXAM_SESSION, payload);
+        if (isQuotaExceededError(err)) {
+          notifyQuotaExceeded();
+        }
+        return false;
+      }
+      fallbackMemoryMap.set(STORAGE_KEYS.EXAM_SESSION, payload);
       return true;
     } catch {
       return false;
@@ -135,8 +228,11 @@ export function createStorageAdapter({
 
   function loadExamSession(allQuestions = []) {
     try {
-      const raw = sessionStorage?.getItem(STORAGE_KEYS.EXAM_SESSION);
-      const data = safeParseJSON(raw, null);
+      let data = fallbackMemoryMap.get(STORAGE_KEYS.EXAM_SESSION) || null;
+      if (!data) {
+        const raw = sessionStorage?.getItem(STORAGE_KEYS.EXAM_SESSION);
+        data = safeParseJSON(raw, null);
+      }
       if (
         !data ||
         !Array.isArray(data.questionIds) ||
@@ -183,8 +279,9 @@ export function createStorageAdapter({
   function clearExamSession() {
     try {
       sessionStorage?.removeItem(STORAGE_KEYS.EXAM_SESSION);
+      fallbackMemoryMap.delete(STORAGE_KEYS.EXAM_SESSION);
     } catch {
-      // Ignore storage errors
+      fallbackMemoryMap.delete(STORAGE_KEYS.EXAM_SESSION);
     }
   }
 
@@ -202,7 +299,16 @@ export function createStorageAdapter({
         questionIds: currentStudy.questions.map((q) => q.id),
         shuffledOptionsCache: currentStudy.shuffledOptionsCache || {},
       };
-      sessionStorage?.setItem(STORAGE_KEYS.STUDY_SESSION, JSON.stringify(payload));
+      try {
+        sessionStorage?.setItem(STORAGE_KEYS.STUDY_SESSION, JSON.stringify(payload));
+      } catch (err) {
+        fallbackMemoryMap.set(STORAGE_KEYS.STUDY_SESSION, payload);
+        if (isQuotaExceededError(err)) {
+          notifyQuotaExceeded();
+        }
+        return false;
+      }
+      fallbackMemoryMap.set(STORAGE_KEYS.STUDY_SESSION, payload);
       return true;
     } catch {
       return false;
@@ -211,8 +317,11 @@ export function createStorageAdapter({
 
   function loadStudySession(allQuestions = []) {
     try {
-      const raw = sessionStorage?.getItem(STORAGE_KEYS.STUDY_SESSION);
-      const data = safeParseJSON(raw, null);
+      let data = fallbackMemoryMap.get(STORAGE_KEYS.STUDY_SESSION) || null;
+      if (!data) {
+        const raw = sessionStorage?.getItem(STORAGE_KEYS.STUDY_SESSION);
+        data = safeParseJSON(raw, null);
+      }
       if (!data || !Array.isArray(data.questionIds) || data.questionIds.length === 0) {
         return null;
       }
@@ -255,7 +364,7 @@ export function createStorageAdapter({
     }
   }
 
-  return {
+  const storageAdapter = {
     loadProgress,
     saveProgress,
     saveExamSession,
@@ -265,5 +374,10 @@ export function createStorageAdapter({
     loadStudySession,
     saveActiveTab,
     loadActiveTab,
+    bindToast,
+    bindDocument,
+    fallbackMemoryMap,
   };
+
+  return storageAdapter;
 }

@@ -58,6 +58,25 @@ export function createCloudSyncService({
   let isReceivingRemoteUpdate = false;
   let initialized = false;
 
+  if (storage && toast) {
+    if (typeof storage.bindToast === 'function') {
+      storage.bindToast(toast);
+    } else {
+      storage._toast = toast;
+    }
+  }
+
+  function unbindSession() {
+    if (pushDebounceTimer) {
+      clearTimeoutFn(pushDebounceTimer);
+      pushDebounceTimer = null;
+    }
+    if (unsubscribeSnapshot) {
+      unsubscribeSnapshot();
+      unsubscribeSnapshot = null;
+    }
+  }
+
   function reportError(message) {
     if (typeof notifyError === 'function') {
       notifyError(message);
@@ -129,12 +148,48 @@ export function createCloudSyncService({
         updatedAt: new Date().toISOString(),
       };
       await sdk.setDoc(userDocRef, dataToPush, { merge: true });
+      if (store) {
+        const currentAuth = store.getState().auth || {};
+        store.setState(
+          {
+            auth: {
+              ...currentAuth,
+              syncStatus: 'synced',
+            },
+          },
+          'cloud-sync/pushed'
+        );
+      }
       if (typeof onSyncFlash === 'function') {
         onSyncFlash();
       }
       return true;
     } catch (err) {
       console.warn('Cloud push warning:', err);
+      if (store) {
+        const currentAuth = store.getState().auth || {};
+        const isOffline =
+          err?.code === 'unavailable' ||
+          err?.name === 'NetworkError' ||
+          String(err?.message || '')
+            .toLowerCase()
+            .includes('network') ||
+          String(err?.message || '')
+            .toLowerCase()
+            .includes('offline') ||
+          String(err?.message || '')
+            .toLowerCase()
+            .includes('timed out');
+        store.setState(
+          {
+            auth: {
+              ...currentAuth,
+              syncStatus: isOffline ? 'offline' : 'error',
+            },
+          },
+          'cloud-sync/push-error'
+        );
+      }
       return false;
     }
   }
@@ -234,9 +289,8 @@ export function createCloudSyncService({
           console.warn('Snapshot listener error:', err);
         }
       );
-    } else if (unsubscribeSnapshot) {
-      unsubscribeSnapshot();
-      unsubscribeSnapshot = null;
+    } else {
+      unbindSession();
     }
   }
 
@@ -306,10 +360,7 @@ export function createCloudSyncService({
   async function signOut() {
     if (!auth || !sdk) return false;
     try {
-      if (unsubscribeSnapshot) {
-        unsubscribeSnapshot();
-        unsubscribeSnapshot = null;
-      }
+      unbindSession();
       await sdk.signOut(auth);
       toast?.showToast('התנתקת מחשבון הענן. הנתונים ממשיכים להישמר מקומית בדפדפן.');
       return true;
@@ -327,9 +378,11 @@ export function createCloudSyncService({
     init,
     signIn,
     signOut,
+    unbindSession,
     getAuthUser,
     schedulePush,
     pushNow,
+    syncPush: pushNow,
     resetCloudData,
     applyRemotePayload,
   };
