@@ -2,7 +2,7 @@
 
 **Requirement**: `UX-01` (Ultra-Narrow Viewport 320px & Viewport Rotation Stress)  
 **Severity**: Medium (WCAG 2.1 AA Target Size Non-Conformance / Mobile Touch Usability)  
-**Status**: Open  
+**Status**: Resolved in v3.0  
 **Affected Files**:
 
 - `app/styles/components/buttons.css` (lines 201–221, lines 240–244)

@@ -140,7 +140,7 @@
           <div class="progress-text">
             <span id="examProgressCount">שאלה 1 מתוך 25</span>
             <span id="examAnsweredCount">נענו: 0</span>
-            <button type="button" class="btn-abandon-exam" data-action="confirm-abandon-exam" title="יציאה מהמבחן וחזרה למסך הגדרת מבחן">
+            <button type="button" class="btn-abandon-exam" id="btnAbandonExam" data-action="confirm-abandon-exam" title="יציאה מהמבחן וחזרה למסך הגדרת מבחן" tabindex="-1">
               ✕ יציאה מהמבחן
             </button>
           </div>
@@ -156,7 +156,7 @@
             <span class="badge badge-source" id="examQSource">מקור</span>
             <span class="badge badge-unverified" id="examQUnverified" style="display:none;">פתרון משוער</span>
           </div>
-          <button type="button" class="flag-btn" id="examFlagBtn" data-action="toggle-exam-flag">
+          <button type="button" class="flag-btn" id="examFlagBtn" data-action="toggle-exam-flag" tabindex="-1">
             <span>★</span> סימון לעיון חוזר
           </button>
         </div>
@@ -359,7 +359,7 @@
         </div>
 
         <!-- Immediate Explanation Box -->
-        <div class="explanation-box" id="studyExplanationBox">
+        <div class="explanation-box" id="studyExplanationBox" role="status" aria-live="polite">
           <div class="explanation-header" id="studyExplanationHeader">
             💡 הסבר ונימוק פדגוגי:
           </div>
@@ -470,7 +470,9 @@
   </nav>
 
   <!-- Global App Toast Notification -->
-  <div id="appGlobalToast" class="app-toast" role="status" aria-live="polite"></div>
+  <div id="appToastContainer" class="app-toast-container" role="status" aria-live="polite">
+    <div id="appGlobalToast" class="app-toast" role="status" aria-live="polite"></div>
+  </div>
 
   <!-- Application Module Entrypoint -->
   <script type="module" src="./js/main.js"></script>
