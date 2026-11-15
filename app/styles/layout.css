@@ -321,7 +321,12 @@ footer {
   }
 
   .header-top {
+    flex-wrap: wrap;
     gap: 8px;
+  }
+
+  .cloud-auth-bar {
+    gap: 6px;
   }
 
   .brand-title h1 {

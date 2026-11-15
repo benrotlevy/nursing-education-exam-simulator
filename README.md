@@ -17,7 +17,7 @@
 - **אבטחה, נגישות ובדיקות אוטומטיות מקצה לקצה:**
   - מדיניות אבטחת תוכן קפדנית (`Content-Security-Policy` כולל `manifest-src 'self'` ו-`worker-src 'self'`) החוסמת הרצת סקריפטים מוטמעים (`script-src` ללא `'unsafe-inline'`), סינון XSS אוטומטי (`escapeHTML` / `html`), וחוקי אבטחה ב-[`firestore.rules`](./firestore.rules).
   - החלפת חלונות `alert()` / `confirm()` חוסמים ברכיב `<dialog>` נגיש (`app/js/ui/dialog.js`) ובהתראות Toast מבוססות Top Layer (`popover="manual"`, `app/js/ui/toast.js`).
-  - **161 בדיקות Unit, Data, Integration ו-DOM** (`node:test` + `happy-dom` על פני 52 חבילות) + **80 בדיקות Playwright E2E** (כולל סימולציית Offline PWA מלאה) על פני 4 פרופילי מסך (`Laptop 1440×900`, `Tablet 768×1024`, `Pixel 10 Pro XL 448×998`, `Galaxy S25 360×780`) ב-100% הצלחה (0 כישלונות, 0 דילוגים).
+  - **162 בדיקות Unit, Data, Integration ו-DOM** (`node:test` + `happy-dom` על פני 52 חבילות) + **80 בדיקות Playwright E2E** (כולל סימולציית Offline PWA מלאה) על פני 4 פרופילי מסך (`Laptop 1440×900`, `Tablet 768×1024`, `Pixel 10 Pro XL 448×998`, `Galaxy S25 360×780`) ב-100% הצלחה (0 כישלונות, 0 דילוגים).
 
 ---
 
@@ -133,7 +133,7 @@ npm install
 # הפעלת שרת פיתוח מקומי בכתובת http://127.0.0.1:4173
 npm start
 
-# הרצת בדיקות Lint + פורמט + כל 161 בדיקות ה-Unit / Data / Integration / DOM
+# הרצת בדיקות Lint + פורמט + כל 162 בדיקות ה-Unit / Data / Integration / DOM
 npm run verify
 
 # הרצת 80 בדיקות ה-E2E בדפדפן אמיתי על פני 4 גדלי מסך (Laptop, Tablet, Pixel 10 Pro XL, Galaxy S25)

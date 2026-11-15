@@ -1,17 +1,22 @@
 /**
  * Progressive Web App (PWA) Registration & Install Prompt Service (`app/js/services/pwa.js`)
  * Registers the Service Worker (`./sw.js`) for full offline resilience and manages the
- * browser's `beforeinstallprompt` / `appinstalled` lifecycle for `#btnInstallPwa`.
+ * browser's `beforeinstallprompt` / `appinstalled` lifecycle and dismissible `#pwaInstallBanner` UX.
  */
+
+export const PWA_INSTALL_DISMISSED_KEY = 'nursing_pwa_install_dismissed_v1';
 
 export function createPwaService({
   window = globalThis.window,
   document = globalThis.document,
   navigator = globalThis.navigator,
+  storage = window?.localStorage,
+  dismissStorageKey = PWA_INSTALL_DISMISSED_KEY,
   toast = null,
   swUrl = './sw.js',
 } = {}) {
   let deferredPrompt = null;
+  let dismissed = false;
   let initialized = false;
 
   function isStandalone() {
@@ -22,11 +27,35 @@ export function createPwaService({
     return matchesDisplayMode || iosStandalone;
   }
 
+  function isInstallDismissed() {
+    if (dismissed) return true;
+    try {
+      return storage?.getItem?.(dismissStorageKey) === '1';
+    } catch {
+      return false;
+    }
+  }
+
   function updateInstallButtonVisibility() {
+    const shouldShow = Boolean(deferredPrompt) && !isStandalone() && !isInstallDismissed();
     const installBtn = document?.getElementById('btnInstallPwa');
-    if (!installBtn) return;
-    const shouldShow = Boolean(deferredPrompt) && !isStandalone();
-    installBtn.hidden = !shouldShow;
+    if (installBtn) {
+      installBtn.hidden = !shouldShow;
+    }
+    const installBanner = document?.getElementById('pwaInstallBanner');
+    if (installBanner) {
+      installBanner.hidden = !shouldShow;
+    }
+  }
+
+  function dismissInstall() {
+    dismissed = true;
+    try {
+      storage?.setItem?.(dismissStorageKey, '1');
+    } catch {
+      // Ignore storage failures in restricted browsing modes
+    }
+    updateInstallButtonVisibility();
   }
 
   async function registerServiceWorker() {
@@ -90,6 +119,8 @@ export function createPwaService({
     init,
     registerServiceWorker,
     promptInstall,
+    dismissInstall,
+    isInstallDismissed,
     isStandalone,
     hasInstallPrompt: () => Boolean(deferredPrompt),
   };

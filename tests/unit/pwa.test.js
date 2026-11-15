@@ -4,7 +4,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 import vm from 'node:vm';
 import { fileURLToPath } from 'node:url';
-import { createPwaService } from '../../app/js/services/pwa.js';
+import { createPwaService, PWA_INSTALL_DISMISSED_KEY } from '../../app/js/services/pwa.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -270,9 +270,24 @@ describe('PWA Manifest, Icons, Service Worker & Install UX', () => {
     assert.equal(offlineRes.body, `fresh:${baseUrl}/data/questions.json`);
   });
 
-  it('wires install prompt lifecycle and SW registration in createPwaService', async () => {
+  it('includes mobile-web-app-capable alongside apple-mobile-web-app-capable and dismissible install banner markup in app/index.html', () => {
+    const html = fs.readFileSync(path.join(APP_DIR, 'index.html'), 'utf8');
+    assert.match(html, /<meta\s+name="mobile-web-app-capable"\s+content="yes"\s*>/i);
+    assert.match(html, /<meta\s+name="apple-mobile-web-app-capable"\s+content="yes"\s*>/i);
+    assert.match(html, /id="pwaInstallBanner"/);
+    assert.match(html, /id="btnDismissInstallPwa"/);
+    assert.match(html, /data-action="dismiss-install-pwa"/);
+  });
+
+  it('wires install prompt lifecycle, dismiss persistence, and SW registration in createPwaService', async () => {
     const listeners = {};
     const installBtn = { hidden: true };
+    const installBanner = { hidden: true };
+    const storageMap = new Map();
+    const memoryStorage = {
+      getItem: (k) => (storageMap.has(k) ? storageMap.get(k) : null),
+      setItem: (k, v) => storageMap.set(k, String(v)),
+    };
     const toasts = [];
     let swRegisterArgs = null;
     let promptCalled = false;
@@ -282,12 +297,17 @@ describe('PWA Manifest, Icons, Service Worker & Install UX', () => {
         listeners[evt] = cb;
       },
       matchMedia: () => ({ matches: false }),
+      localStorage: memoryStorage,
     };
 
     const pwa = createPwaService({
       window: fakeWindow,
       document: {
-        getElementById: (id) => (id === 'btnInstallPwa' ? installBtn : null),
+        getElementById: (id) => {
+          if (id === 'btnInstallPwa') return installBtn;
+          if (id === 'pwaInstallBanner') return installBanner;
+          return null;
+        },
       },
       navigator: {
         serviceWorker: {
@@ -297,12 +317,14 @@ describe('PWA Manifest, Icons, Service Worker & Install UX', () => {
           },
         },
       },
+      storage: memoryStorage,
       toast: { showToast: (msg) => toasts.push(msg) },
     });
 
     await pwa.init();
     assert.deepEqual(swRegisterArgs, { url: './sw.js', opts: { scope: './' } });
     assert.equal(installBtn.hidden, true);
+    assert.equal(installBanner.hidden, true);
 
     let defaultPrevented = false;
     listeners.beforeinstallprompt({
@@ -317,12 +339,47 @@ describe('PWA Manifest, Icons, Service Worker & Install UX', () => {
 
     assert.equal(defaultPrevented, true);
     assert.equal(installBtn.hidden, false);
+    assert.equal(installBanner.hidden, false);
     assert.equal(pwa.hasInstallPrompt(), true);
+
+    // Dismissing hides both banner & install button and persists preference
+    pwa.dismissInstall();
+    assert.equal(pwa.isInstallDismissed(), true);
+    assert.equal(installBtn.hidden, true);
+    assert.equal(installBanner.hidden, true);
+    assert.equal(memoryStorage.getItem(PWA_INSTALL_DISMISSED_KEY), '1');
+
+    // Subsequent sessions respect persisted dismissal even when beforeinstallprompt fires
+    const nextListeners = {};
+    const nextBtn = { hidden: true };
+    const nextBanner = { hidden: true };
+    const nextPwa = createPwaService({
+      window: {
+        addEventListener: (evt, cb) => {
+          nextListeners[evt] = cb;
+        },
+        matchMedia: () => ({ matches: false }),
+      },
+      document: {
+        getElementById: (id) => {
+          if (id === 'btnInstallPwa') return nextBtn;
+          if (id === 'pwaInstallBanner') return nextBanner;
+          return null;
+        },
+      },
+      navigator: {},
+      storage: memoryStorage,
+    });
+    await nextPwa.init();
+    nextListeners.beforeinstallprompt({ preventDefault: () => {} });
+    assert.equal(nextBtn.hidden, true);
+    assert.equal(nextBanner.hidden, true);
 
     const accepted = await pwa.promptInstall();
     assert.equal(promptCalled, true);
     assert.equal(accepted, true);
     assert.equal(installBtn.hidden, true);
+    assert.equal(installBanner.hidden, true);
 
     listeners.appinstalled();
     assert.equal(toasts.length, 1);

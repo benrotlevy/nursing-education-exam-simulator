@@ -105,32 +105,77 @@
   pointer-events: none;
 }
 
-/* PWA Install Button */
+/* PWA Install Split-Pill Banner */
+.pwa-install-banner {
+  display: inline-flex;
+  align-items: stretch;
+  background: var(--primary-light);
+  border: 1px solid #bae6fd;
+  border-radius: 9999px;
+  box-shadow: 0 1px 3px rgba(2, 132, 199, 0.12);
+  overflow: hidden;
+  transition: all 0.2s ease;
+}
+
+.pwa-install-banner:hover {
+  border-color: var(--primary);
+}
+
+.pwa-install-banner[hidden],
+.btn-install-pwa[hidden] {
+  display: none !important;
+}
+
 .btn-install-pwa {
   display: inline-flex;
   align-items: center;
   gap: 6px;
-  background: var(--primary-light);
-  border: 1px solid #bae6fd;
-  border-radius: 9999px;
-  padding: 7px 14px;
-  font-size: 0.85rem;
+  background: transparent;
+  border: none;
+  padding: 6px 12px 6px 10px;
+  font-size: 0.84rem;
   font-weight: 700;
   color: var(--primary-dark);
   cursor: pointer;
   white-space: nowrap;
-  box-shadow: 0 1px 3px rgba(2, 132, 199, 0.12);
-  transition: all 0.2s ease;
+  transition: background 0.15s ease;
 }
 
 .btn-install-pwa:hover {
   background: #bae6fd;
-  border-color: var(--primary);
-  transform: translateY(-1px);
 }
 
-.btn-install-pwa[hidden] {
-  display: none !important;
+.btn-install-pwa-icon {
+  font-size: 0.95em;
+  line-height: 1;
+}
+
+.btn-install-pwa-text {
+  line-height: 1.2;
+}
+
+.btn-dismiss-pwa {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: transparent;
+  border: none;
+  border-inline-start: 1px solid #bae6fd;
+  padding: 0 10px;
+  font-size: 0.78rem;
+  font-weight: 800;
+  color: #0369a1;
+  cursor: pointer;
+  line-height: 1;
+  transition:
+    background 0.15s ease,
+    color 0.15s ease;
+}
+
+.btn-dismiss-pwa:hover {
+  background: #bae6fd;
+  color: #0c4a6e;
 }
 
 .btn-abandon-exam {
@@ -267,6 +312,15 @@
 }
 
 @media (max-width: 640px) {
+  .btn-install-pwa {
+    padding: 5px 9px 5px 7px;
+    font-size: 0.76rem;
+    gap: 4px;
+  }
+  .btn-dismiss-pwa {
+    padding: 0 9px;
+    font-size: 0.74rem;
+  }
   .btn-google-auth {
     padding: 6px 10px;
     font-size: 0.78rem;
@@ -291,6 +345,14 @@
 }
 
 @media (max-width: 420px) {
+  .btn-install-pwa {
+    padding: 4px 8px 4px 6px;
+    font-size: 0.72rem;
+  }
+  .btn-dismiss-pwa {
+    padding: 0 8px;
+    font-size: 0.72rem;
+  }
   .btn-google-auth {
     padding: 5px 8px;
     font-size: 0.74rem;

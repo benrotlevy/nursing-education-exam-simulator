@@ -231,6 +231,7 @@ export function mountApplication({
     window,
     document,
     navigator,
+    storage: localStorage,
     toast,
   });
 
@@ -372,6 +373,9 @@ export function mountApplication({
     },
     'install-pwa': () => {
       pwaService.promptInstall();
+    },
+    'dismiss-install-pwa': () => {
+      pwaService.dismissInstall();
     },
   });
 

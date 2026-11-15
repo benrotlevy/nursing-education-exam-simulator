@@ -13,8 +13,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 - **Full Offline-Capable Progressive Web App (`PWA`)**:
   - Added RTL Hebrew Web App Manifest (`app/manifest.webmanifest`) configured for `display: "standalone"`, `start_url: "./"`, `dir: "rtl"`, `lang: "he"`, and generated standard (`192x192`, `512x512`, `icon.svg`), `maskable` (`512x512`), and iOS (`apple-touch-icon.png`) icons under `app/icons/`.
   - Implemented Network-First Service Worker (`app/sw.js`) pre-caching all app shell assets, stylesheets, ES modules, icons, and `app/data/questions.json` under versioned cache `nursing-exam-sim-v2.3.0`, evicting legacy caches on activation, and bypassing external Firebase Auth/Firestore, Google Fonts, and Cloudflare Worker origins.
-  - Added `app/js/services/pwa.js` (`createPwaService`) wiring Service Worker registration, `beforeinstallprompt` install button (`#btnInstallPwa`), standalone detection, and `appinstalled` toast feedback in `app/js/main.js` and `app/index.html`.
-  - Updated `app/index.html` Content-Security-Policy with `manifest-src 'self'; worker-src 'self';`, added `.webmanifest` MIME type in `tools/serve.js`, configured `app/sw.js` linting in `eslint.config.js`, and added automated verification in `tests/unit/pwa.test.js` and `tests/e2e/pwa-offline.spec.js`.
+  - Added `app/js/services/pwa.js` (`createPwaService`) wiring Service Worker registration, `beforeinstallprompt` dismissible split-pill install banner (`#pwaInstallBanner` / `#btnInstallPwa` / `#btnDismissInstallPwa` persisted via `nursing_pwa_install_dismissed_v1`), standalone detection, and `appinstalled` toast feedback in `app/js/main.js` and `app/index.html`.
+  - Updated `app/index.html` Content-Security-Policy with `manifest-src 'self'; worker-src 'self';`, added standard `<meta name="mobile-web-app-capable" content="yes">` alongside `apple-mobile-web-app-capable` to eliminate browser deprecation warnings, added `.webmanifest` MIME type in `tools/serve.js`, configured `app/sw.js` linting in `eslint.config.js`, and added automated verification in `tests/unit/pwa.test.js` and `tests/e2e/pwa-offline.spec.js`.
 
 ### Fixed
 

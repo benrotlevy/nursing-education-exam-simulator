@@ -127,6 +127,32 @@ test.describe('Progressive Web App (PWA) Offline Support', () => {
     const syncIndicator = page.locator('#syncStatusIndicator');
     await expect(syncIndicator).toContainText('☁️ סנכרון ענן פעיל');
 
+    // Verify dismissible PWA install split-pill fits without horizontal overflow and remembers dismissal
+    await page.evaluate(() => {
+      window.dispatchEvent(new Event('beforeinstallprompt', { cancelable: true }));
+    });
+    const installBanner = page.locator('#pwaInstallBanner');
+    await expect(installBanner).toBeVisible();
+    await expect(page.locator('#btnInstallPwa')).toBeVisible();
+
+    const hasHorizontalOverflow = await page.evaluate(
+      () => document.documentElement.scrollWidth > window.innerWidth
+    );
+    expect(hasHorizontalOverflow).toBe(false);
+
+    await page.locator('#btnDismissInstallPwa').click();
+    await expect(installBanner).toBeHidden();
+    const persistedDismiss = await page.evaluate(() =>
+      localStorage.getItem('nursing_pwa_install_dismissed_v1')
+    );
+    expect(persistedDismiss).toBe('1');
+
+    // Subsequent beforeinstallprompt events must keep the banner hidden once dismissed
+    await page.evaluate(() => {
+      window.dispatchEvent(new Event('beforeinstallprompt', { cancelable: true }));
+    });
+    await expect(installBanner).toBeHidden();
+
     // Switch browser offline and confirm indicator updates cleanly
     await context.setOffline(true);
     try {
