@@ -13,12 +13,45 @@ import {
 
 const COLLECTION_NAME = 'question_reports';
 
+function createOfflineReportError(code = 'REPORT_OFFLINE') {
+  const err = new Error('Offline or report submission timed out');
+  err.code = code;
+  return err;
+}
+
+function withTimeout(promise, timeoutMs, errorFactory) {
+  if (!Number.isFinite(timeoutMs) || timeoutMs <= 0) {
+    return promise;
+  }
+  return new Promise((resolve, reject) => {
+    const timer = globalThis.setTimeout(() => {
+      reject(errorFactory());
+    }, timeoutMs);
+    Promise.resolve(promise).then(
+      (value) => {
+        globalThis.clearTimeout(timer);
+        resolve(value);
+      },
+      (err) => {
+        globalThis.clearTimeout(timer);
+        reject(err);
+      }
+    );
+  });
+}
+
 export function createReportService({
   cloudSync,
   webhookUrl = TELEGRAM_WEBHOOK_URL,
   fetchFn = globalThis.fetch,
+  navigator = globalThis.navigator,
+  writeTimeoutMs = 10000,
 } = {}) {
   let unsubscribeCountListener = null;
+
+  function isBrowserOffline() {
+    return Boolean(navigator && navigator.onLine === false);
+  }
 
   async function ensureFirebaseReady() {
     if (!cloudSync) {
@@ -39,17 +72,21 @@ export function createReportService({
 
   async function dispatchTelegramWebhook(payload, reportId) {
     const cleanUrl = typeof webhookUrl === 'string' ? webhookUrl.trim() : '';
-    if (!cleanUrl || typeof fetchFn !== 'function') {
+    if (!cleanUrl || typeof fetchFn !== 'function' || isBrowserOffline()) {
       return false;
     }
 
     try {
       const alertBody = formatTelegramAlertPayload(payload, reportId);
-      const res = await fetchFn(cleanUrl, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(alertBody),
-      });
+      const res = await withTimeout(
+        fetchFn(cleanUrl, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(alertBody),
+        }),
+        writeTimeoutMs,
+        () => createOfflineReportError('REPORT_WEBHOOK_TIMEOUT')
+      );
       if (!res || !res.ok) {
         console.warn('Telegram notification dispatch returned non-OK status:', res?.status);
         return false;
@@ -96,16 +133,28 @@ export function createReportService({
       user,
     });
 
+    if (isBrowserOffline()) {
+      return {
+        ok: false,
+        offline: true,
+        message: 'אין חיבור לאינטרנט. לא ניתן לשלוח דיווח במצב לא מקוון.',
+      };
+    }
+
     try {
       let reportId = '';
       if (typeof fb.sdk.collection === 'function' && typeof fb.sdk.addDoc === 'function') {
         const colRef = fb.sdk.collection(fb.db, COLLECTION_NAME);
-        const docRef = await fb.sdk.addDoc(colRef, payload);
+        const docRef = await withTimeout(fb.sdk.addDoc(colRef, payload), writeTimeoutMs, () =>
+          createOfflineReportError('REPORT_WRITE_TIMEOUT')
+        );
         reportId = docRef?.id || '';
       } else {
         reportId = `rpt_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`;
         const docRef = fb.sdk.doc(fb.db, COLLECTION_NAME, reportId);
-        await fb.sdk.setDoc(docRef, payload);
+        await withTimeout(fb.sdk.setDoc(docRef, payload), writeTimeoutMs, () =>
+          createOfflineReportError('REPORT_WRITE_TIMEOUT')
+        );
       }
 
       const webhookSent = await dispatchTelegramWebhook(payload, reportId);
@@ -117,11 +166,19 @@ export function createReportService({
     } catch (err) {
       console.error('Failed to submit question report:', err);
       const isDenied = err?.code === 'permission-denied';
+      const isOfflineErr =
+        isBrowserOffline() ||
+        err?.code === 'REPORT_WRITE_TIMEOUT' ||
+        err?.code === 'REPORT_OFFLINE' ||
+        err?.code === 'unavailable';
       return {
         ok: false,
+        ...(isOfflineErr ? { offline: true } : {}),
         message: isDenied
           ? 'אין הרשאה לשלוח דיווח. ודא שהתחברת לחשבון ושהנתונים תקינים.'
-          : 'אירעה שגיאה בשליחת הדיווח. אנא נסה שנית.',
+          : isOfflineErr
+            ? 'אין חיבור לאינטרנט או שהשרת אינו זמין כרגע. הדיווח לא נשלח — נסה שוב כשתחזור לרשת.'
+            : 'אירעה שגיאה בשליחת הדיווח. אנא נסה שנית.',
       };
     }
   }

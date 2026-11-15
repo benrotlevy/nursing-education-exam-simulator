@@ -11,6 +11,9 @@ The repository separates **deployable web application assets** (`app/`), **autom
 /
 ├── app/                              # DEPLOYED ROOT (GitHub Pages artifact)
 │   ├── index.html                    # Semantic HTML5 shell (no inline JS or CSS)
+│   ├── manifest.webmanifest          # PWA Web App Manifest (RTL/he, standalone)
+│   ├── sw.js                         # Network-First Service Worker (offline shell + questions)
+│   ├── icons/                        # App icons (icon.svg, 192, 512, maskable, apple-touch-icon)
 │   ├── data/
 │   │   └── questions.json            # Generated, validated, deduplicated question bank
 │   ├── styles/
@@ -57,6 +60,7 @@ The repository separates **deployable web application assets** (`app/`), **autom
 │       │   ├── question-repository.js# Fetches and caches app/data/questions.json
 │       │   ├── clipboard.js          # Resilient async clipboard + mobile fallback
 │       │   ├── cloud-sync.js         # Firebase Auth & Firestore adapter
+│       │   ├── pwa.js                # Service Worker registration & beforeinstallprompt UX
 │       │   └── report-service.js     # Firestore /question_reports CRUD & Telegram dispatch
 │       ├── ui/
 │       │   ├── dom.js                # Auto-escaping html`` template tag & DOM utilities

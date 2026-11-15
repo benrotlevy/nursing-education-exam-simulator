@@ -22,6 +22,7 @@ import { createStatsController } from './features/stats/stats-controller.js';
 import { createAuthController } from './features/auth/auth-controller.js';
 import { createReportService } from './services/report-service.js';
 import { createReportController } from './features/report-issue/report-controller.js';
+import { createPwaService } from './services/pwa.js';
 
 export function mountApplication({
   window = globalThis.window,
@@ -223,6 +224,14 @@ export function mountApplication({
   const reportService = createReportService({
     cloudSync: authController.cloudSync,
     fetchFn,
+    navigator: window?.navigator ?? navigator,
+  });
+
+  const pwaService = createPwaService({
+    window,
+    document,
+    navigator,
+    toast,
   });
 
   const reportController = createReportController({
@@ -361,6 +370,9 @@ export function mountApplication({
     'open-admin-reports': () => {
       reportController.openAdminDashboard();
     },
+    'install-pwa': () => {
+      pwaService.promptInstall();
+    },
   });
 
   delegate(document, 'change', '[data-change-action="study-category-filter"]', () => {
@@ -386,6 +398,7 @@ export function mountApplication({
       authController,
       reportService,
       reportController,
+      pwaService,
       cloudSync: authController.cloudSync,
       updateHeaderCounter,
       updateMistakesUI,
@@ -445,6 +458,9 @@ export function mountApplication({
 
   if (autoInitCloudSync || firebaseSdk) {
     authController.init();
+  }
+  if (autoInitCloudSync) {
+    pwaService.init();
   }
 
   return window?.app;

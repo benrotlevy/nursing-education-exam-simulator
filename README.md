@@ -1,23 +1,23 @@
-# מערכת תרגול למבחן על-בסיסי בהדרכה קלינית (Clinical Preceptorship Exam Simulator — v2.2.0)
+# מערכת תרגול למבחן על-בסיסי בהדרכה קלינית (Clinical Preceptorship Exam Simulator — v2.3.0)
 
-מערכת ווב מודולרית לתרגול ולהכנה למבחן הגמר/על-בסיסי בקורס הדרכה קלינית בסיעוד (מנהל הסיעוד, משרד הבריאות).
+מערכת ווב מודולרית ו-**Progressive Web App (PWA) הניתנת להתקנה ולשימוש מלא אופליין** לתרגול ולהכנה למבחן הגמר/על-בסיסי בקורס הדרכה קלינית בסיעוד (מנהל הסיעוד, משרד הבריאות).
 המערכת כתובה ב-**Pure Vanilla HTML5, CSS3 (`@layer`), ו-ES2022+ Modules** ללא תלות ב-Bundler או Framework חיצוני, פועלת בדפדפן על גבי GitHub Pages וכוללת סנכרון ענן מאובטח בזמן אמת דרך **Google Cloud / Firebase v11**.
 
 ---
 
-## ⚡ סטטוס גרסה `v2.2.0` (Full-Stack Engineering Architecture)
+## ⚡ סטטוס גרסה `v2.3.0` (Full-Stack Engineering Architecture)
 
 - **מאגר שאלות קנוני ומאומת (`1,079` שאלות):**
   - **894 שאלות מאומתות רשמית (`verified: true`)** מתוך מפתחות תשובות רשמיים, סימוני מרקר וערעורים (כולל שחזור ממשלתי 2023 — 100 שאלות, שחזור ממשלתי 2021 — 13 שאלות מלאות, שחזורי 2024, מבחן מסכם הדסה 2023 ושאלונים ממשלתיים).
   - **185 שאלות משוחזרות (`verified: false`)** בעלות פתרון פדגוגי מנומק מבוסס סילבוס משרד הבריאות (כולל 50 שאלות מבחן בית מאוקטובר 2024 תחת תגית שקופה `פתרון משוער`).
   - **261 שאלות עם תשובה בודדת** המתועדות בנפרד ב-[`docs/single_answer_questions.md`](./docs/single_answer_questions.md) לפיתוח מסיחים עתידי.
-- **ארכיטקטורת `v2.2.0` מודולרית ומופרדת שכבות:**
-  - קובץ ה-HTML המונוליתי מ-`v1.0.0` (`~4,200` שורות) פוצל ל-`app/index.html` סמנטי ונקי (`517` שורות ללא אף `<script>` או `<style>` מוטמעים), **17 קובצי CSS** תחת `@layer tokens, base, layout, components, features, utilities`, ו-**37 מודולי ES2022+** בשכבות `core/`, `domain/`, `services/`, `ui/`, ו-`features/`.
+- **ארכיטקטורת `v2.3.0` מודולרית ומופרדת שכבות:**
+  - קובץ ה-HTML המונוליתי מ-`v1.0.0` (`~4,200` שורות) פוצל ל-`app/index.html` סמנטי ונקי (ללא אף `<script>` או `<style>` מוטמעים), **17 קובצי CSS** תחת `@layer tokens, base, layout, components, features, utilities`, **38 מודולי ES2022+** בשכבות `core/`, `domain/`, `services/`, `ui/`, ו-`features/`, וכן תשתית PWA מלאה (`app/manifest.webmanifest`, `app/sw.js`, `app/icons/`).
   - קובץ הנתונים בזמן ריצה (`app/data/questions.json`) עבר דה-דופליקציה אוטומטית באמצעות `tools/build-questions.js` וצומצם מ-**4.31 MB** ל-**2.29 MB** (חיסכון של **46.7%** ברוחב הפס ללא אובדן מידע פדגוגי).
 - **אבטחה, נגישות ובדיקות אוטומטיות מקצה לקצה:**
-  - מדיניות אבטחת תוכן קפדנית (`Content-Security-Policy`) החוסמת הרצת סקריפטים מוטמעים (`script-src` ללא `'unsafe-inline'`), סינון XSS אוטומטי (`escapeHTML` / `html`), וחוקי אבטחה ב-[`firestore.rules`](./firestore.rules).
+  - מדיניות אבטחת תוכן קפדנית (`Content-Security-Policy` כולל `manifest-src 'self'` ו-`worker-src 'self'`) החוסמת הרצת סקריפטים מוטמעים (`script-src` ללא `'unsafe-inline'`), סינון XSS אוטומטי (`escapeHTML` / `html`), וחוקי אבטחה ב-[`firestore.rules`](./firestore.rules).
   - החלפת חלונות `alert()` / `confirm()` חוסמים ברכיב `<dialog>` נגיש (`app/js/ui/dialog.js`) ובהתראות Toast מבוססות Top Layer (`popover="manual"`, `app/js/ui/toast.js`).
-  - **149 בדיקות Unit, Data, Integration ו-DOM** (`node:test` + `happy-dom` על פני 51 חבילות) + **72 בדיקות Playwright E2E** על פני 4 פרופילי מסך (`Laptop 1440×900`, `Tablet 768×1024`, `Pixel 10 Pro XL 448×998`, `Galaxy S25 360×780`) ב-100% הצלחה (0 כישלונות, 0 דילוגים).
+  - **161 בדיקות Unit, Data, Integration ו-DOM** (`node:test` + `happy-dom` על פני 52 חבילות) + **80 בדיקות Playwright E2E** (כולל סימולציית Offline PWA מלאה) על פני 4 פרופילי מסך (`Laptop 1440×900`, `Tablet 768×1024`, `Pixel 10 Pro XL 448×998`, `Galaxy S25 360×780`) ב-100% הצלחה (0 כישלונות, 0 דילוגים).
 
 ---
 
@@ -68,6 +68,9 @@
 /
 ├── app/                              # תיקיית ה-Web App הנפרסת ל-GitHub Pages
 │   ├── index.html                    # שלד HTML5 סמנטי עם CSP קפדני (ללא JS/CSS מוטמעים)
+│   ├── manifest.webmanifest          # מניפסט PWA להתקנה עצמאית (RTL/he, standalone)
+│   ├── sw.js                         # Service Worker במדיניות Network-First לתמיכה מלאה באופליין
+│   ├── icons/                        # אייקוני PWA (SVG, PNG 192/512, maskable ו-Apple Touch Icon)
 │   ├── data/
 │   │   └── questions.json            # מאגר 1,079 השאלות המקומפל לזמן ריצה (2.29 MB)
 │   ├── styles/                       # ארכיטקטורת CSS מודולרית מבוססת @layer (17 קבצים)
@@ -83,7 +86,7 @@
 │       ├── config.js                 # קבועים, מפתחות אחסון v2, הגדרות Firebase, אדמין ו-Webhook
 │       ├── core/                     # store.js, storage.js, router.js, events.js
 │       ├── domain/                   # לוגיקה עסקית טהורה (shuffle, question-pool, question-report, וכו')
-│       ├── services/                 # question-repository.js, clipboard.js, cloud-sync.js, report-service.js
+│       ├── services/                 # question-repository.js, clipboard.js, cloud-sync.js, pwa.js, report-service.js
 │       ├── ui/                       # dom.js, toast.js, dialog.js, explanation-card.js
 │       └── features/                 # exam/, study/, saved-exams/, stats/, auth/, report-issue/
 ├── data-pipeline/
@@ -130,10 +133,10 @@ npm install
 # הפעלת שרת פיתוח מקומי בכתובת http://127.0.0.1:4173
 npm start
 
-# הרצת בדיקות Lint + פורמט + כל 149 בדיקות ה-Unit / Data / Integration / DOM
+# הרצת בדיקות Lint + פורמט + כל 161 בדיקות ה-Unit / Data / Integration / DOM
 npm run verify
 
-# הרצת 72 בדיקות ה-E2E בדפדפן אמיתי על פני 4 גדלי מסך (Laptop, Tablet, Pixel 10 Pro XL, Galaxy S25)
+# הרצת 80 בדיקות ה-E2E בדפדפן אמיתי על פני 4 גדלי מסך (Laptop, Tablet, Pixel 10 Pro XL, Galaxy S25)
 npm run test:e2e
 
 # בנייה מחדש של app/data/questions.json מתוך data-pipeline/source/clean_questions.json
@@ -147,4 +150,4 @@ npm run build:data
 - **[Engineering Standards ("התנ"ך ההנדסי")](./docs/standards/README.md)** — ארכיטקטורה, תקני קוד, CSS, נגישות RTL, ניהול מצב, אבטחה ו-Definition of Done.
 - **[Software Test Plan & Report (`docs/STPR.md`)](./docs/STPR.md)** — מטריצת עקיבות דרישות ודוח ריצת בדיקות מלא.
 - **[מדריך תרומה ופיתוח (`CONTRIBUTING.md`)](./CONTRIBUTING.md)** — תהליך העבודה ב-Git, הוספת פיצ'רים ועדכון מאגר השאלות.
-- **[יומן שינויים (`CHANGELOG.md`)](./CHANGELOG.md)** — פירוט השינויים המלא מ-`v1.0.0` ועד `v2.2.0`.
+- **[יומן שינויים (`CHANGELOG.md`)](./CHANGELOG.md)** — פירוט השינויים המלא מ-`v1.0.0` ועד `v2.3.0`.

@@ -192,14 +192,7 @@ ${draftComment}</textarea>
                 )}
 
                 <div class="app-dialog-actions">
-                  <button
-                    type="button"
-                    class="btn btn-outline"
-                    id="reportCancelBtn"
-                    ${rawHTML(isSubmitting ? 'disabled' : '')}
-                  >
-                    ביטול
-                  </button>
+                  <button type="button" class="btn btn-outline" id="reportCancelBtn">ביטול</button>
                   <button
                     type="submit"
                     class="btn btn-primary"
@@ -228,12 +221,12 @@ ${draftComment}</textarea>
 
     if (closeBtn) {
       closeBtn.addEventListener('click', () => {
-        if (!isSubmitting) close();
+        close();
       });
     }
     if (cancelBtn) {
       cancelBtn.addEventListener('click', () => {
-        if (!isSubmitting) close();
+        close();
       });
     }
     if (signInBtn) {

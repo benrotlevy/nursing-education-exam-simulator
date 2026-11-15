@@ -6,6 +6,27 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 
 ---
 
+## [2.3.0] - 2026-11-15
+
+### Added
+
+- **Full Offline-Capable Progressive Web App (`PWA`)**:
+  - Added RTL Hebrew Web App Manifest (`app/manifest.webmanifest`) configured for `display: "standalone"`, `start_url: "./"`, `dir: "rtl"`, `lang: "he"`, and generated standard (`192x192`, `512x512`, `icon.svg`), `maskable` (`512x512`), and iOS (`apple-touch-icon.png`) icons under `app/icons/`.
+  - Implemented Network-First Service Worker (`app/sw.js`) pre-caching all app shell assets, stylesheets, ES modules, icons, and `app/data/questions.json` under versioned cache `nursing-exam-sim-v2.3.0`, evicting legacy caches on activation, and bypassing external Firebase Auth/Firestore, Google Fonts, and Cloudflare Worker origins.
+  - Added `app/js/services/pwa.js` (`createPwaService`) wiring Service Worker registration, `beforeinstallprompt` install button (`#btnInstallPwa`), standalone detection, and `appinstalled` toast feedback in `app/js/main.js` and `app/index.html`.
+  - Updated `app/index.html` Content-Security-Policy with `manifest-src 'self'; worker-src 'self';`, added `.webmanifest` MIME type in `tools/serve.js`, configured `app/sw.js` linting in `eslint.config.js`, and added automated verification in `tests/unit/pwa.test.js` and `tests/e2e/pwa-offline.spec.js`.
+
+### Fixed
+
+- **Offline Question Reporting & Sync Status Indicator Safeguards (`PWA-OFFLINE`)**:
+  - Updated `app/js/services/report-service.js` and `app/js/features/report-issue/report-dialog-view.js` so offline or hanging Firestore/webhook report submissions fail cleanly within `writeTimeoutMs` with a clear Hebrew offline message instead of freezing the UI, while keeping Cancel (`#reportCancelBtn`) and Close (`#reportDialogCloseBtn`) responsive at all times.
+  - Updated `app/js/services/cloud-sync.js`, `app/js/features/auth/auth-view.js`, `app/js/features/auth/auth-controller.js`, `app/styles/components/badges.css`, and `app/styles/features/stats.css` to track browser `online`/`offline` transitions and Firestore error states so `#syncStatusIndicator` and Statistics sync sub-labels accurately show `'📴 מצב לא מקוון (נשמר מקומית)'` and `'⚠️ שגיאת סנכרון (נשמר מקומית)'` instead of staying green `'☁️ סנכרון ענן פעיל'`.
+
+- **Cross-Device Saved Exam Release Synchronization (`SYNC-04`)**:
+  - Replicated `releasedSavedExams` deletion tombstones to Firestore (`/users/{userId}`) in `app/js/services/cloud-sync.js` and `firestore.rules` (up to 200 keys), merged remote tombstones across devices using monotonic max timestamps in `app/js/domain/sync-merge.js`, added clock-skew-safe release/reserve timestamps in `app/js/features/saved-exams/saved-exams-controller.js`, and preserved `releasedSavedExams` across `storage.saveProgress()` callers.
+
+---
+
 ## [2.2.0] - 2026-11-15
 
 ### Added

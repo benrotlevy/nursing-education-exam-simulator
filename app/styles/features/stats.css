@@ -100,6 +100,16 @@
   color: #15803d;
 }
 
+.cloud-sync-active-sub.sync-indicator-offline {
+  color: #b45309;
+  font-weight: 600;
+}
+
+.cloud-sync-active-sub.sync-indicator-error {
+  color: var(--danger);
+  font-weight: 600;
+}
+
 .sync-indicator-flashing {
   color: #15803d;
   font-weight: 700;

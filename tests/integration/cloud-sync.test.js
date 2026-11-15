@@ -237,4 +237,68 @@ describe('app/js/services/cloud-sync.js — Firebase Auth & Cloud Sync Service (
     assert.equal(signedIn, true);
     assert.equal(redirectCalled, true);
   });
+
+  it('tracks offline/online window events, short-circuits pushNow offline, and marks snapshot errors', async () => {
+    const localStorage = createMemoryStorage();
+    const sessionStorage = createMemoryStorage();
+    const store = createStore(createInitialState());
+    const storage = createStorageAdapter({ localStorage, sessionStorage });
+    const fakeSdk = createFakeFirebaseSdk(null);
+
+    const listeners = new Map();
+    const fakeWindow = {
+      addEventListener: (evt, fn) => {
+        if (!listeners.has(evt)) listeners.set(evt, []);
+        listeners.get(evt).push(fn);
+      },
+    };
+    const fakeNav = { onLine: true };
+    const statusHistory = [];
+    let snapshotErrorCb = null;
+
+    fakeSdk.onSnapshot = (_ref, _cb, errCb) => {
+      snapshotErrorCb = errCb;
+      return () => {
+        snapshotErrorCb = null;
+      };
+    };
+
+    const cloudSync = createCloudSyncService({
+      firebaseSdk: fakeSdk,
+      store,
+      storage,
+      debounceMs: 5,
+      window: fakeWindow,
+      navigator: fakeNav,
+      onSyncStatusChanged: (status) => statusHistory.push(status),
+    });
+
+    await cloudSync.init();
+    await cloudSync.signIn();
+    assert.equal(store.getState().auth.syncStatus, 'synced');
+
+    // Go offline via browser event + navigator.onLine = false
+    fakeNav.onLine = false;
+    for (const fn of listeners.get('offline') || []) fn();
+    assert.equal(store.getState().auth.syncStatus, 'offline');
+    assert.equal(statusHistory[statusHistory.length - 1], 'offline');
+
+    // pushNow while offline short-circuits without hitting setDoc
+    const beforeCalls = fakeSdk.getSetDocCalls().length;
+    const pushedOffline = await cloudSync.pushNow();
+    assert.equal(pushedOffline, false);
+    assert.equal(fakeSdk.getSetDocCalls().length, beforeCalls);
+
+    // Go back online -> sets synced and schedules push
+    fakeNav.onLine = true;
+    for (const fn of listeners.get('online') || []) fn();
+    assert.equal(store.getState().auth.syncStatus, 'synced');
+
+    // Snapshot error while online sets error, and unavailable sets offline
+    snapshotErrorCb(new Error('permission failure'));
+    assert.equal(store.getState().auth.syncStatus, 'error');
+
+    snapshotErrorCb(Object.assign(new Error('offline'), { code: 'unavailable' }));
+    assert.equal(store.getState().auth.syncStatus, 'offline');
+  });
 });

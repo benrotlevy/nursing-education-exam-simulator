@@ -54,7 +54,7 @@ Because the web app is hosted statically on GitHub Pages, **no Telegram Bot Toke
 
 ---
 
-## 2. Progressive Web App (PWA) — Installable from Chrome
+## 2. Progressive Web App (PWA) — Installable from Chrome ✅ *(Implemented in v2.3.0)*
 
 ### Overview
 

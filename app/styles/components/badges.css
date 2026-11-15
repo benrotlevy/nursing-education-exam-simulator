@@ -41,6 +41,16 @@
   transition: all 0.3s ease;
 }
 
+.sync-status-indicator.sync-indicator-offline {
+  color: #b45309;
+  font-weight: 700;
+}
+
+.sync-status-indicator.sync-indicator-error {
+  color: var(--danger);
+  font-weight: 700;
+}
+
 /* Navigation Counter Badges */
 .mistakes-counter-badge {
   background: var(--danger-light);

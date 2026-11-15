@@ -297,4 +297,53 @@ describe('Question Issue Reporting & Admin Dashboard DOM Flow', () => {
     assert.equal(mockFb.reportsStore.get('rpt_xss_1').status, 'RESOLVED');
     assert.equal(badge.textContent, '0');
   });
+
+  it('shows offline error and keeps Cancel clickable even during in-flight report submission', async () => {
+    const { win, document, app, mockFb } = await setupReportEnv();
+    mockFb.setUser({
+      uid: 'student_uid_offline',
+      displayName: 'רותם שמש',
+      email: 'rotem@example.com',
+    });
+
+    app.router.switchTab('study');
+    document.getElementById('btnReportStudyQuestion').click();
+
+    // Test 1: Submitting while offline fails cleanly without locking buttons
+    let isOnline = false;
+    Object.defineProperty(win.navigator, 'onLine', {
+      configurable: true,
+      get: () => isOnline,
+    });
+
+    const textarea = document.getElementById('reportCommentInput');
+    textarea.value = 'נמצא אי דיוק בניסוח התשובה.';
+    document
+      .getElementById('reportIssueForm')
+      .dispatchEvent(new win.Event('submit', { bubbles: true, cancelable: true }));
+    await new Promise((r) => setTimeout(r, 20));
+
+    const errorBox = document.getElementById('reportErrorBox');
+    assert.ok(errorBox, 'Expected offline error box');
+    assert.match(errorBox.textContent, /לא מקוון/);
+    assert.equal(document.getElementById('reportSubmitBtn').disabled, false);
+    assert.equal(document.getElementById('reportCancelBtn').disabled, false);
+
+    // Test 2: Even while online and Firestore write is pending, Cancel remains enabled & closes dialog
+    isOnline = true;
+    mockFb.sdk.addDoc = () => new Promise(() => {});
+    document.getElementById('reportCommentInput').value = 'בדיקת ביטול בזמן שליחה פעילה.';
+    document
+      .getElementById('reportIssueForm')
+      .dispatchEvent(new win.Event('submit', { bubbles: true, cancelable: true }));
+    await new Promise((r) => setTimeout(r, 10));
+
+    const cancelBtn = document.getElementById('reportCancelBtn');
+    const submitBtn = document.getElementById('reportSubmitBtn');
+    assert.equal(submitBtn.disabled, true, 'Submit button should stay disabled while in-flight');
+    assert.equal(cancelBtn.disabled, false, 'Cancel button must NEVER lock the user in the modal');
+
+    cancelBtn.click();
+    assert.equal(document.getElementById('reportIssueDialog').hasAttribute('open'), false);
+  });
 });

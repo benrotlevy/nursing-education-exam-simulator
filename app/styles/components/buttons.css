@@ -105,6 +105,34 @@
   pointer-events: none;
 }
 
+/* PWA Install Button */
+.btn-install-pwa {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: var(--primary-light);
+  border: 1px solid #bae6fd;
+  border-radius: 9999px;
+  padding: 7px 14px;
+  font-size: 0.85rem;
+  font-weight: 700;
+  color: var(--primary-dark);
+  cursor: pointer;
+  white-space: nowrap;
+  box-shadow: 0 1px 3px rgba(2, 132, 199, 0.12);
+  transition: all 0.2s ease;
+}
+
+.btn-install-pwa:hover {
+  background: #bae6fd;
+  border-color: var(--primary);
+  transform: translateY(-1px);
+}
+
+.btn-install-pwa[hidden] {
+  display: none !important;
+}
+
 .btn-abandon-exam {
   background: #fef2f2;
   border: 1px solid #fecaca;

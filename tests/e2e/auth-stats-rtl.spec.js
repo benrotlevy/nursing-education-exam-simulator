@@ -4,30 +4,41 @@ test.describe('AUTH-RTL: Statistics Cloud Sync Badge & Saved Exams Count RTL Bid
   test('renders "Google:" immediately adjacent to "מחובר לחשבון" without BiDi inversion across viewports', async ({
     page,
   }) => {
-    await page.goto('/');
-    await expect(page.locator('#totalQuestionsHeader')).toContainText('1079');
-
-    // Wait for app controller initialization
-    await page.waitForFunction(() => Boolean(window.app?.authController));
-
-    const isMobile = Boolean(page.viewportSize() && page.viewportSize().width <= 640);
-    // Switch to Statistics tab
-    await page.locator(isMobile ? '#bNavStats' : '#tabStats').click();
-    await expect(page.locator('#screenStats')).toBeVisible();
-
-    // Render authenticated user into DOM and lock state against background auth callbacks
-    await page.evaluate(() => {
+    await page.addInitScript(() => {
       const mockUser = {
         uid: 'test-user-123',
         displayName: 'Benjamin Rotlevy',
         email: 'benjamin.rotlevy@gmail.com',
       };
-      if (window.app?.authController) {
-        const originalRender = window.app.authController.renderUser;
-        window.app.authController.renderUser = () => originalRender(mockUser);
-        window.app.authController.renderUser(mockUser);
-      }
+      window.__E2E_FIREBASE_SDK__ = {
+        initializeApp: () => ({ name: 'e2e-rtl-app' }),
+        getAuth: () => ({ currentUser: mockUser }),
+        getFirestore: () => ({ name: 'e2e-rtl-db' }),
+        GoogleAuthProvider: class {
+          setCustomParameters() {}
+        },
+        onAuthStateChanged: (_auth, cb) => {
+          setTimeout(() => cb(mockUser), 0);
+          return () => {};
+        },
+        doc: (_db, col, id) => ({ path: `${col}/${id}` }),
+        getDoc: async () => ({ exists: () => false, data: () => null }),
+        setDoc: async () => {},
+        onSnapshot: () => () => {},
+      };
     });
+
+    await page.goto('/');
+    await expect(page.locator('#totalQuestionsHeader')).toContainText('1079');
+
+    // Wait for app controller initialization and authenticated pill rendering
+    await page.waitForFunction(() => Boolean(window.app?.authController));
+    await expect(page.locator('#userPill')).toBeVisible();
+
+    const isMobile = Boolean(page.viewportSize() && page.viewportSize().width <= 640);
+    // Switch to Statistics tab
+    await page.locator(isMobile ? '#bNavStats' : '#tabStats').click();
+    await expect(page.locator('#screenStats')).toBeVisible();
 
     const badge = page.locator('#statsCloudSyncInfo');
     await expect(badge).toBeVisible();

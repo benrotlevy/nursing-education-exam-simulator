@@ -275,4 +275,54 @@ describe('app/js/services/report-service.js — Report Submission, Telegram Disp
     );
     assert.equal((await service.deleteReport('rpt_seed_1')).ok, false);
   });
+
+  it('short-circuits immediately when navigator.onLine is false and times out hanging Firestore writes', async () => {
+    const fakeSdk = createFakeReportFirebaseSdk({
+      initialUser: { uid: 'student-offline', email: 's@test.org', displayName: 'תלמידה' },
+    });
+    const cloudSync = createCloudSyncService({
+      firebaseSdk: fakeSdk,
+      store: createStore(createInitialState()),
+      storage: createStorageAdapter({
+        localStorage: createMemoryStorage(),
+        sessionStorage: createMemoryStorage(),
+      }),
+    });
+
+    let fetchCalled = 0;
+    const offlineNav = { onLine: false };
+    const offlineService = createReportService({
+      cloudSync,
+      webhookUrl: 'https://worker.example.com/report',
+      fetchFn: async () => {
+        fetchCalled += 1;
+        return { ok: true, status: 200 };
+      },
+      navigator: offlineNav,
+      writeTimeoutMs: 50,
+    });
+
+    const offlineRes = await offlineService.submitReport({
+      question: sampleQuestion,
+      issueType: 'TYPO_TEXT',
+      comment: 'תיקון כתיב קטן בשאלה.',
+    });
+    assert.equal(offlineRes.ok, false);
+    assert.equal(offlineRes.offline, true);
+    assert.match(offlineRes.message, /לא מקוון/);
+    assert.equal(fakeSdk._getReportsMap().size, 0);
+    assert.equal(fetchCalled, 0);
+
+    // Online navigator, but Firestore write hangs indefinitely -> must fail with timeout instead of freezing
+    offlineNav.onLine = true;
+    fakeSdk.addDoc = () => new Promise(() => {});
+    const timedOutRes = await offlineService.submitReport({
+      question: sampleQuestion,
+      issueType: 'TYPO_TEXT',
+      comment: 'שליחה עם שרת שאינו מגיב.',
+    });
+    assert.equal(timedOutRes.ok, false);
+    assert.equal(timedOutRes.offline, true);
+    assert.match(timedOutRes.message, /חיבור לאינטרנט/);
+  });
 });

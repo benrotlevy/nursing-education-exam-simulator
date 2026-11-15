@@ -4,7 +4,12 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { Window } from 'happy-dom';
-import { sanitizeAvatarUrl, renderAuthUI } from '../../app/js/features/auth/auth-view.js';
+import {
+  sanitizeAvatarUrl,
+  renderAuthUI,
+  renderSyncStatus,
+  flashSyncIndicator,
+} from '../../app/js/features/auth/auth-view.js';
 import { DEFAULT_AVATAR_URL } from '../../app/js/config.js';
 
 const __filename = fileURLToPath(import.meta.url);
@@ -94,5 +99,52 @@ describe('app/js/features/auth/auth-view.js & firestore.rules — Auth UI Securi
     assert.ok(rules.includes('allow delete: if false;'));
     assert.ok(rules.includes('match /{document=**}'));
     assert.ok(rules.includes('allow read, write: if false;'));
+  });
+
+  it('updates #syncStatusIndicator and stats sub-label cleanly across offline, error, and synced states without flash clobbering', () => {
+    const htmlContent = fs.readFileSync(path.join(ROOT_DIR, 'app/index.html'), 'utf8');
+    const win = new Window();
+    win.document.write(htmlContent);
+
+    Object.defineProperty(win.navigator, 'onLine', {
+      configurable: true,
+      get: () => false,
+    });
+
+    renderAuthUI({
+      document: win.document,
+      user: {
+        uid: 'u3',
+        displayName: 'דנה לוי',
+        email: 'dana@example.com',
+      },
+    });
+
+    const indicator = win.document.getElementById('syncStatusIndicator');
+    const statsSub = win.document.querySelector('#statsCloudSyncInfo .cloud-sync-active-sub');
+    assert.equal(indicator.textContent, '📴 מצב לא מקוון (נשמר מקומית)');
+    assert.equal(indicator.classList.contains('sync-indicator-offline'), true);
+    assert.equal(statsSub.textContent, 'מצב לא מקוון (נשמר מקומית)');
+
+    // flashSyncIndicator must not replace offline indicator with online text
+    assert.equal(flashSyncIndicator({ document: win.document }), null);
+    assert.equal(indicator.textContent, '📴 מצב לא מקוון (נשמר מקומית)');
+
+    // Error state
+    renderSyncStatus({ document: win.document, syncStatus: 'error' });
+    assert.equal(indicator.textContent, '⚠️ שגיאת סנכרון (נשמר מקומית)');
+    assert.equal(indicator.classList.contains('sync-indicator-error'), true);
+    assert.equal(indicator.classList.contains('sync-indicator-offline'), false);
+
+    // Restored synced state
+    Object.defineProperty(win.navigator, 'onLine', {
+      configurable: true,
+      get: () => true,
+    });
+    renderSyncStatus({ document: win.document, syncStatus: 'synced' });
+    assert.equal(indicator.textContent, '☁️ סנכרון ענן פעיל');
+    assert.equal(indicator.classList.contains('sync-indicator-offline'), false);
+    assert.equal(indicator.classList.contains('sync-indicator-error'), false);
+    assert.equal(statsSub.textContent, 'סנכרון ענן פעיל');
   });
 });

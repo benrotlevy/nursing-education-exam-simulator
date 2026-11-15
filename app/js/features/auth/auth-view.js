@@ -30,7 +30,11 @@ export function sanitizeAvatarUrl(url) {
 /**
  * Updates the header user pill, Google sign-in button, and statistics cloud sync banner.
  */
-export function renderAuthUI({ document = globalThis.document, user = null } = {}) {
+export function renderAuthUI({
+  document = globalThis.document,
+  user = null,
+  syncStatus = null,
+} = {}) {
   if (!document) return;
 
   const btn = document.getElementById('btnGoogleSignIn');
@@ -38,6 +42,9 @@ export function renderAuthUI({ document = globalThis.document, user = null } = {
   const nameEl = document.getElementById('userName');
   const avatarEl = document.getElementById('userAvatar');
   const statsCloudBadge = document.getElementById('statsCloudSyncInfo');
+
+  const isOffline = document?.defaultView?.navigator?.onLine === false;
+  const effectiveStatus = syncStatus || (isOffline ? 'offline' : 'synced');
 
   if (user) {
     const displayLabel = user.displayName || user.email || 'משתמש';
@@ -50,12 +57,52 @@ export function renderAuthUI({ document = globalThis.document, user = null } = {
     if (statsCloudBadge) {
       statsCloudBadge.innerHTML = `<span class="cloud-sync-active-title">☁️ מחובר לחשבון <bdi>Google</bdi>:</span> <bdi class="user-display-name">${escapeHTML(displayLabel)}</bdi> &bull; <span class="cloud-sync-active-sub">סנכרון ענן פעיל</span>`;
     }
+    renderSyncStatus({ document, syncStatus: effectiveStatus });
   } else {
     if (btn) btn.style.display = 'inline-flex';
     if (pill) pill.style.display = 'none';
+    renderSyncStatus({ document, syncStatus: 'synced' });
     if (statsCloudBadge) {
       statsCloudBadge.innerHTML = `<span class="u-text-muted">💾 הנתונים נשמרים מקומית בדפדפן. לחץ למעלה על 'סנכרון ענן' כדי לסנכרן בין מכשירים.</span>`;
     }
+  }
+}
+
+/**
+ * Updates the header sync status badge and Stats cloud sync sub-label
+ * to reflect live online ('synced'), offline ('offline'), or sync error ('error') state.
+ */
+export function renderSyncStatus({ document = globalThis.document, syncStatus = 'synced' } = {}) {
+  if (!document) return;
+  const indicator = document.getElementById('syncStatusIndicator');
+  const statsSub = document.querySelector('#statsCloudSyncInfo .cloud-sync-active-sub');
+
+  const isOffline = syncStatus === 'offline';
+  const isError = syncStatus === 'error';
+
+  let indicatorText = '☁️ סנכרון ענן פעיל';
+  let statsSubText = 'סנכרון ענן פעיל';
+  if (isOffline) {
+    indicatorText = '📴 מצב לא מקוון (נשמר מקומית)';
+    statsSubText = 'מצב לא מקוון (נשמר מקומית)';
+  } else if (isError) {
+    indicatorText = '⚠️ שגיאת סנכרון (נשמר מקומית)';
+    statsSubText = 'שגיאת סנכרון (נשמר מקומית)';
+  }
+
+  if (indicator) {
+    indicator.textContent = indicatorText;
+    indicator.classList?.toggle('sync-indicator-offline', isOffline);
+    indicator.classList?.toggle('sync-indicator-error', isError);
+    if (isOffline || isError) {
+      indicator.classList?.remove('sync-indicator-flashing');
+    }
+  }
+
+  if (statsSub) {
+    statsSub.textContent = statsSubText;
+    statsSub.classList?.toggle('sync-indicator-offline', isOffline);
+    statsSub.classList?.toggle('sync-indicator-error', isError);
   }
 }
 
@@ -78,12 +125,28 @@ export function flashSyncIndicator({
 } = {}) {
   const indicator = document?.getElementById('syncStatusIndicator');
   if (!indicator) return null;
+  if (
+    indicator.classList?.contains('sync-indicator-offline') ||
+    document?.defaultView?.navigator?.onLine === false
+  ) {
+    renderSyncStatus({ document, syncStatus: 'offline' });
+    return null;
+  }
 
   indicator.textContent = '☁️ סונכרן הרגע';
   indicator.classList.add('sync-indicator-flashing');
 
   return setTimeoutFn(() => {
-    indicator.textContent = '☁️ סנכרון ענן פעיל';
     indicator.classList.remove('sync-indicator-flashing');
+    if (
+      indicator.classList?.contains('sync-indicator-offline') ||
+      document?.defaultView?.navigator?.onLine === false
+    ) {
+      renderSyncStatus({ document, syncStatus: 'offline' });
+    } else if (indicator.classList?.contains('sync-indicator-error')) {
+      renderSyncStatus({ document, syncStatus: 'error' });
+    } else {
+      indicator.textContent = '☁️ סנכרון ענן פעיל';
+    }
   }, durationMs);
 }

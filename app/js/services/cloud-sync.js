@@ -56,11 +56,13 @@ export function createCloudSyncService({
   onAuthChanged = null,
   onRemoteMerged = null,
   onSyncFlash = null,
+  onSyncStatusChanged = null,
   onSignInLoadingChange = null,
   debounceMs = 600,
   setTimeoutFn = globalThis.setTimeout,
   clearTimeoutFn = globalThis.clearTimeout,
   window = globalThis.window,
+  navigator = globalThis.navigator,
 } = {}) {
   let sdk = firebaseSdk;
   let auth = null;
@@ -70,10 +72,39 @@ export function createCloudSyncService({
   let pushDebounceTimer = null;
   let initialized = false;
 
-  // Automatically flush pending offline mutations when network connectivity is restored
+  function isBrowserOffline() {
+    const nav = navigator || window?.navigator;
+    return Boolean(nav && nav.onLine === false);
+  }
+
+  function updateSyncStatus(syncStatus, actionName = 'cloud-sync/status-changed') {
+    if (store) {
+      const currentAuth = store.getState().auth || {};
+      store.setState(
+        {
+          auth: {
+            ...currentAuth,
+            syncStatus,
+          },
+        },
+        actionName
+      );
+    }
+    if (typeof onSyncStatusChanged === 'function') {
+      onSyncStatusChanged(syncStatus);
+    }
+  }
+
+  // Track offline/online transitions and flush pending offline mutations when restored
   if (window && typeof window.addEventListener === 'function') {
+    window.addEventListener('offline', () => {
+      if (auth && auth.currentUser) {
+        updateSyncStatus('offline', 'cloud-sync/offline');
+      }
+    });
     window.addEventListener('online', () => {
       if (auth && auth.currentUser) {
+        updateSyncStatus('synced', 'cloud-sync/online');
         schedulePush();
       }
     });
@@ -151,6 +182,10 @@ export function createCloudSyncService({
 
   async function pushNow() {
     if (!sdk || !auth || !auth.currentUser || !db || !store) return false;
+    if (isBrowserOffline()) {
+      updateSyncStatus('offline', 'cloud-sync/offline');
+      return false;
+    }
     try {
       const state = store.getState();
       const userDocRef = sdk.doc(db, 'users', auth.currentUser.uid);
@@ -166,48 +201,27 @@ export function createCloudSyncService({
         updatedAt: new Date().toISOString(),
       };
       await sdk.setDoc(userDocRef, dataToPush, { merge: true });
-      if (store) {
-        const currentAuth = store.getState().auth || {};
-        store.setState(
-          {
-            auth: {
-              ...currentAuth,
-              syncStatus: 'synced',
-            },
-          },
-          'cloud-sync/pushed'
-        );
-      }
+      updateSyncStatus('synced', 'cloud-sync/pushed');
       if (typeof onSyncFlash === 'function') {
         onSyncFlash();
       }
       return true;
     } catch (err) {
       console.warn('Cloud push warning:', err);
-      if (store) {
-        const currentAuth = store.getState().auth || {};
-        const isOffline =
-          err?.code === 'unavailable' ||
-          err?.name === 'NetworkError' ||
-          String(err?.message || '')
-            .toLowerCase()
-            .includes('network') ||
-          String(err?.message || '')
-            .toLowerCase()
-            .includes('offline') ||
-          String(err?.message || '')
-            .toLowerCase()
-            .includes('timed out');
-        store.setState(
-          {
-            auth: {
-              ...currentAuth,
-              syncStatus: isOffline ? 'offline' : 'error',
-            },
-          },
-          'cloud-sync/push-error'
-        );
-      }
+      const isOffline =
+        isBrowserOffline() ||
+        err?.code === 'unavailable' ||
+        err?.name === 'NetworkError' ||
+        String(err?.message || '')
+          .toLowerCase()
+          .includes('network') ||
+        String(err?.message || '')
+          .toLowerCase()
+          .includes('offline') ||
+        String(err?.message || '')
+          .toLowerCase()
+          .includes('timed out');
+      updateSyncStatus(isOffline ? 'offline' : 'error', 'cloud-sync/push-error');
       return false;
     }
   }
@@ -257,6 +271,7 @@ export function createCloudSyncService({
   }
 
   async function handleAuthUserChange(user) {
+    const initialSyncStatus = user ? (isBrowserOffline() ? 'offline' : 'synced') : 'idle';
     if (store) {
       store.setState(
         {
@@ -269,7 +284,7 @@ export function createCloudSyncService({
                   photoURL: user.photoURL || '',
                 }
               : null,
-            syncStatus: user ? 'synced' : 'idle',
+            syncStatus: initialSyncStatus,
           },
         },
         'cloud-sync/auth-changed'
@@ -292,6 +307,10 @@ export function createCloudSyncService({
         }
       } catch (err) {
         console.warn('Initial Firestore getDoc failed:', err);
+        updateSyncStatus(
+          isBrowserOffline() || err?.code === 'unavailable' ? 'offline' : 'error',
+          'cloud-sync/fetch-error'
+        );
       }
 
       if (unsubscribeSnapshot) {
@@ -302,10 +321,17 @@ export function createCloudSyncService({
         userDocRef,
         (docSnap) => {
           if (!docSnap || typeof docSnap.exists !== 'function' || !docSnap.exists()) return;
+          if (!isBrowserOffline()) {
+            updateSyncStatus('synced', 'cloud-sync/snapshot');
+          }
           applyRemotePayload(docSnap.data());
         },
         (err) => {
           console.warn('Snapshot listener error:', err);
+          updateSyncStatus(
+            isBrowserOffline() || err?.code === 'unavailable' ? 'offline' : 'error',
+            'cloud-sync/snapshot-error'
+          );
         }
       );
     } else {

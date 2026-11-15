@@ -4,7 +4,12 @@
  */
 
 import { createCloudSyncService } from '../../services/cloud-sync.js';
-import { renderAuthUI, setSignInButtonLoading, flashSyncIndicator } from './auth-view.js';
+import {
+  renderAuthUI,
+  renderSyncStatus,
+  setSignInButtonLoading,
+  flashSyncIndicator,
+} from './auth-view.js';
 
 export function createAuthController({
   document = globalThis.document,
@@ -24,8 +29,14 @@ export function createAuthController({
     storage,
     toast,
     notifyError,
+    window: document?.defaultView || globalThis.window,
+    navigator: document?.defaultView?.navigator || globalThis.navigator,
     onAuthChanged: (user) => {
-      renderAuthUI({ document, user });
+      renderAuthUI({
+        document,
+        user,
+        syncStatus: store?.getState()?.auth?.syncStatus,
+      });
       if (typeof onAuthChanged === 'function') {
         onAuthChanged(user);
       }
@@ -35,6 +46,9 @@ export function createAuthController({
     },
     onSyncFlash: () => {
       flashSyncIndicator({ document });
+    },
+    onSyncStatusChanged: (syncStatus) => {
+      renderSyncStatus({ document, syncStatus });
     },
     onRemoteMerged: (merged) => {
       if (typeof onRemoteMerged === 'function') {
