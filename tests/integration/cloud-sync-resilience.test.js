@@ -133,6 +133,15 @@ function createFakeFirebaseSdk({ initialDocData = null, setDocError = null } = {
     setSetDocError: (err) => {
       currentSetDocError = err;
     },
+    triggerSnapshot: (data) => {
+      storedDoc = data;
+      if (snapshotCallback) {
+        snapshotCallback({
+          exists: () => Boolean(data),
+          data: () => data,
+        });
+      }
+    },
     isSnapshotActive: () => Boolean(snapshotCallback),
     isSnapshotUnsubscribed: () => snapshotUnsubscribeCalled,
     getSetDocCalls: () => setDocCalls,
@@ -716,6 +725,105 @@ describe('app/js/services/cloud-sync.js — Cloud Sync Resilience, Debouncing & 
         lastCall.data.savedExams,
         [],
         'Expected cloud document savedExams to be empty after offline release merge'
+      );
+      assert.deepStrictEqual(
+        lastCall.data.releasedSavedExams,
+        {
+          saved_offline_target: 2000,
+          'שחזור מבחן ממשלתי 2023': 2000,
+        },
+        'Expected cloud push to persist releasedSavedExams tombstones for other devices'
+      );
+    });
+
+    it('synchronizes saved exam removal from Smartphone to Laptop without resurrection on refresh [SYNC-04]', async () => {
+      const slot = {
+        id: 'saved_5000',
+        sourceName: 'שחזור מבחן מרכזי 2025',
+        title: 'שחזור מבחן מרכזי 2025',
+        questionCount: 50,
+        questionIds: ['q1', 'q2'],
+        savedAt: new Date(5000).toISOString(),
+        status: 'READY',
+        score: null,
+        completedAt: null,
+      };
+
+      // Laptop currently has the saved exam locally and in the initial cloud snapshot
+      const laptopStore = createStore({
+        ...createInitialState(),
+        savedExams: [slot],
+        releasedSavedExams: {},
+      });
+      const laptopStorage = createStorageAdapter({
+        localStorage: createMemoryStorage(),
+        sessionStorage: createMemoryStorage(),
+      });
+
+      const fakeSdk = createFakeFirebaseSdk({
+        initialDocData: {
+          schemaVersion: 2,
+          mistakes: [],
+          mistakeTimestamps: {},
+          userStats: {
+            totalAnswered: 0,
+            totalCorrect: 0,
+            examsCompleted: 0,
+            lastResetAt: 0,
+            categoryStats: {},
+          },
+          savedExams: [slot],
+          releasedSavedExams: {},
+          updatedAt: new Date(5000).toISOString(),
+        },
+      });
+
+      const laptopSync = createCloudSyncService({
+        firebaseSdk: fakeSdk,
+        store: laptopStore,
+        storage: laptopStorage,
+        debounceMs: 5,
+      });
+
+      await laptopSync.init();
+      await laptopSync.signIn();
+      await new Promise((r) => setTimeout(r, 20));
+      assert.equal(laptopStore.getState().savedExams.length, 1);
+
+      // Smartphone releases the saved exam and pushes updated cloud doc with tombstone
+      fakeSdk.triggerSnapshot({
+        schemaVersion: 2,
+        mistakes: [],
+        mistakeTimestamps: {},
+        userStats: {
+          totalAnswered: 0,
+          totalCorrect: 0,
+          examsCompleted: 0,
+          lastResetAt: 0,
+          categoryStats: {},
+        },
+        savedExams: [],
+        releasedSavedExams: {
+          saved_5000: 6000,
+          'שחזור מבחן מרכזי 2025': 6000,
+        },
+        updatedAt: new Date(6000).toISOString(),
+      });
+
+      assert.equal(
+        laptopStore.getState().savedExams.length,
+        0,
+        'Expected Laptop savedExams to become empty when Smartphone pushes release tombstone'
+      );
+      assert.equal(
+        laptopStorage.loadProgress().savedExams.length,
+        0,
+        'Expected Laptop localStorage savedExams to clear after remote release tombstone'
+      );
+      assert.equal(
+        laptopStorage.loadProgress().releasedSavedExams.saved_5000,
+        6000,
+        'Expected Laptop localStorage to store remote release tombstone'
       );
     });
   });

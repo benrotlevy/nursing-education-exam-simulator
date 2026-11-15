@@ -443,6 +443,41 @@ describe('firestore.rules — Automated Security Rules Logic Verification (SEC-0
         'Minimal document with optional fields omitted must be permitted'
       );
     });
+
+    it('permits optional releasedSavedExams tombstone map up to 200 entries and rejects non-map values', () => {
+      const withReleased = {
+        ...createValidUserDoc(),
+        releasedSavedExams: {
+          saved_1000: 1700000000000,
+          'שחזור מבחן 2024': 1700000000000,
+        },
+      };
+
+      assert.equal(
+        evaluate({
+          request: { auth: { uid: 'alice' }, resource: { data: withReleased } },
+          resource: { data: createValidUserDoc() },
+          path: '/users/alice',
+          operation: 'update',
+        }),
+        true,
+        'Valid releasedSavedExams map must be permitted'
+      );
+
+      assert.equal(
+        evaluate({
+          request: {
+            auth: { uid: 'alice' },
+            resource: { data: { ...createValidUserDoc(), releasedSavedExams: ['bad'] } },
+          },
+          resource: { data: createValidUserDoc() },
+          path: '/users/alice',
+          operation: 'update',
+        }),
+        false,
+        'Non-map releasedSavedExams must be rejected'
+      );
+    });
   });
 
   describe('Invariant C: Authenticated user Alice reading/writing /users/bob is rejected [SEC-04.c]', () => {

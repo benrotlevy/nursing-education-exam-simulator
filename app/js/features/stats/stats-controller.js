@@ -54,6 +54,7 @@ export function createStatsController({
       mistakes: resetPayload.mistakes,
       mistakeTimestamps: resetPayload.mistakeTimestamps,
       savedExams: state.savedExams,
+      releasedSavedExams: state.releasedSavedExams || {},
       userStats: resetPayload.userStats,
     });
 

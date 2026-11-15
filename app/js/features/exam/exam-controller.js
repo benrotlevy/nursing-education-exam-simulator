@@ -188,6 +188,7 @@ export function createExamController({
       mistakes: graded.mistakes,
       mistakeTimestamps: graded.mistakeTimestamps,
       savedExams: graded.savedExams,
+      releasedSavedExams: state.releasedSavedExams || {},
       userStats: graded.userStats,
     });
     storage.saveExamSession('RESULTS', graded.exam);

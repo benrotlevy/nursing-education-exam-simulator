@@ -78,6 +78,65 @@ function normalizeMistakeMeta(mistakes, mistakeTimestamps = {}, defaultTimestamp
 }
 
 /**
+ * Merges local and remote `releasedSavedExams` tombstone maps using monotonic max timestamps
+ * and caps the retained entries so cloud documents stay bounded.
+ */
+function mergeReleasedTombstones(localReleased, remoteReleased, maxEntries = 200) {
+  const localMap = localReleased && typeof localReleased === 'object' ? localReleased : {};
+  const remoteMap = remoteReleased && typeof remoteReleased === 'object' ? remoteReleased : {};
+
+  const merged = {};
+  for (const key of new Set([...Object.keys(localMap), ...Object.keys(remoteMap)])) {
+    if (!key) continue;
+    const ts = Math.max(Number(localMap[key]) || 0, Number(remoteMap[key]) || 0);
+    if (ts > 0) {
+      merged[key] = ts;
+    }
+  }
+
+  const keys = Object.keys(merged);
+  if (keys.length <= maxEntries) return merged;
+
+  keys.sort((a, b) => merged[b] - merged[a]);
+  const pruned = {};
+  for (const key of keys.slice(0, maxEntries)) {
+    pruned[key] = merged[key];
+  }
+  return pruned;
+}
+
+/**
+ * Returns true if a saved exam slot has not been superseded by a release tombstone.
+ */
+function isSavedSlotActive(slot, releasedMap) {
+  if (!slot) return false;
+  const idTs = slot.id ? Number(releasedMap[slot.id]) || 0 : 0;
+  const sourceTs = slot.sourceName ? Number(releasedMap[slot.sourceName]) || 0 : 0;
+  const releasedTimestamp = Math.max(idTs, sourceTs);
+  if (!releasedTimestamp) return true;
+  const slotSavedAt = slot.savedAt ? new Date(slot.savedAt).getTime() : 0;
+  return slotSavedAt > releasedTimestamp;
+}
+
+/**
+ * Resolves two active saved exam slots sharing an ID or sourceName (e.g. READY vs COMPLETED).
+ */
+function pickPreferredSavedSlot(localSlot, remoteSlot) {
+  const localCompleted = localSlot.status === 'COMPLETED';
+  const remoteCompleted = remoteSlot.status === 'COMPLETED';
+  if (remoteCompleted !== localCompleted) {
+    return remoteCompleted ? remoteSlot : localSlot;
+  }
+  const localTime = new Date(
+    (localCompleted ? localSlot.completedAt : null) || localSlot.savedAt || 0
+  ).getTime();
+  const remoteTime = new Date(
+    (remoteCompleted ? remoteSlot.completedAt : null) || remoteSlot.savedAt || 0
+  ).getTime();
+  return remoteTime > localTime ? remoteSlot : localSlot;
+}
+
+/**
  * Merges local and remote progress deterministically:
  * 1. If one side has a newer `userStats.lastResetAt` than the other side's `updatedAt` / `lastResetAt`,
  *    earlier pre-reset counters and pre-reset mistakes from the stale side are discarded (SYNC-03).
@@ -173,34 +232,26 @@ export function mergeCloudAndLocalProgress(local = {}, remote = {}) {
     };
   }
 
-  // Reconcile savedExams respecting releasedSavedExams tombstones
+  // Reconcile savedExams respecting merged cross-device releasedSavedExams tombstones
   const localSaved = Array.isArray(local.savedExams) ? local.savedExams : [];
   const remoteSaved = Array.isArray(remote.savedExams) ? remote.savedExams : [];
-  const releasedMap =
-    local.releasedSavedExams && typeof local.releasedSavedExams === 'object'
-      ? local.releasedSavedExams
-      : {};
+  const releasedMap = mergeReleasedTombstones(local.releasedSavedExams, remote.releasedSavedExams);
 
-  // A remote saved exam is considered deleted if local releasedSavedExams has a tombstone
-  // newer than or matching its savedAt timestamp (or matching its ID/sourceName)
-  const activeRemoteSaved = remoteSaved.filter((slot) => {
-    if (!slot) return false;
-    const releasedTimestamp = Number(releasedMap[slot.id] || releasedMap[slot.sourceName] || 0);
-    if (!releasedTimestamp) return true;
-    const slotSavedAt = slot.savedAt ? new Date(slot.savedAt).getTime() : 0;
-    return slotSavedAt > releasedTimestamp;
-  });
+  // Filter BOTH local and remote slots so deletions on another device remove local copies too
+  const activeLocalSaved = localSaved.filter((slot) => isSavedSlotActive(slot, releasedMap));
+  const activeRemoteSaved = remoteSaved.filter((slot) => isSavedSlotActive(slot, releasedMap));
 
-  // Combine local and active remote saved exams without duplicates (matched by id or sourceName)
-  const combinedSaved = [...localSaved];
+  // Combine active local and remote saved exams without duplicates (matched by id or sourceName)
+  const combinedSaved = [...activeLocalSaved];
   for (const rSlot of activeRemoteSaved) {
-    if (!rSlot) continue;
-    const existsInLocal = combinedSaved.some(
+    const matchIdx = combinedSaved.findIndex(
       (lSlot) =>
         lSlot.id === rSlot.id || (lSlot.sourceName && lSlot.sourceName === rSlot.sourceName)
     );
-    if (!existsInLocal) {
+    if (matchIdx === -1) {
       combinedSaved.push(rSlot);
+    } else {
+      combinedSaved[matchIdx] = pickPreferredSavedSlot(combinedSaved[matchIdx], rSlot);
     }
   }
 

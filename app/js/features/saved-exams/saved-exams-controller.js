@@ -30,15 +30,31 @@ export function createSavedExamsController({
     });
   }
 
+  function buildReleasedTombstones(existingReleased, savedId, item) {
+    const rawSavedAt = item?.savedAt ? new Date(item.savedAt).getTime() : 0;
+    const itemSavedAt = Number.isFinite(rawSavedAt) ? rawSavedAt : 0;
+    // Guarantee tombstone beats item.savedAt even if devices have skewed clocks
+    const releaseTs = Math.max(Date.now(), itemSavedAt + 1);
+    return {
+      ...(existingReleased || {}),
+      ...(savedId ? { [savedId]: releaseTs } : {}),
+      ...(item?.sourceName ? { [item.sourceName]: releaseTs } : {}),
+    };
+  }
+
   function addSelectedExamToSavedZone() {
     const state = store.getState();
     const select = document?.getElementById('savedExamSourceSelect');
     const selectedSource = select ? select.value : '';
+    const existingReleased = state.releasedSavedExams || {};
+    const prevTombstone = selectedSource ? Number(existingReleased[selectedSource]) || 0 : 0;
+    const now = Math.max(Date.now(), prevTombstone + 1);
 
     const result = reserveExamSlot({
       allQuestions: state.allQuestions,
       savedExams: state.savedExams,
       sourceName: selectedSource,
+      now,
     });
 
     if (!result.ok) {
@@ -46,23 +62,15 @@ export function createSavedExamsController({
       return false;
     }
 
-    const nextReleased = { ...(state.releasedSavedExams || {}) };
-    if (selectedSource) {
-      delete nextReleased[selectedSource];
-    }
-    if (result.slot?.id) {
-      delete nextReleased[result.slot.id];
-    }
-
     store.setState(
-      { savedExams: result.savedExams, releasedSavedExams: nextReleased },
+      { savedExams: result.savedExams, releasedSavedExams: existingReleased },
       'saved-exams/reserve'
     );
     storage.saveProgress({
       mistakes: state.mistakes,
       mistakeTimestamps: state.mistakeTimestamps,
       savedExams: result.savedExams,
-      releasedSavedExams: nextReleased,
+      releasedSavedExams: existingReleased,
       userStats: state.userStats,
     });
 
@@ -80,12 +88,11 @@ export function createSavedExamsController({
   function executeReleaseSavedExam(savedId, item) {
     const state = store.getState();
     const rel = releaseSavedExamSlot(state.savedExams, savedId);
-    const now = Date.now();
-    const nextReleased = {
-      ...(state.releasedSavedExams || {}),
-      [savedId]: now,
-      ...(item?.sourceName ? { [item.sourceName]: now } : {}),
-    };
+    const nextReleased = buildReleasedTombstones(
+      state.releasedSavedExams,
+      savedId,
+      item || rel.removedSlot
+    );
 
     store.setState(
       { savedExams: rel.savedExams, releasedSavedExams: nextReleased },
@@ -170,12 +177,11 @@ export function createSavedExamsController({
     const item = state.savedExams.find((s) => s.id === savedId);
     const rel = releaseSavedExamSlot(state.savedExams, savedId);
     const qCount = rel.removedSlot ? rel.removedSlot.questionCount : 0;
-    const now = Date.now();
-    const nextReleased = {
-      ...(state.releasedSavedExams || {}),
-      [savedId]: now,
-      ...(item?.sourceName ? { [item.sourceName]: now } : {}),
-    };
+    const nextReleased = buildReleasedTombstones(
+      state.releasedSavedExams,
+      savedId,
+      item || rel.removedSlot
+    );
 
     store.setState(
       { savedExams: rel.savedExams, releasedSavedExams: nextReleased },

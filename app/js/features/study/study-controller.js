@@ -96,6 +96,7 @@ export function createStudyController({
       mistakes: result.mistakes,
       mistakeTimestamps: result.mistakeTimestamps,
       savedExams: state.savedExams,
+      releasedSavedExams: state.releasedSavedExams || {},
       userStats: result.userStats,
     });
     storage.saveStudySession(result.study);

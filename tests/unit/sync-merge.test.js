@@ -94,4 +94,74 @@ describe('app/js/domain/sync-merge.js — Timestamped Mistake Deletion & Reset P
     assert.equal(merged.userStats.examsCompleted, 0);
     assert.equal(merged.userStats.lastResetAt, 5000);
   });
+
+  it('removes a locally saved exam when remote brings a newer releasedSavedExams tombstone', () => {
+    const slot = {
+      id: 'saved_1000',
+      sourceName: 'שחזור מבחן 2024',
+      title: 'שחזור מבחן 2024',
+      questionCount: 100,
+      questionIds: ['q1'],
+      savedAt: new Date(1000).toISOString(),
+      status: 'READY',
+    };
+
+    const laptopLocal = {
+      mistakes: new Set(),
+      mistakeTimestamps: {},
+      userStats: { totalAnswered: 0, totalCorrect: 0, examsCompleted: 0, categoryStats: {} },
+      savedExams: [slot],
+      releasedSavedExams: {},
+    };
+
+    const smartphoneRemote = {
+      mistakes: [],
+      mistakeTimestamps: {},
+      userStats: { totalAnswered: 0, totalCorrect: 0, examsCompleted: 0, categoryStats: {} },
+      savedExams: [],
+      releasedSavedExams: {
+        saved_1000: 2000,
+        'שחזור מבחן 2024': 2000,
+      },
+    };
+
+    const merged = mergeCloudAndLocalProgress(laptopLocal, smartphoneRemote);
+    assert.equal(merged.savedExams.length, 0);
+    assert.equal(merged.releasedSavedExams.saved_1000, 2000);
+    assert.equal(merged.releasedSavedExams['שחזור מבחן 2024'], 2000);
+  });
+
+  it('keeps a re-saved exam when its savedAt timestamp is newer than a prior tombstone and prefers COMPLETED slots', () => {
+    const olderReady = {
+      id: 'saved_3000',
+      sourceName: 'שחזור מבחן 2024',
+      title: 'שחזור מבחן 2024',
+      questionCount: 100,
+      questionIds: ['q1'],
+      savedAt: new Date(3000).toISOString(),
+      status: 'READY',
+    };
+    const completedRemote = {
+      ...olderReady,
+      status: 'COMPLETED',
+      score: 92,
+      completedAt: new Date(4000).toISOString(),
+    };
+
+    const merged = mergeCloudAndLocalProgress(
+      {
+        savedExams: [olderReady],
+        releasedSavedExams: { 'שחזור מבחן 2024': 2000 },
+      },
+      {
+        savedExams: [completedRemote],
+        releasedSavedExams: { 'שחזור מבחן 2024': 1500 },
+      }
+    );
+
+    assert.equal(merged.savedExams.length, 1);
+    assert.equal(merged.savedExams[0].status, 'COMPLETED');
+    assert.equal(merged.savedExams[0].score, 92);
+    assert.equal(merged.releasedSavedExams['שחזור מבחן 2024'], 2000);
+  });
 });

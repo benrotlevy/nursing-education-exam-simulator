@@ -22,6 +22,7 @@ rules_version = '2';
 //       - categoryStats: map (required, max 50 keys)
 //       - lastResetAt: number (optional, >= 0)
 //   - savedExams: list (required, max 3 items) - Reserved exam slots in the Quarantine Zone (SAVED-01..SAVED-05)
+//   - releasedSavedExams: map (optional, max 200 keys) - Cross-device saved exam release tombstones
 //   - updatedAt: string | int | timestamp (required, if string max 64 chars, if int >= 0) - Last cloud sync timestamp
 //
 // ===============================================================
@@ -100,6 +101,12 @@ service cloud.firestore {
         (data.mistakeTimestamps is map && data.mistakeTimestamps.size() <= 2000);
     }
 
+    // Validate optional releasedSavedExams map (cross-device saved exam release tombstones)
+    function isValidReleasedSavedExams(data) {
+      return !('releasedSavedExams' in data) ||
+        (data.releasedSavedExams is map && data.releasedSavedExams.size() <= 200);
+    }
+
     // Validate the nested userStats map structure, allowed keys, and non-negative counters
     function isValidUserStats(stats) {
       return stats is map &&
@@ -152,6 +159,7 @@ service cloud.firestore {
           'mistakeTimestamps',
           'userStats',
           'savedExams',
+          'releasedSavedExams',
           'updatedAt'
         ]) &&
         hasRequiredFields([
@@ -167,6 +175,7 @@ service cloud.firestore {
         isValidMistakeTimestamps(data) &&
         isValidUserStats(data.userStats) &&
         isValidList(data.savedExams, 3) &&
+        isValidReleasedSavedExams(data) &&
         isValidUpdatedAt(data.updatedAt);
     }
 

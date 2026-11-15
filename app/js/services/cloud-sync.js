@@ -162,6 +162,7 @@ export function createCloudSyncService({
         mistakeTimestamps: state.mistakeTimestamps || {},
         userStats: state.userStats,
         savedExams: (state.savedExams || []).slice(0, 3),
+        releasedSavedExams: state.releasedSavedExams || {},
         updatedAt: new Date().toISOString(),
       };
       await sdk.setDoc(userDocRef, dataToPush, { merge: true });
@@ -240,6 +241,7 @@ export function createCloudSyncService({
             lastResetAt: Date.now(),
           },
           savedExams: (state.savedExams || []).slice(0, 3),
+          releasedSavedExams: state.releasedSavedExams || {},
           updatedAt: new Date().toISOString(),
         },
         { merge: true }
