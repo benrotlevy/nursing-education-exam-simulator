@@ -58,4 +58,53 @@ describe('app/js/ui/toast.js & app/js/ui/dialog.js — Non-Blocking UI Primitive
     const cancelled = await cancelPromise;
     assert.equal(cancelled, false);
   });
+
+  it('promotes [popover] toast container into Top Layer above open modal dialogs', () => {
+    const window = new Window();
+    const document = window.document;
+    document.body.innerHTML = `<div id="appToastContainer" popover="manual"><div id="appGlobalToast" class="app-toast"></div></div>`;
+
+    const container = document.getElementById('appToastContainer');
+    let popoverOpen = false;
+    let showCalls = 0;
+    let hideCalls = 0;
+    container.showPopover = () => {
+      popoverOpen = true;
+      showCalls += 1;
+    };
+    container.hidePopover = () => {
+      popoverOpen = false;
+      hideCalls += 1;
+    };
+    const origMatches = container.matches.bind(container);
+    container.matches = (sel) => (sel === ':popover-open' ? popoverOpen : origMatches(sel));
+
+    const timers = new Map();
+    let nextTimerId = 1;
+    const toast = createToastController({
+      document,
+      setTimeoutFn: (fn) => {
+        const id = nextTimerId++;
+        timers.set(id, fn);
+        return id;
+      },
+      clearTimeoutFn: (id) => {
+        timers.delete(id);
+      },
+    });
+
+    toast.showToast('פרטי הדיווח הועתקו');
+    assert.equal(showCalls, 1);
+    assert.equal(popoverOpen, true);
+
+    toast.showToast('הדיווח נדחה');
+    assert.equal(hideCalls, 1);
+    assert.equal(showCalls, 2);
+    assert.equal(timers.size, 1);
+
+    // Trigger active duration timer, then its follow-up 320ms popover-close timer
+    Array.from(timers.values())[0]();
+    Array.from(timers.values()).at(-1)();
+    assert.equal(popoverOpen, false);
+  });
 });

@@ -35,7 +35,7 @@ describe('Step 6 Modular CSS Architecture & Selector Integrity', () => {
 
     const importRegex = /@import\s+url\(['"](.+?)['"]\)\s+layer\(([a-z]+)\);/g;
     const imports = [...mainCss.matchAll(importRegex)];
-    assert.equal(imports.length, 15, 'Expected 15 @import layer statements in main.css');
+    assert.equal(imports.length, 16, 'Expected 16 @import layer statements in main.css');
 
     for (const [, relPath] of imports) {
       const fullPath = path.resolve(stylesDir, relPath);

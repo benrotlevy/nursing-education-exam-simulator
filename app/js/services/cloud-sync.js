@@ -29,9 +29,18 @@ async function loadFirebaseFromCdn() {
     GoogleAuthProvider: authMod.GoogleAuthProvider,
     onAuthStateChanged: authMod.onAuthStateChanged,
     getFirestore: firestoreMod.getFirestore,
+    collection: firestoreMod.collection,
     doc: firestoreMod.doc,
+    addDoc: firestoreMod.addDoc,
     getDoc: firestoreMod.getDoc,
+    getDocs: firestoreMod.getDocs,
     setDoc: firestoreMod.setDoc,
+    updateDoc: firestoreMod.updateDoc,
+    deleteDoc: firestoreMod.deleteDoc,
+    query: firestoreMod.query,
+    where: firestoreMod.where,
+    orderBy: firestoreMod.orderBy,
+    limit: firestoreMod.limit,
     onSnapshot: firestoreMod.onSnapshot,
   };
 }
@@ -402,12 +411,17 @@ export function createCloudSyncService({
     return auth ? auth.currentUser : null;
   }
 
+  function getFirebaseContext() {
+    return { sdk, auth, db, initialized };
+  }
+
   return {
     init,
     signIn,
     signOut,
     unbindSession,
     getAuthUser,
+    getFirebaseContext,
     schedulePush,
     pushNow,
     syncPush: pushNow,

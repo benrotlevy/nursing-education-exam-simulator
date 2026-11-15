@@ -6,6 +6,31 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 
 ---
 
+## [2.2.0] - 2026-11-15
+
+### Added
+
+- **Question Issue Reporting (`RPT-01`, `RPT-02`)**:
+  - Added **"🚩 דווח על טעות"** report triggers in Active Exam Mode (`#btnReportExamQuestion`), Study Mode (`#btnReportStudyQuestion`), and Exam Results review cards.
+  - Built accessible `<dialog>` modal (`app/js/features/report-issue/report-dialog-view.js`) requiring Google Sign-In (`request.auth != null`) with issue categories (`KEY_ERROR`, `EXPLANATION_ERROR`, `TYPO_TEXT`, `OUTDATED`, `OTHER`), 3–1,000 character validation with live counter, and non-blocking toast feedback.
+  - Added pure domain validation, payload builder, filtering, and admin formatting utilities in `app/js/domain/question-report.js` (`tests/unit/question-report.test.js`).
+
+- **Firestore-Backed Admin Moderation Dashboard (`RPT-03`, `RPT-SEC`)**:
+  - Enforced server-side Firestore security rules in `firestore.rules` allowing signed-in users to create schema-validated `/question_reports` documents while restricting `read`, `update`, and `delete` exclusively to verified administrators (`benjaminrotlevy@gmail.com`, `benjamin@rotlevy.com`), verified by Invariant G in `tests/integration/firestore-rules.test.js`.
+  - Added header Admin trigger (`#btnAdminReports`) with live `onSnapshot` unresolved counter badge (`#adminReportsBadge`), status filter tabs (`OPEN`, `RESOLVED`, `DISMISSED`, `ALL`), expandable question preview, one-click clipboard copy (`📋 העתק לצורך תיקון`), resolve/dismiss/reopen/delete actions, and XSS-safe rendering (`tests/dom/report-issue.test.js`, `tests/e2e/report-issue.spec.js`).
+
+- **Secret-Safe Instant Telegram Push Alerts (`RPT-04`)**:
+  - Created Cloudflare Worker relay (`tools/cloudflare-worker-telegram.js`) keeping `TELEGRAM_BOT_TOKEN` and `TELEGRAM_CHAT_ID` strictly in encrypted edge environment secrets, with origin allowlist, `QUESTION_ISSUE_REPORT` payload contract (`questionPreview`), and HTML escaping.
+  - Configured live Worker webhook endpoint (`TELEGRAM_WEBHOOK_URL`) in `app/js/config.js`, tightened `app/index.html` CSP `connect-src`, and documented setup in `docs/guides/TELEGRAM_NOTIFICATIONS_SETUP.md`.
+
+### Fixed
+
+- **Report Modal Category Selection & Admin Top-Layer Stacking**:
+  - Added distinct active styling and `✓` selection indicator for `.pill-badge.active` / `[aria-pressed='true']` issue category buttons (`app/styles/components/forms.css`, `app/styles/features/report-issue.css`).
+  - Promoted `#appToastContainer` using native Top Layer `popover="manual"` (`app/index.html`, `app/js/ui/toast.js`, `app/styles/components/toast.css`) so copy/resolve/dismiss toast notifications always render crisply above active `<dialog>` modals and their blurred `::backdrop`, and wired `danger: true` / `confirmText` for Admin report deletion (`app/js/features/report-issue/report-controller.js`).
+
+---
+
 ## [2.1.5] - 2026-11-12
 
 ### Fixed

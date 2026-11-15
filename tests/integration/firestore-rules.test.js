@@ -246,6 +246,7 @@ function compileFirestoreRules(rulesSource) {
           return `
           function evaluateBlock_${idx}(matchParams) {
             const userId = matchParams.userId;
+            const reportId = matchParams.reportId;
             const document = matchParams.document;
             ${blockRulesCode}
             return false;
@@ -312,9 +313,12 @@ describe('firestore.rules — Automated Security Rules Logic Verification (SEC-0
   it('reads and compiles production firestore.rules from repository root', () => {
     assert.ok(rulesContent.includes("rules_version = '2';"));
     assert.ok(compiled.functions.includes('isAuthenticated'));
+    assert.ok(compiled.functions.includes('isAdmin'));
     assert.ok(compiled.functions.includes('isOwner'));
     assert.ok(compiled.functions.includes('isValidUserDocument'));
+    assert.ok(compiled.functions.includes('isValidQuestionReport'));
     assert.ok(compiled.matchPaths.includes('/users/{userId}'));
+    assert.ok(compiled.matchPaths.includes('/question_reports/{reportId}'));
     assert.ok(compiled.matchPaths.includes('/{document=**}'));
   });
 
@@ -735,6 +739,224 @@ describe('firestore.rules — Automated Security Rules Logic Verification (SEC-0
         operation: 'update',
       });
       assert.equal(allowed, false, 'Altering uid in resource must be rejected by uidNotModified');
+    });
+  });
+
+  describe('Invariant G: Question Reports Access Control & Schema Validation [RPT-SEC]', () => {
+    function createValidReportDoc(overrides = {}) {
+      return {
+        schemaVersion: 2,
+        questionId: 'q_042',
+        questionText: 'מהי ההתערבות הראשונה המומלצת למניעת טעויות?',
+        source: 'שחזור מבחן ממשלתי 2023',
+        category: 'אתיקה, חוק ובטיחות המטופל',
+        correctIndex: 1,
+        issueType: 'KEY_ERROR',
+        comment: 'לפי סילבוס משרד הבריאות התשובה הנכונה היא ג ולא ב.',
+        reporterUid: 'alice',
+        reporterEmail: 'alice@hospital.org.il',
+        reporterName: 'אליס כהן',
+        status: 'OPEN',
+        createdAt: '2026-11-15T10:00:00.000Z',
+        updatedAt: '2026-11-15T10:00:00.000Z',
+        ...overrides,
+      };
+    }
+
+    const adminAuth1 = {
+      uid: 'admin-ben-1',
+      token: { email: 'benjaminrotlevy@gmail.com', email_verified: true },
+    };
+    const adminAuth2 = {
+      uid: 'admin-ben-2',
+      token: { email: 'benjamin@rotlevy.com', email_verified: true },
+    };
+
+    it('rejects unauthenticated users from creating or reading /question_reports', () => {
+      const report = createValidReportDoc();
+      assert.equal(
+        evaluate({
+          request: { auth: null, resource: { data: report } },
+          resource: { data: {} },
+          path: '/question_reports/rpt_1',
+          operation: 'create',
+        }),
+        false,
+        'Unauthenticated create on /question_reports must be rejected'
+      );
+
+      assert.equal(
+        evaluate({
+          request: { auth: null },
+          resource: { data: report },
+          path: '/question_reports/rpt_1',
+          operation: 'read',
+        }),
+        false,
+        'Unauthenticated read on /question_reports must be rejected'
+      );
+    });
+
+    it('permits authenticated non-admin users to submit schema-valid OPEN reports with matching reporterUid', () => {
+      const report = createValidReportDoc({ reporterUid: 'alice' });
+      assert.equal(
+        evaluate({
+          request: {
+            auth: { uid: 'alice', token: { email: 'alice@hospital.org.il', email_verified: true } },
+            resource: { data: report },
+          },
+          resource: { data: {} },
+          path: '/question_reports/rpt_1',
+          operation: 'create',
+        }),
+        true,
+        'Signed-in user must be allowed to create valid report'
+      );
+    });
+
+    it('rejects report creation with spoofed status, uid mismatch, oversized comment, or invalid issueType', () => {
+      const aliceAuth = {
+        uid: 'alice',
+        token: { email: 'alice@hospital.org.il', email_verified: true },
+      };
+
+      assert.equal(
+        evaluate({
+          request: {
+            auth: aliceAuth,
+            resource: { data: createValidReportDoc({ status: 'RESOLVED' }) },
+          },
+          resource: { data: {} },
+          path: '/question_reports/rpt_1',
+          operation: 'create',
+        }),
+        false,
+        'Clients must not create pre-resolved reports'
+      );
+
+      assert.equal(
+        evaluate({
+          request: {
+            auth: aliceAuth,
+            resource: { data: createValidReportDoc({ reporterUid: 'bob' }) },
+          },
+          resource: { data: {} },
+          path: '/question_reports/rpt_1',
+          operation: 'create',
+        }),
+        false,
+        'Impersonated reporterUid must be rejected'
+      );
+
+      assert.equal(
+        evaluate({
+          request: {
+            auth: aliceAuth,
+            resource: { data: createValidReportDoc({ comment: 'א'.repeat(1001) }) },
+          },
+          resource: { data: {} },
+          path: '/question_reports/rpt_1',
+          operation: 'create',
+        }),
+        false,
+        'Comment exceeding 1000 chars must be rejected'
+      );
+
+      assert.equal(
+        evaluate({
+          request: {
+            auth: aliceAuth,
+            resource: { data: createValidReportDoc({ issueType: 'HACKED' }) },
+          },
+          resource: { data: {} },
+          path: '/question_reports/rpt_1',
+          operation: 'create',
+        }),
+        false,
+        'Unknown issueType must be rejected'
+      );
+    });
+
+    it('strictly blocks regular users and unverified admin claims from reading, updating, or deleting reports', () => {
+      const existingReport = createValidReportDoc();
+      const nonAdminAuth = {
+        uid: 'alice',
+        token: { email: 'alice@hospital.org.il', email_verified: true },
+      };
+      const unverifiedAdminAuth = {
+        uid: 'fake-ben',
+        token: { email: 'benjaminrotlevy@gmail.com', email_verified: false },
+      };
+
+      for (const op of ['get', 'list', 'update', 'delete']) {
+        assert.equal(
+          evaluate({
+            request: { auth: nonAdminAuth, resource: { data: existingReport } },
+            resource: { data: existingReport },
+            path: '/question_reports/rpt_1',
+            operation: op,
+          }),
+          false,
+          `Non-admin must be denied ${op} on /question_reports`
+        );
+
+        assert.equal(
+          evaluate({
+            request: { auth: unverifiedAdminAuth, resource: { data: existingReport } },
+            resource: { data: existingReport },
+            path: '/question_reports/rpt_1',
+            operation: op,
+          }),
+          false,
+          `Unverified email claiming admin address must be denied ${op}`
+        );
+      }
+    });
+
+    it('permits verified Admin accounts to read, resolve/update, and delete /question_reports', () => {
+      const existingReport = createValidReportDoc();
+      const resolvedUpdate = {
+        ...existingReport,
+        status: 'RESOLVED',
+        adminNote: 'תוקן במאגר v2.2.0',
+        resolvedAt: '2026-11-15T12:00:00.000Z',
+        updatedAt: '2026-11-15T12:00:00.000Z',
+      };
+
+      for (const admin of [adminAuth1, adminAuth2]) {
+        assert.equal(
+          evaluate({
+            request: { auth: admin },
+            resource: { data: existingReport },
+            path: '/question_reports/rpt_1',
+            operation: 'read',
+          }),
+          true,
+          `Verified admin ${admin.token.email} must be able to read reports`
+        );
+
+        assert.equal(
+          evaluate({
+            request: { auth: admin, resource: { data: resolvedUpdate } },
+            resource: { data: existingReport },
+            path: '/question_reports/rpt_1',
+            operation: 'update',
+          }),
+          true,
+          `Verified admin ${admin.token.email} must be able to resolve reports`
+        );
+
+        assert.equal(
+          evaluate({
+            request: { auth: admin },
+            resource: { data: existingReport },
+            path: '/question_reports/rpt_1',
+            operation: 'delete',
+          }),
+          true,
+          `Verified admin ${admin.token.email} must be able to delete reports`
+        );
+      }
     });
   });
 });

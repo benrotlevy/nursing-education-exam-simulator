@@ -38,6 +38,16 @@ service cloud.firestore {
       return request.auth != null;
     }
 
+    // Check if the authenticated user is a verified site administrator
+    function isAdmin() {
+      return isAuthenticated() &&
+        request.auth.token.email_verified == true &&
+        (
+          request.auth.token.email == 'benjaminrotlevy@gmail.com' ||
+          request.auth.token.email == 'benjamin@rotlevy.com'
+        );
+    }
+
     // Check if the authenticated user owns the document at /users/{userId}
     function isOwner(userId) {
       return isAuthenticated() && request.auth.uid == userId;
@@ -160,6 +170,76 @@ service cloud.firestore {
         isValidUpdatedAt(data.updatedAt);
     }
 
+    function isValidIssueType(val) {
+      return val is string && (
+        val == 'KEY_ERROR' ||
+        val == 'EXPLANATION_ERROR' ||
+        val == 'TYPO_TEXT' ||
+        val == 'OUTDATED' ||
+        val == 'OTHER'
+      );
+    }
+
+    function isValidReportStatus(val) {
+      return val is string && (
+        val == 'OPEN' ||
+        val == 'RESOLVED' ||
+        val == 'DISMISSED'
+      );
+    }
+
+    function isValidQuestionReport(data) {
+      return hasOnlyAllowedFields([
+          'schemaVersion',
+          'questionId',
+          'questionText',
+          'source',
+          'category',
+          'correctIndex',
+          'issueType',
+          'comment',
+          'reporterUid',
+          'reporterEmail',
+          'reporterName',
+          'status',
+          'createdAt',
+          'updatedAt'
+        ]) &&
+        hasRequiredFields([
+          'schemaVersion',
+          'questionId',
+          'questionText',
+          'issueType',
+          'comment',
+          'reporterUid',
+          'status',
+          'createdAt',
+          'updatedAt'
+        ]) &&
+        data.schemaVersion is int &&
+        data.schemaVersion == 2 &&
+        data.questionId is string &&
+        data.questionId.size() >= 1 &&
+        data.questionId.size() <= 64 &&
+        data.questionText is string &&
+        data.questionText.size() <= 250 &&
+        isValidOptionalString(data, 'source', 0, 200) &&
+        isValidOptionalString(data, 'category', 0, 200) &&
+        (!('correctIndex' in data) ||
+          (data.correctIndex is int && data.correctIndex >= 0 && data.correctIndex <= 3)) &&
+        isValidIssueType(data.issueType) &&
+        data.comment is string &&
+        data.comment.size() >= 3 &&
+        data.comment.size() <= 1000 &&
+        data.reporterUid is string &&
+        data.reporterUid == request.auth.uid &&
+        isValidOptionalString(data, 'reporterEmail', 0, 320) &&
+        isValidOptionalString(data, 'reporterName', 0, 200) &&
+        data.status == 'OPEN' &&
+        isValidUpdatedAt(data.createdAt) &&
+        isValidUpdatedAt(data.updatedAt);
+    }
+
     // ===============================================================
     // Collection Rules
     // ===============================================================
@@ -172,6 +252,37 @@ service cloud.firestore {
       allow update: if isOwner(userId) && uidNotModified() && isValidUserDocument(request.resource.data);
       // Users reset progress via in-place update (resetCloudData), never by deleting the document
       allow delete: if false;
+    }
+
+    // Question Issue Reports (Authenticated users submit; ONLY verified Admins read/resolve/delete)
+    match /question_reports/{reportId} {
+      allow create: if isAuthenticated() && isValidQuestionReport(request.resource.data);
+      allow read, delete: if isAdmin();
+      allow update: if isAdmin() &&
+        hasOnlyAllowedFields([
+          'schemaVersion',
+          'questionId',
+          'questionText',
+          'source',
+          'category',
+          'correctIndex',
+          'issueType',
+          'comment',
+          'reporterUid',
+          'reporterEmail',
+          'reporterName',
+          'status',
+          'adminNote',
+          'createdAt',
+          'updatedAt',
+          'resolvedAt'
+        ]) &&
+        isValidReportStatus(request.resource.data.status) &&
+        isValidOptionalString(request.resource.data, 'adminNote', 0, 500) &&
+        isValidUpdatedAt(request.resource.data.updatedAt) &&
+        (!('resolvedAt' in request.resource.data) ||
+          request.resource.data.resolvedAt == null ||
+          isValidUpdatedAt(request.resource.data.resolvedAt));
     }
 
     // Default Deny: Explicitly reject reads and writes to all other collections and subcollections

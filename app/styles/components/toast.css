@@ -1,9 +1,14 @@
 /* Floating Toast Notification */
 .app-toast-container {
   position: fixed;
-  bottom: 28px;
-  left: 0;
-  right: 0;
+  inset: auto 0 28px 0;
+  margin: 0;
+  border: 0;
+  background: transparent;
+  color: inherit;
+  width: 100%;
+  height: auto;
+  overflow: visible;
   z-index: var(--z-toast);
   pointer-events: none;
   display: flex;
@@ -11,6 +16,10 @@
   align-items: center;
   padding: 0 16px;
   box-sizing: border-box;
+}
+
+.app-toast-container[popover]:not(:popover-open) {
+  display: none;
 }
 
 .app-toast {
@@ -57,16 +66,13 @@
 }
 
 @media (max-width: 640px) {
-  .app-toast-container,
-  .app-toast {
-    bottom: 84px;
-  }
-
   .app-toast-container {
+    inset: auto 0 84px 0;
     padding: 0 14px;
   }
 
   .app-toast {
+    bottom: 84px;
     font-size: 0.88rem;
     padding: 11px 18px;
     border-radius: 18px;

@@ -15,6 +15,7 @@ export function createAuthController({
   firebaseSdk = null,
   sdkLoader = undefined,
   onRemoteMerged = null,
+  onAuthChanged = null,
 } = {}) {
   const cloudSync = createCloudSyncService({
     firebaseSdk,
@@ -25,6 +26,9 @@ export function createAuthController({
     notifyError,
     onAuthChanged: (user) => {
       renderAuthUI({ document, user });
+      if (typeof onAuthChanged === 'function') {
+        onAuthChanged(user);
+      }
     },
     onSignInLoadingChange: (isLoading) => {
       setSignInButtonLoading({ document, isLoading });

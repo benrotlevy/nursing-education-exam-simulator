@@ -41,3 +41,49 @@ export const FIREBASE_CONFIG = Object.freeze({
   messagingSenderId: '756220661476',
   appId: '1:756220661476:web:2598724629ebb0dbea26f1',
 });
+
+export const ADMIN_EMAILS = Object.freeze(['benjaminrotlevy@gmail.com', 'benjamin@rotlevy.com']);
+
+export const REPORT_ISSUE_TYPES = Object.freeze({
+  KEY_ERROR: Object.freeze({
+    id: 'KEY_ERROR',
+    icon: '🎯',
+    label: 'תשובה נכונה שגויה במפתח התשובות',
+  }),
+  EXPLANATION_ERROR: Object.freeze({
+    id: 'EXPLANATION_ERROR',
+    icon: '📖',
+    label: 'טעות בהסבר הפדגוגי או בניתוח המסיחים',
+  }),
+  TYPO_TEXT: Object.freeze({
+    id: 'TYPO_TEXT',
+    icon: '✍️',
+    label: 'שגיאת כתיב, ניסוח מקוטע או טקסט חסר',
+  }),
+  OUTDATED: Object.freeze({
+    id: 'OUTDATED',
+    icon: '❓',
+    label: 'חומר / נוהל לא מעודכן',
+  }),
+  OTHER: Object.freeze({
+    id: 'OTHER',
+    icon: '💬',
+    label: 'סיבה אחרת',
+  }),
+});
+
+export const REPORT_STATUSES = Object.freeze({
+  OPEN: 'OPEN',
+  RESOLVED: 'RESOLVED',
+  DISMISSED: 'DISMISSED',
+});
+
+export const REPORT_LIMITS = Object.freeze({
+  MIN_COMMENT_LENGTH: 3,
+  MAX_COMMENT_LENGTH: 1000,
+  MAX_PREVIEW_LENGTH: 200,
+  MAX_ADMIN_NOTE_LENGTH: 500,
+});
+
+export const TELEGRAM_WEBHOOK_URL =
+  'https://nursing-exam-telegram-relay.benjaminrotlevy.workers.dev';

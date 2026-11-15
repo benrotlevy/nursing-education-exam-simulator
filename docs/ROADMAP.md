@@ -4,7 +4,7 @@ This document outlines planned future enhancements for the **Clinical Preceptors
 
 ---
 
-## 1. Question Issue Reporting, Admin Dashboard & Telegram Push Notifications
+## 1. Question Issue Reporting, Admin Dashboard & Telegram Push Notifications ✅ *(Implemented in v2.2.0)*
 
 ### Overview
 

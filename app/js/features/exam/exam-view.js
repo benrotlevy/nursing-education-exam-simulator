@@ -272,6 +272,7 @@ export function renderExamReviewList({ document = globalThis.document, exam } = 
             ${optionsHtml}
           </div>
           ${renderExplanationHTML(q)}
+          <button type="button" class="btn-report-issue review-report-btn" data-action="open-report-dialog" data-report-source="review" data-question-id="${escapeHTML(q.id)}">🚩 דווח על טעות</button>
         </div>
       `;
     })

@@ -14,4 +14,5 @@
 @import url('./features/study.css') layer(features);
 @import url('./features/saved-exams.css') layer(features);
 @import url('./features/stats.css') layer(features);
+@import url('./features/report-issue.css') layer(features);
 @import url('./utilities.css') layer(utilities);

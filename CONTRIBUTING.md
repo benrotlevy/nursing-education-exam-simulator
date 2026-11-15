@@ -27,7 +27,7 @@ Open `http://127.0.0.1:4173` in your browser.
 1. **Strict Layer Boundaries (`docs/standards/01-ARCHITECTURE.md`)**:
    - `app/js/domain/` — Pure, deterministic business logic. **Zero DOM (`document`, `window`) or storage (`localStorage`) imports.**
    - `app/js/core/` — State container (`store.js`), versioned persistence (`storage.js`), tab/screen router (`router.js`), and delegated event helper (`events.js`).
-   - `app/js/services/` — External I/O adapters (`question-repository.js`, `cloud-sync.js`, `clipboard.js`).
+   - `app/js/services/` — External I/O adapters (`question-repository.js`, `cloud-sync.js`, `report-service.js`, `clipboard.js`).
    - `app/js/ui/` — Safe HTML escaping (`dom.js`), non-blocking `<dialog>` (`dialog.js`), toast (`toast.js`), and shared explanation renderer (`explanation-card.js`).
    - `app/js/features/<feature>/` — Feature-specific `<feature>-view.js` and `<feature>-controller.js`.
 2. **Zero Inline JS or CSS in `app/index.html`**:

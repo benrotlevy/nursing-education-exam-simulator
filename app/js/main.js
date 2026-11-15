@@ -20,6 +20,8 @@ import { createStudyController } from './features/study/study-controller.js';
 import { createSavedExamsController } from './features/saved-exams/saved-exams-controller.js';
 import { createStatsController } from './features/stats/stats-controller.js';
 import { createAuthController } from './features/auth/auth-controller.js';
+import { createReportService } from './services/report-service.js';
+import { createReportController } from './features/report-issue/report-controller.js';
 
 export function mountApplication({
   window = globalThis.window,
@@ -27,7 +29,7 @@ export function mountApplication({
   localStorage = globalThis.localStorage,
   sessionStorage = globalThis.sessionStorage,
   navigator = globalThis.navigator,
-  fetchFn = globalThis.fetch,
+  fetchFn = (...args) => globalThis.fetch(...args),
   preloadedQuestions = null,
   firebaseSdk = null,
   autoInitCloudSync = false,
@@ -213,6 +215,25 @@ export function mountApplication({
       statsController.renderStats();
       savedExamsController.renderSavedExamsUI();
     },
+    onAuthChanged: (user) => {
+      reportController.onAuthChanged(user);
+    },
+  });
+
+  const reportService = createReportService({
+    cloudSync: authController.cloudSync,
+    fetchFn,
+  });
+
+  const reportController = createReportController({
+    document,
+    navigator: window?.navigator,
+    store,
+    cloudSync: authController.cloudSync,
+    reportService,
+    toast,
+    dialog,
+    authController,
   });
 
   controllers.exam = examController;
@@ -331,6 +352,15 @@ export function mountApplication({
     'google-sign-out': () => {
       authController.signOut();
     },
+    'open-report-dialog': (_event, actionEl) => {
+      reportController.openReportDialog({
+        source: actionEl?.dataset?.reportSource || 'study',
+        questionId: actionEl?.dataset?.questionId || '',
+      });
+    },
+    'open-admin-reports': () => {
+      reportController.openAdminDashboard();
+    },
   });
 
   delegate(document, 'change', '[data-change-action="study-category-filter"]', () => {
@@ -354,6 +384,8 @@ export function mountApplication({
       savedExamsController,
       statsController,
       authController,
+      reportService,
+      reportController,
       cloudSync: authController.cloudSync,
       updateHeaderCounter,
       updateMistakesUI,

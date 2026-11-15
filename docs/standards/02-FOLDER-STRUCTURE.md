@@ -32,10 +32,11 @@ The repository separates **deployable web application assets** (`app/`), **autom
 │   │       ├── study.css
 │   │       ├── saved-exams.css
 │   │       ├── stats.css
-│   │       └── auth.css
+│   │       ├── auth.css
+│   │       └── report-issue.css
 │   └── js/
 │       ├── main.js                   # Application bootstrap & composition root
-│       ├── config.js                 # Constants, storage keys (v2), categories, Firebase config
+│       ├── config.js                 # Constants, storage keys (v2), categories, Firebase & admin config
 │       ├── core/
 │       │   ├── store.js              # Observable state container
 │       │   ├── storage.js            # Versioned localStorage / sessionStorage adapter
@@ -44,6 +45,7 @@ The repository separates **deployable web application assets** (`app/`), **autom
 │       ├── domain/
 │       │   ├── shuffle.js            # Fisher-Yates & option shuffler
 │       │   ├── question-pool.js      # Quarantine filtering & pool queries
+│       │   ├── question-report.js    # Issue report validation, payloads & admin helpers
 │       │   ├── exam-session.js       # Pure exam state transitions & grading
 │       │   ├── study-session.js      # Pure study mode transitions
 │       │   ├── saved-exams.js        # Quarantine slot management (max 3)
@@ -54,10 +56,11 @@ The repository separates **deployable web application assets** (`app/`), **autom
 │       ├── services/
 │       │   ├── question-repository.js# Fetches and caches app/data/questions.json
 │       │   ├── clipboard.js          # Resilient async clipboard + mobile fallback
-│       │   └── cloud-sync.js         # Firebase Auth & Firestore adapter
+│       │   ├── cloud-sync.js         # Firebase Auth & Firestore adapter
+│       │   └── report-service.js     # Firestore /question_reports CRUD & Telegram dispatch
 │       ├── ui/
 │       │   ├── dom.js                # Auto-escaping html`` template tag & DOM utilities
-│       │   ├── toast.js              # Non-blocking status toast
+│       │   ├── toast.js              # Non-blocking status toast (Top Layer popover-aware)
 │       │   ├── dialog.js             # Accessible <dialog> modal replacement for alert/confirm
 │       │   └── explanation-card.js   # Shared pedagogical explanation card renderer
 │       └── features/
@@ -73,9 +76,13 @@ The repository separates **deployable web application assets** (`app/`), **autom
 │           ├── stats/
 │           │   ├── stats-controller.js
 │           │   └── stats-view.js
-│           └── auth/
-│               ├── auth-controller.js
-│               └── auth-view.js
+│           ├── auth/
+│           │   ├── auth-controller.js
+│           │   └── auth-view.js
+│           └── report-issue/
+│               ├── report-controller.js
+│               ├── report-dialog-view.js
+│               └── admin-reports-view.js
 ├── tests/
 │   ├── unit/                         # Pure domain & core unit tests (node:test)
 │   ├── integration/                  # Store + storage persistence & cloud merge tests
@@ -90,10 +97,12 @@ The repository separates **deployable web application assets** (`app/`), **autom
 │       └── clean_questions.json      # Canonical source of truth for the 1,079 questions
 ├── tools/
 │   ├── build-questions.js            # Compiles clean_questions.json -> app/data/questions.json
+│   ├── cloudflare-worker-telegram.js # Edge relay keeping Telegram secrets out of client JS
 │   └── serve.js                      # Zero-dependency local HTTP dev server
 ├── docs/
 │   ├── standards/                    # The Project Bible (01 through 12)
 │   ├── adr/                          # Architecture Decision Records
+│   ├── guides/                       # Setup & operations guides (e.g., Telegram relay & rules)
 │   ├── STPR.md                       # Software Test Plan & Report
 │   └── data/                         # Historical indexing docs & single-answer question bank
 ├── .github/

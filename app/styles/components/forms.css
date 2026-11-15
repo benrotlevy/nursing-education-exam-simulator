@@ -77,12 +77,15 @@
   box-sizing: border-box;
 }
 
-.pill-option:hover .pill-badge {
+.pill-option:hover .pill-badge,
+button.pill-badge:hover {
   background: #f1f5f9;
   border-color: #cbd5e1;
 }
 
-.pill-option input:checked + .pill-badge {
+.pill-option input:checked + .pill-badge,
+.pill-badge.active,
+.pill-badge[aria-pressed='true'] {
   background: var(--primary-light);
   border-color: var(--primary);
   color: var(--primary-dark);

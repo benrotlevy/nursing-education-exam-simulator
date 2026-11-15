@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <meta
     http-equiv="Content-Security-Policy"
-    content="default-src 'self'; script-src 'self' https://www.gstatic.com https://apis.google.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; img-src 'self' data: https://*.googleusercontent.com https://www.gravatar.com; connect-src 'self' https://*.googleapis.com https://*.firebaseio.com https://*.firebaseapp.com https://www.gstatic.com; frame-src https://*.firebaseapp.com https://accounts.google.com; object-src 'none'; base-uri 'self';"
+    content="default-src 'self'; script-src 'self' https://www.gstatic.com https://apis.google.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; img-src 'self' data: https://*.googleusercontent.com https://www.gravatar.com; connect-src 'self' https://*.googleapis.com https://*.firebaseio.com https://*.firebaseapp.com https://www.gstatic.com https://nursing-exam-telegram-relay.benjaminrotlevy.workers.dev; frame-src https://*.firebaseapp.com https://accounts.google.com; object-src 'none'; base-uri 'self';"
   >
   <title>סימולטור מבחן בהדרכה קלינית בסיעוד</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -45,6 +45,18 @@
               <span class="user-name" id="userName">משתמש</span>
               <span class="sync-status-indicator" id="syncStatusIndicator">☁️ סנכרון ענן פעיל</span>
             </div>
+            <button
+              type="button"
+              class="btn-admin-reports"
+              id="btnAdminReports"
+              data-action="open-admin-reports"
+              style="display:none;"
+              title="פתיחת לוח בקרת דיווחי שגיאות"
+            >
+              <span>🛡️</span>
+              <span>דיווחים</span>
+              <span class="admin-reports-badge" id="adminReportsBadge">0</span>
+            </button>
             <button type="button" class="btn-signout" data-action="google-sign-out" title="התנתק מהחשבון">התנתק</button>
           </div>
         </div>
@@ -156,9 +168,23 @@
             <span class="badge badge-source" id="examQSource">מקור</span>
             <span class="badge badge-unverified" id="examQUnverified" style="display:none;">פתרון משוער</span>
           </div>
-          <button type="button" class="flag-btn" id="examFlagBtn" data-action="toggle-exam-flag" tabindex="-1">
-            <span>★</span> סימון לעיון חוזר
-          </button>
+          <div class="q-header-actions">
+            <button
+              type="button"
+              class="btn-report-issue"
+              id="btnReportExamQuestion"
+              data-action="open-report-dialog"
+              data-report-source="exam"
+              tabindex="-1"
+              title="דווח על טעות בשאלה זו"
+            >
+              <span>🚩</span>
+              <span>דווח על טעות</span>
+            </button>
+            <button type="button" class="flag-btn" id="examFlagBtn" data-action="toggle-exam-flag" tabindex="-1">
+              <span>★</span> סימון לעיון חוזר
+            </button>
+          </div>
         </div>
 
         <!-- Question Text -->
@@ -340,6 +366,17 @@
             <span class="badge badge-unverified" id="studyQUnverified" style="display:none;">פתרון משוער</span>
           </div>
           <div class="q-header-actions">
+            <button
+              type="button"
+              class="btn-report-issue"
+              id="btnReportStudyQuestion"
+              data-action="open-report-dialog"
+              data-report-source="study"
+              title="דווח על טעות בשאלה זו"
+            >
+              <span>🚩</span>
+              <span>דווח על טעות</span>
+            </button>
             <button type="button" class="btn-copy-ai" id="btnCopyStudyAI" data-action="copy-study-ai" title="העתק שאלה ופרומפט מובנה להתייעצות עם מודל AI (ChatGPT, Claude, Gemini)">
               <span class="copy-ai-icon">📋</span>
               <span class="copy-ai-label">העתק שאלה ל-AI</span>
@@ -470,7 +507,7 @@
   </nav>
 
   <!-- Global App Toast Notification -->
-  <div id="appToastContainer" class="app-toast-container" role="status" aria-live="polite">
+  <div id="appToastContainer" class="app-toast-container" popover="manual" role="status" aria-live="polite">
     <div id="appGlobalToast" class="app-toast" role="status" aria-live="polite"></div>
   </div>
 
