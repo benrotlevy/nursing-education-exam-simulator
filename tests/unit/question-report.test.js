@@ -167,14 +167,14 @@ describe('app/js/domain/question-report.js — Pure Report Validation & Admin He
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          Origin: 'http://127.0.0.1:4173',
+          Origin: 'https://benrotlevy.github.io',
         },
         body: JSON.stringify(alert),
       });
       const res = await telegramWorker.fetch(req, {
         TELEGRAM_BOT_TOKEN: 'bot-token',
         TELEGRAM_CHAT_ID: '12345',
-        ALLOWED_ORIGIN: 'https://benjaminrotlevy.github.io,http://127.0.0.1:4173',
+        ALLOWED_ORIGIN: 'https://benrotlevy.github.io,http://127.0.0.1:4173',
       });
       assert.equal(res.status, 200);
       assert.equal(sentBodies.length, 1);

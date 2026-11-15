@@ -5,7 +5,7 @@
  *   - TELEGRAM_BOT_TOKEN  (Secret) : Bot token from @BotFather
  *   - TELEGRAM_CHAT_ID    (Secret) : Your personal numeric Telegram chat ID
  *   - ALLOWED_ORIGIN      (Plaintext, optional) : Comma-separated allowed origins
- *                         (e.g. "https://benjaminrotlevy.github.io,http://127.0.0.1:4173")
+ *                         (e.g. "https://benrotlevy.github.io,http://127.0.0.1:4173")
  */
 
 const MAX_FIELD_LEN = Object.freeze({

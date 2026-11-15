@@ -44,7 +44,7 @@ The client app sends report metadata to your Cloudflare Worker URL (`https://<wo
    - **`TELEGRAM_BOT_TOKEN`** *(Type: **Secret**)* → Paste your `@BotFather` bot token.
    - **`TELEGRAM_CHAT_ID`** *(Type: **Secret**)* → Paste your numeric Telegram chat ID.
    - **`ALLOWED_ORIGIN`** *(Type: **Text**, optional)* → Comma-separated site origins allowed to trigger notifications, e.g.:
-     `https://benjaminrotlevy.github.io,http://127.0.0.1:4173,http://localhost:4173`
+     `https://benrotlevy.github.io,http://127.0.0.1:4173,http://localhost:4173`
 7. Copy your deployed Worker URL (for example: `https://nursing-exam-telegram-relay.<your-subdomain>.workers.dev`).
 
 ---
