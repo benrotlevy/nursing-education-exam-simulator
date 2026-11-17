@@ -417,17 +417,39 @@ export function createAccessControlService({
 
     try {
       const colRef = fb.sdk.collection(fb.db, ALLOWED_USERS_COLLECTION);
-      const qRef =
-        typeof fb.sdk.query === 'function' && typeof fb.sdk.orderBy === 'function'
-          ? fb.sdk.query(colRef, fb.sdk.orderBy('updatedAt', 'desc'))
-          : colRef;
-      const snap = await withTimeout(fb.sdk.getDocs(qRef), requestTimeoutMs);
+      // Fetch full collection without server-side orderBy so docs missing `updatedAt` are never excluded
+      const snap = await withTimeout(fb.sdk.getDocs(colRef), requestTimeoutMs);
       const items = [];
+      const seenEmails = new Set();
       if (snap && Array.isArray(snap.docs)) {
-        for (const d of snap.docs) items.push({ id: d.id, ...(d.data() || {}) });
+        for (const d of snap.docs) {
+          const item = { id: d.id, ...(d.data() || {}) };
+          items.push(item);
+          seenEmails.add(normalizeEmail(item.email || d.id));
+        }
       } else if (snap && typeof snap.forEach === 'function') {
-        snap.forEach((d) => items.push({ id: d.id, ...(d.data() || {}) }));
+        snap.forEach((d) => {
+          const item = { id: d.id, ...(d.data() || {}) };
+          items.push(item);
+          seenEmails.add(normalizeEmail(item.email || d.id));
+        });
       }
+
+      const adminEmail = normalizeEmail(fb.auth.currentUser?.email);
+      if (adminEmail && !seenEmails.has(adminEmail)) {
+        items.push({
+          id: adminEmail,
+          email: adminEmail,
+          displayName: fb.auth.currentUser?.displayName || 'מנהל מערכת',
+          active: true,
+          status: 'APPROVED',
+          note: 'מנהל מערכת (Admin קבוע)',
+          isAdminAccount: true,
+          addedAt: '',
+          updatedAt: '',
+        });
+      }
+
       return items;
     } catch (err) {
       console.error('Failed to fetch allowed users:', err);

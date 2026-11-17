@@ -1,11 +1,44 @@
 import { test, expect } from '@playwright/test';
+import { loadTestCatalogKey } from '../helpers/load-test-questions.js';
+
+const TEST_CATALOG_KEY = loadTestCatalogKey();
 
 test.describe('A11Y-02: Full Keyboard-Only Navigation Workflow (E2E)', () => {
   test('navigates complete exam flow using only keyboard: Tab, Space, Enter, and Arrow keys [A11Y-02]', async ({
     page,
   }) => {
+    await page.addInitScript((catalogKey) => {
+      const user = {
+        uid: 'e2e-a11y-user',
+        displayName: 'אחות נגישות',
+        email: 'a11y@hospital.org.il',
+      };
+      window.__E2E_FIREBASE_SDK__ = {
+        GoogleAuthProvider: class {},
+        initializeApp: () => ({}),
+        getAuth: () => ({ currentUser: user }),
+        getFirestore: () => ({}),
+        onAuthStateChanged: (_auth, cb) => {
+          cb(user);
+          return () => {};
+        },
+        doc: (_db, col, id) => ({ col, id }),
+        getDoc: async (ref) => {
+          if (ref?.col === 'allowed_users') {
+            return { exists: () => true, data: () => ({ active: true, status: 'APPROVED' }) };
+          }
+          if (ref?.col === 'app_config' && ref?.id === 'catalog_key' && catalogKey) {
+            return { exists: () => true, data: () => ({ keyBase64: catalogKey }) };
+          }
+          return { exists: () => false, data: () => null };
+        },
+        setDoc: async () => {},
+        onSnapshot: () => () => {},
+      };
+    }, TEST_CATALOG_KEY);
+
     await page.goto('/');
-    await expect(page.locator('#totalQuestionsHeader')).toContainText('1079');
+    await expect(page.locator('#totalQuestionsHeader')).toContainText('מאגר פעיל: 1079');
 
     // 1. Navigate to and select 10-question option using keyboard
     // Focus the category selector and Tab toward the question count option

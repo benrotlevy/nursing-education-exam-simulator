@@ -442,6 +442,51 @@ export function mountApplication({
   controllers.stats = statsController;
   controllers.auth = authController;
 
+  function syncDemoModeLocks(isDemoMode) {
+    if (!document) return;
+    const selectorLockTitle = 'סינון לפי מקור ונושא זמין למשתמשים מורשים במאגר המלא בלבד';
+    const countLockTitle = 'כמות שאלות מעל 10 זמינה למשתמשים מורשים במאגר המלא בלבד';
+
+    for (const selectId of ['examSourceSelect', 'examCategorySelect', 'studyCategoryFilter']) {
+      const sel = document.getElementById(selectId);
+      if (!sel) continue;
+      if (isDemoMode) {
+        sel.value = 'ALL';
+        sel.disabled = true;
+        sel.title = selectorLockTitle;
+      } else {
+        sel.disabled = false;
+        sel.title = '';
+      }
+    }
+
+    const radios = document.querySelectorAll?.('input[name="examCount"]') || [];
+    let radio10 = null;
+    let hasEnabledChecked = false;
+    radios.forEach((radio) => {
+      if (radio.value === '10') radio10 = radio;
+      const numericVal = Number(radio.value);
+      const isOverTen = Number.isFinite(numericVal) && numericVal > 10;
+      const label = radio.closest?.('.pill-option');
+      if (isOverTen) {
+        radio.disabled = isDemoMode;
+        if (isDemoMode) {
+          radio.checked = false;
+        }
+        if (label) {
+          label.classList.toggle('is-demo-locked', isDemoMode);
+          label.title = isDemoMode ? countLockTitle : '';
+        }
+      } else if (radio.checked && !radio.disabled) {
+        hasEnabledChecked = true;
+      }
+    });
+
+    if (isDemoMode && !hasEnabledChecked && radio10) {
+      radio10.checked = true;
+    }
+  }
+
   function bootstrapWithQuestions(rawQuestions = [], { preserveActiveTab = false } = {}) {
     const questions = Array.isArray(rawQuestions)
       ? rawQuestions
@@ -450,6 +495,7 @@ export function mountApplication({
         : [];
     const progress = storage.loadProgress();
     const sources = extractUniqueSources(questions);
+    const isDemoMode = !hasFullCatalog && !preloadedQuestions;
 
     store.setState(
       {
@@ -479,11 +525,13 @@ export function mountApplication({
     updateHeaderCounter();
 
     const restoredStudy = storage.loadStudySession(questions);
-    if (restoredStudy) {
+    if (restoredStudy && (!isDemoMode || restoredStudy.selectedCategory === 'ALL')) {
       store.setState({ currentStudy: restoredStudy }, 'app/restore-study');
     } else {
       studyController.initStudyMode();
     }
+
+    syncDemoModeLocks(isDemoMode);
 
     const restoredExam = storage.loadExamSession(questions);
     if (restoredExam) {

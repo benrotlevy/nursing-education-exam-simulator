@@ -29,6 +29,31 @@
   box-shadow: 0 0 0 3px var(--primary-light);
 }
 
+.form-select:disabled {
+  background-color: #f1f5f9;
+  color: var(--text-muted);
+  cursor: not-allowed;
+  opacity: 0.72;
+}
+
+.pill-option.is-demo-locked {
+  cursor: not-allowed;
+}
+
+.pill-option.is-demo-locked .pill-badge,
+.pill-option.is-demo-locked:hover .pill-badge {
+  background: #f1f5f9;
+  border-color: var(--border);
+  color: var(--text-muted);
+  opacity: 0.65;
+  cursor: not-allowed;
+}
+
+.pill-option.is-demo-locked .pill-badge::after {
+  content: ' 🔒';
+  font-size: 0.78em;
+}
+
 .pill-group {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));

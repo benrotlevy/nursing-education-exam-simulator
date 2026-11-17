@@ -371,39 +371,43 @@ export function createAdminReportsView({ document } = {}) {
 
         <div class="admin-report-actions">
           ${rawHTML(
-            !isApproved
-              ? html`
-                  <button
-                    type="button"
-                    class="btn btn-primary btn-sm"
-                    data-user-action="approve"
-                    data-user-email="${email}"
-                    ${rawHTML(disabledAttr)}
-                  >
-                    ✅ אשר גישה
-                  </button>
-                `
-              : html`
+            userItem.isAdminAccount
+              ? '<span class="badge badge-source">🛡️ מנהל מערכת (גישה קבועה)</span>'
+              : html`${rawHTML(
+                    !isApproved
+                      ? html`
+                          <button
+                            type="button"
+                            class="btn btn-primary btn-sm"
+                            data-user-action="approve"
+                            data-user-email="${email}"
+                            ${rawHTML(disabledAttr)}
+                          >
+                            ✅ אשר גישה
+                          </button>
+                        `
+                      : html`
+                          <button
+                            type="button"
+                            class="btn btn-outline btn-sm"
+                            data-user-action="revoke"
+                            data-user-email="${email}"
+                            ${rawHTML(disabledAttr)}
+                          >
+                            🚫 השהה גישה
+                          </button>
+                        `
+                  )}
                   <button
                     type="button"
                     class="btn btn-outline btn-sm"
-                    data-user-action="revoke"
+                    data-user-action="delete"
                     data-user-email="${email}"
                     ${rawHTML(disabledAttr)}
                   >
-                    🚫 השהה גישה
-                  </button>
-                `
+                    🗑️ הסר
+                  </button>`
           )}
-          <button
-            type="button"
-            class="btn btn-outline btn-sm"
-            data-user-action="delete"
-            data-user-email="${email}"
-            ${rawHTML(disabledAttr)}
-          >
-            🗑️ הסר
-          </button>
         </div>
       </article>
     `;
@@ -588,7 +592,8 @@ export function createAdminReportsView({ document } = {}) {
           data-admin-tab="users"
           aria-selected="${activeTab === 'users' ? 'true' : 'false'}"
         >
-          👥 משתמשים מורשים (${String(userCounts.PENDING)})
+          👥 משתמשים מורשים (${String(userCounts.APPROVED)})
+          ${rawHTML(userCounts.PENDING > 0 ? html` &bull; ⏳ ${String(userCounts.PENDING)}` : '')}
         </button>
       </div>
 
@@ -626,10 +631,10 @@ export function createAdminReportsView({ document } = {}) {
         const nextTab = tabBtn.dataset.adminTab || 'reports';
         if (nextTab !== activeTab) {
           activeTab = nextTab;
+          render();
           if (activeTab === 'users' && typeof handlers.onRefreshUsers === 'function') {
             handlers.onRefreshUsers();
           }
-          render();
         }
       });
     });

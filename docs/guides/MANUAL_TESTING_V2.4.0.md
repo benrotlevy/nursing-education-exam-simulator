@@ -14,7 +14,7 @@ This short **5-minute manual checklist** covers only the **live production integ
    - Top subtitle reads **`מצב הדגמה: 10 שאלות פתוחות מתוך 1079 שאלות במאגר`**.
    - Blue banner `#demoModeBanner` appears with **`🔒 מצב הדגמה (10 מתוך 1079 שאלות פתוחות)`** and **"התחבר עם Google לפתיחת המאגר"**.
    - **Study Mode (`💡 מצב למידה`)** works cleanly across the 10 sample questions.
-   - **Exam Mode (`📝 מצב מבחן`)** lets guests run a **10-question miniature demo exam**.
+   - **Exam Mode (`📝 מצב מבחן`)** lets guests run a **10-question miniature demo exam**, while the **25 / 50 / 100 question buttons show 🔒 and cannot be clicked**, and the **Source (`מקור השאלות`), Exam Category (`סינון לפי נושא`), and Study Category dropdowns are locked (disabled)**.
 3. Open a new tab to:
    `https://benrotlevy.github.io/nursing-education-exam-simulator/data/questions.json`
 4. **Expected:** Returns **`404 Not Found`** (plaintext catalog is no longer publicly served).
@@ -29,7 +29,7 @@ This short **5-minute manual checklist** covers only the **live production integ
 2. **Expected:**
    - Header unlocks immediately to **`מאגר פעיל: 1079 שאלות מאומתות`** and the Demo banner disappears.
    - Top bar shows the **`🛡️ דיווחים`** admin button.
-   - Tap **`🛡️`** → switch to **`👥 משתמשים מורשים`** → confirm **🔑 הגדרות מפתח פענוח וקישור Telegram** displays **`מפתח פענוח מוגדר בענן ✅`**.
+   - Tap **`🛡️`** → confirm **`👥 משתמשים מורשים`** shows the real count of authorized users (e.g. `(1)` or `(2)`, including your Admin account and every added student, NOT `0`), switch to the tab to view the list, and confirm **🔑 הגדרות מפתח פענוח וקישור Telegram** displays **`מפתח פענוח מוגדר בענן ✅`**.
 
 ---
 

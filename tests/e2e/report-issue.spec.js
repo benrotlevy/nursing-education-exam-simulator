@@ -67,12 +67,17 @@ function injectMockFirebaseScript(initialUser = null, initialReports = {}) {
           storeMap.delete(ref.id);
           emitCount();
         },
-        getDocs: async () => ({
-          docs: Array.from(storeMap.entries()).map(([id, data]) => ({
-            id,
-            data: () => data,
-          })),
-        }),
+        getDocs: async (ref) => {
+          if (ref?.path === 'allowed_users') {
+            return { docs: [] };
+          }
+          return {
+            docs: Array.from(storeMap.entries()).map(([id, data]) => ({
+              id,
+              data: () => data,
+            })),
+          };
+        },
         onSnapshot: (ref, onNext) => {
           if (ref && ref.path === 'question_reports') {
             countCb = onNext;

@@ -210,12 +210,22 @@ test.describe('ACCESS-CONTROL E2E: Demo Mode, Telegram Approval Request & Encryp
       persistInSession: false,
     });
 
-    // 1. Guest boots in 10-question Demo Mode (with both Study & 10-Q Demo Exam allowed)
+    // 1. Guest boots in 10-question Demo Mode (with >10 question buttons & selectors locked, 10-Q mini-exam allowed)
     await page.goto('/');
     await expect(page.locator('#totalQuestionsHeader')).toContainText('מצב הדגמה: 10 שאלות פתוחות');
     const demoBanner = page.locator('#demoModeBanner');
     await expect(demoBanner).toBeVisible();
     await expect(demoBanner).toContainText('מצב הדגמה (10 מתוך 1079');
+
+    // Verify source/category selectors and >10 question radios are locked in Demo Mode
+    await expect(page.locator('#examSourceSelect')).toBeDisabled();
+    await expect(page.locator('#examCategorySelect')).toBeDisabled();
+    await expect(page.locator('#studyCategoryFilter')).toBeDisabled();
+    await expect(page.locator('input[name="examCount"][value="10"]')).toBeEnabled();
+    await expect(page.locator('input[name="examCount"][value="10"]')).toBeChecked();
+    for (const lockedVal of ['25', '50', '100']) {
+      await expect(page.locator(`input[name="examCount"][value="${lockedVal}"]`)).toBeDisabled();
+    }
 
     // Miniature 10-question Demo Exam works for guests
     await page.locator('#screenExamSetup button[data-action="start-exam"]').click();
@@ -262,23 +272,36 @@ test.describe('ACCESS-CONTROL E2E: Demo Mode, Telegram Approval Request & Encryp
     await adminBtn.click();
     const adminDialog = page.locator('#adminReportsDialog');
     await expect(adminDialog).toBeVisible();
-    await adminDialog.locator('button[data-admin-tab="users"]').click();
+    const usersTabBtn = adminDialog.locator('button[data-admin-tab="users"]');
+    await expect(usersTabBtn).toContainText('משתמשים מורשים (1)');
+    await expect(usersTabBtn).toContainText('⏳ 1');
+    await usersTabBtn.click();
+    await expect(adminDialog).toContainText('benjaminrotlevy@gmail.com');
     await expect(adminDialog).toContainText('sara.cohen@nursing.ac.il');
     await expect(adminDialog).toContainText('הדסה שנה ד');
 
     await adminDialog.locator('button[data-user-action="approve"]').click();
     await expect(page.locator('#appGlobalToast')).toContainText('הגישה אושרה');
+    await expect(usersTabBtn).toContainText('משתמשים מורשים (2)');
     await adminDialog.locator('#adminDialogCloseBtn').click();
 
-    // Sign out of Admin -> catalog reverts cleanly to 10-question Demo Mode
+    // Sign out of Admin -> catalog reverts cleanly to 10-question Demo Mode & re-locks controls
     await page.evaluate(() => window.__E2E_SWITCH_USER__(null));
     await expect(page.locator('#totalQuestionsHeader')).toContainText('מצב הדגמה: 10 שאלות פתוחות');
+    await expect(page.locator('#examSourceSelect')).toBeDisabled();
+    await expect(page.locator('input[name="examCount"][value="50"]')).toBeDisabled();
 
-    // 4. Switch to approved student -> all 1,079 encrypted questions unlock & banner hides
+    // 4. Switch to approved student -> all 1,079 encrypted questions unlock, controls unlock & banner hides
     await page.evaluate(() => window.__E2E_SWITCH_USER__('student'));
     await expect(page.locator('#totalQuestionsHeader')).toContainText('מאגר פעיל: 1079');
     await expect(demoBanner).toBeHidden();
     await expect(page.locator('#syncStatusIndicator')).toContainText('☁️ סנכרון ענן פעיל');
+    await expect(page.locator('#examSourceSelect')).toBeEnabled();
+    await expect(page.locator('#examCategorySelect')).toBeEnabled();
+    await expect(page.locator('#studyCategoryFilter')).toBeEnabled();
+    for (const unlockedVal of ['25', '50', '100']) {
+      await expect(page.locator(`input[name="examCount"][value="${unlockedVal}"]`)).toBeEnabled();
+    }
   });
 
   test('verifies Admin first-time key & Telegram setup, legacy worker 400 fallback, in-place recheck, offline encrypted reload, and online revocation', async ({

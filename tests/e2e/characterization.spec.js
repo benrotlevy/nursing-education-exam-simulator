@@ -175,8 +175,38 @@ test.describe('Characterization E2E Suite (Laptop, Tablet, Pixel 10 Pro XL, Gala
   test('verifies CSP meta tag, RTL/ARIA landmarks, Practice Weakest Category, and Stats Reset across viewports [STATS-03, STATS-04, A11Y-01]', async ({
     page,
   }) => {
+    await page.addInitScript((catalogKey) => {
+      const user = {
+        uid: 'e2e-stats-user',
+        displayName: 'סטודנט מאושר',
+        email: 'approved-stats@hospital.org.il',
+      };
+      window.__E2E_FIREBASE_SDK__ = {
+        GoogleAuthProvider: class {},
+        initializeApp: () => ({}),
+        getAuth: () => ({ currentUser: user }),
+        getFirestore: () => ({}),
+        onAuthStateChanged: (_auth, cb) => {
+          cb(user);
+          return () => {};
+        },
+        doc: (_db, col, id) => ({ col, id }),
+        getDoc: async (ref) => {
+          if (ref?.col === 'allowed_users') {
+            return { exists: () => true, data: () => ({ active: true, status: 'APPROVED' }) };
+          }
+          if (ref?.col === 'app_config' && ref?.id === 'catalog_key' && catalogKey) {
+            return { exists: () => true, data: () => ({ keyBase64: catalogKey }) };
+          }
+          return { exists: () => false, data: () => null };
+        },
+        setDoc: async () => {},
+        onSnapshot: () => () => {},
+      };
+    }, TEST_CATALOG_KEY);
+
     await page.goto('/');
-    await expect(page.locator('#totalQuestionsHeader')).toContainText('1079');
+    await expect(page.locator('#totalQuestionsHeader')).toContainText('מאגר פעיל: 1079');
 
     // 1. Verify RTL document attributes and landmarks [A11Y-01]
     await expect(page.locator('html')).toHaveAttribute('lang', 'he');

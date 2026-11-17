@@ -337,9 +337,9 @@ export function createReportController({
     });
 
     if (initialTab === 'users') {
-      await loadAdminUsers();
+      await Promise.all([loadAdminUsers(), loadAdminReports()]);
     } else {
-      await loadAdminReports();
+      await Promise.all([loadAdminReports(), loadAdminUsers()]);
     }
     return true;
   }
