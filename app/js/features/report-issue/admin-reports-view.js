@@ -87,6 +87,7 @@ export function createAdminReportsView({ document } = {}) {
   let activeUserFilter = 'ALL';
   let userSearchQuery = '';
   let configStatus = { hasCatalogKey: false, telegramUrl: '' };
+  let configDetailsOpen = false;
   let isLoading = false;
   let isUsersLoading = false;
   let busyReportId = null;
@@ -492,7 +493,8 @@ export function createAdminReportsView({ document } = {}) {
 
       <details
         class="admin-question-details admin-config-details"
-        ${rawHTML(!configStatus.hasCatalogKey ? 'open' : '')}
+        id="adminConfigDetails"
+        ${rawHTML(configDetailsOpen || !configStatus.hasCatalogKey ? 'open' : '')}
       >
         <summary>🔑 הגדרות מפתח פענוח וקישור Telegram (${keyBadgeText})</summary>
         <div class="admin-config-body">
@@ -673,9 +675,17 @@ export function createAdminReportsView({ document } = {}) {
       });
     }
 
+    const configDetails = el.querySelector('#adminConfigDetails');
+    if (configDetails) {
+      configDetails.addEventListener('toggle', () => {
+        configDetailsOpen = configDetails.open;
+      });
+    }
+
     if (keyForm) {
       keyForm.addEventListener('submit', async (e) => {
         e.preventDefault();
+        configDetailsOpen = true;
         const keyVal = el.querySelector('#adminCatalogKeyInput')?.value || '';
         if (typeof handlers.onSaveCatalogKey === 'function') {
           await handlers.onSaveCatalogKey(keyVal);
@@ -686,6 +696,7 @@ export function createAdminReportsView({ document } = {}) {
     if (telegramForm) {
       telegramForm.addEventListener('submit', async (e) => {
         e.preventDefault();
+        configDetailsOpen = true;
         const urlVal = el.querySelector('#adminTelegramUrlInput')?.value || '';
         if (typeof handlers.onSaveTelegramUrl === 'function') {
           await handlers.onSaveTelegramUrl(urlVal);

@@ -58,6 +58,7 @@ export function mountApplication({
 
   const controllers = {};
   let hasFullCatalog = false;
+  let catalogEpoch = 0;
   let latestAccessDecision = {
     status: ACCESS_STATUSES.GUEST,
     approved: false,
@@ -246,7 +247,7 @@ export function mountApplication({
 
   let accessControlService = null;
 
-  async function unlockFullCatalogWithKey(keyBase64) {
+  async function unlockFullCatalogWithKey(keyBase64, expectedEpoch = catalogEpoch) {
     if (!keyBase64 || hasFullCatalog || preloadedQuestions) {
       return hasFullCatalog;
     }
@@ -257,6 +258,9 @@ export function mountApplication({
       fetchImpl: fetchFn,
       cryptoImpl,
     });
+    if (expectedEpoch !== catalogEpoch || !latestAccessDecision.approved) {
+      return false;
+    }
     hasFullCatalog = true;
     if (window) window.EXAM_QUESTIONS = fullQuestions;
     bootstrapWithQuestions(fullQuestions, { preserveActiveTab: true });
@@ -265,7 +269,11 @@ export function mountApplication({
   }
 
   async function revertToDemoCatalogIfNeeded() {
-    if (preloadedQuestions || !hasFullCatalog) {
+    if (preloadedQuestions) {
+      return;
+    }
+    const currentLen = store.getState().allQuestions?.length || 0;
+    if (!hasFullCatalog && currentLen > 0) {
       return;
     }
     hasFullCatalog = false;
@@ -300,12 +308,15 @@ export function mountApplication({
         return { allowed: true };
       }
       const decision = await accessControlService.checkUserAccess(user);
+      if (!decision.approved) {
+        catalogEpoch += 1;
+      }
       latestAccessDecision = { ...decision };
 
       if (decision.approved) {
         if (decision.keyBase64 && !hasFullCatalog && !preloadedQuestions) {
           try {
-            await unlockFullCatalogWithKey(decision.keyBase64);
+            await unlockFullCatalogWithKey(decision.keyBase64, catalogEpoch);
           } catch (decryptErr) {
             console.warn('Failed to decrypt full catalog:', decryptErr);
           }
@@ -328,6 +339,7 @@ export function mountApplication({
     },
     onAuthChanged: (user) => {
       if (!user) {
+        catalogEpoch += 1;
         accessControlService?.clearCachedApproval?.();
         latestAccessDecision = {
           status: ACCESS_STATUSES.GUEST,

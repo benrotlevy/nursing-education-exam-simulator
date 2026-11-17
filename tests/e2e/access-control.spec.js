@@ -4,16 +4,69 @@ import { loadTestCatalogKey } from '../helpers/load-test-questions.js';
 const TEST_CATALOG_KEY = loadTestCatalogKey();
 
 function buildAccessControlMockInit() {
-  return ({ key }) => {
+  return ({ key, initialConfig = true, persistInSession = false }) => {
+    const SESSION_STORAGE_KEY = '__E2E_ACCESS_MOCK_DB__';
+
+    function loadPersistedState() {
+      if (persistInSession) {
+        try {
+          const raw = window.sessionStorage.getItem(SESSION_STORAGE_KEY);
+          if (raw) {
+            const parsed = JSON.parse(raw);
+            return {
+              allowed_users: new Map(parsed.allowed_users || []),
+              app_config: new Map(parsed.app_config || []),
+              question_reports: new Map(parsed.question_reports || []),
+              users: new Map(parsed.users || []),
+              activeUser: parsed.activeUser || null,
+            };
+          }
+        } catch {
+          // Ignore malformed session data
+        }
+      }
+
+      const appConfigEntries = initialConfig
+        ? [
+            ['catalog_key', { schemaVersion: 2, keyBase64: key }],
+            ['contact', { schemaVersion: 2, telegramUrl: 'https://t.me/nursing_admin_bot' }],
+          ]
+        : [];
+
+      return {
+        allowed_users: new Map(),
+        app_config: new Map(appConfigEntries),
+        question_reports: new Map(),
+        users: new Map(),
+        activeUser: null,
+      };
+    }
+
+    const state = loadPersistedState();
     const collections = {
-      allowed_users: new Map(),
-      app_config: new Map([
-        ['catalog_key', { schemaVersion: 2, keyBase64: key }],
-        ['contact', { schemaVersion: 2, telegramUrl: 'https://t.me/nursing_admin_bot' }],
-      ]),
-      question_reports: new Map(),
-      users: new Map(),
+      allowed_users: state.allowed_users,
+      app_config: state.app_config,
+      question_reports: state.question_reports,
+      users: state.users,
     };
+
+    function savePersistedState() {
+      if (!persistInSession) return;
+      try {
+        window.sessionStorage.setItem(
+          SESSION_STORAGE_KEY,
+          JSON.stringify({
+            allowed_users: Array.from(collections.allowed_users.entries()),
+            app_config: Array.from(collections.app_config.entries()),
+            question_reports: Array.from(collections.question_reports.entries()),
+            users: Array.from(collections.users.entries()),
+            activeUser,
+          })
+        );
+      } catch {
+        // Ignore storage quota errors
+      }
+    }
 
     const studentUser = {
       uid: 'stu_invite_1',
@@ -26,7 +79,7 @@ function buildAccessControlMockInit() {
       email: 'benjaminrotlevy@gmail.com',
     };
 
-    let activeUser = null;
+    let activeUser = state.activeUser;
     let authCallback = null;
     const pendingListeners = [];
 
@@ -41,9 +94,20 @@ function buildAccessControlMockInit() {
 
     window.__E2E_SWITCH_USER__ = async (role) => {
       activeUser = role === 'admin' ? adminUser : role === 'student' ? studentUser : null;
+      savePersistedState();
       if (authCallback) {
         await authCallback(activeUser);
       }
+    };
+
+    window.__E2E_SET_USER_ACCESS__ = (email, docData) => {
+      if (docData === null) {
+        collections.allowed_users.delete(email);
+      } else {
+        collections.allowed_users.set(email, docData);
+      }
+      savePersistedState();
+      emitPendingSnapshot();
     };
 
     window.__E2E_FIREBASE_SDK__ = {
@@ -63,11 +127,13 @@ function buildAccessControlMockInit() {
       },
       signInWithPopup: async () => {
         activeUser = studentUser;
+        savePersistedState();
         if (authCallback) await authCallback(activeUser);
         return { user: activeUser };
       },
       signOut: async () => {
         activeUser = null;
+        savePersistedState();
         if (authCallback) await authCallback(null);
       },
       getFirestore: () => ({}),
@@ -90,12 +156,14 @@ function buildAccessControlMockInit() {
         if (!store) return;
         const prev = store.get(ref.id) || {};
         store.set(ref.id, opts?.merge ? { ...prev, ...data } : { ...data });
+        savePersistedState();
         if (ref.colName === 'allowed_users') emitPendingSnapshot();
       },
       deleteDoc: async (ref) => {
         const store = collections[ref.colName];
         if (store) {
           store.delete(ref.id);
+          savePersistedState();
           if (ref.colName === 'allowed_users') emitPendingSnapshot();
         }
       },
@@ -138,6 +206,8 @@ test.describe('ACCESS-CONTROL E2E: Demo Mode, Telegram Approval Request & Encryp
 
     await page.addInitScript(buildAccessControlMockInit(), {
       key: TEST_CATALOG_KEY,
+      initialConfig: true,
+      persistInSession: false,
     });
 
     // 1. Guest boots in 10-question Demo Mode (with both Study & 10-Q Demo Exam allowed)
@@ -209,5 +279,133 @@ test.describe('ACCESS-CONTROL E2E: Demo Mode, Telegram Approval Request & Encryp
     await expect(page.locator('#totalQuestionsHeader')).toContainText('מאגר פעיל: 1079');
     await expect(demoBanner).toBeHidden();
     await expect(page.locator('#syncStatusIndicator')).toContainText('☁️ סנכרון ענן פעיל');
+  });
+
+  test('verifies Admin first-time key & Telegram setup, legacy worker 400 fallback, in-place recheck, offline encrypted reload, and online revocation', async ({
+    page,
+    context,
+  }) => {
+    const webhookRequests = [];
+    await page.route('https://*.workers.dev/**', async (route) => {
+      const payload = route.request().postDataJSON();
+      webhookRequests.push(payload);
+      // Simulate legacy deployed Cloudflare Worker returning 400 on NEW_USER_SIGN_IN
+      if (payload?.type === 'NEW_USER_SIGN_IN') {
+        await route.fulfill({
+          status: 400,
+          contentType: 'application/json',
+          body: JSON.stringify({ ok: false, error: 'Invalid report payload' }),
+        });
+        return;
+      }
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({ ok: true }),
+      });
+    });
+
+    await page.addInitScript(buildAccessControlMockInit(), {
+      key: TEST_CATALOG_KEY,
+      initialConfig: false,
+      persistInSession: true,
+    });
+
+    await page.goto('/');
+    await page.waitForFunction(() => Boolean(window.app?.authController));
+
+    // Ensure Service Worker is active so offline reload with encrypted catalog works
+    await page.evaluate(async () => {
+      const reg = await navigator.serviceWorker?.ready;
+      return Boolean(reg?.active);
+    });
+
+    // 1. Admin signs in before catalog_key exists in Firestore -> sees setup prompt & configures key + @handle
+    await page.evaluate(() => window.__E2E_SWITCH_USER__('admin'));
+    const demoBanner = page.locator('#demoModeBanner');
+    await expect(demoBanner).toHaveClass(/is-admin-setup/);
+    await expect(page.locator('#totalQuestionsHeader')).toContainText('מצב הדגמה: 10 שאלות פתוחות');
+
+    await page.locator('#btnBannerSetupKey').click();
+    const adminDialog = page.locator('#adminReportsDialog');
+    await expect(adminDialog).toBeVisible();
+    await expect(adminDialog.locator('#adminCatalogKeyInput')).toBeVisible();
+
+    await adminDialog.locator('#adminCatalogKeyInput').fill(TEST_CATALOG_KEY);
+    await adminDialog.locator('#adminSaveCatalogKeyBtn').click();
+
+    // All 1,079 questions unlock immediately for Admin and settings section stays open for Telegram link
+    await expect(page.locator('#totalQuestionsHeader')).toContainText('מאגר פעיל: 1079');
+    await expect(demoBanner).toBeHidden();
+    await expect(adminDialog.locator('#adminTelegramUrlInput')).toBeVisible();
+
+    await adminDialog.locator('#adminTelegramUrlInput').fill('@nursing_preceptor_admin');
+    await adminDialog.locator('#adminSaveTelegramUrlBtn').click();
+    await expect(adminDialog.locator('#adminTelegramUrlInput')).toHaveValue(
+      'https://t.me/nursing_preceptor_admin'
+    );
+    await adminDialog.locator('#adminDialogCloseBtn').click();
+
+    // Sign out Admin -> Demo Mode restores cleanly
+    await page.evaluate(() => window.__E2E_SWITCH_USER__(null));
+    await expect(page.locator('#totalQuestionsHeader')).toContainText('מצב הדגמה: 10 שאלות פתוחות');
+
+    // 2. Unapproved student signs in -> legacy Worker returns 400, client automatically retries with compatible schema
+    await page.locator('#btnGoogleSignIn').click();
+    await expect(demoBanner).toHaveClass(/is-pending/);
+    await expect(page.locator('#btnTelegramAdminChat')).toHaveAttribute(
+      'href',
+      'https://t.me/nursing_preceptor_admin'
+    );
+    expect(webhookRequests).toHaveLength(2);
+    expect(webhookRequests[0].type).toBe('NEW_USER_SIGN_IN');
+    expect(webhookRequests[1].type).toBe('QUESTION_ISSUE_REPORT');
+    expect(webhookRequests[1].reporterEmail).toBe('sara.cohen@nursing.ac.il');
+
+    // 3. Admin approves student in Firestore; student taps "🔄 בדוק הרשאה מחדש" without signing out
+    await page.evaluate(() => {
+      window.__E2E_SET_USER_ACCESS__('sara.cohen@nursing.ac.il', {
+        schemaVersion: 2,
+        email: 'sara.cohen@nursing.ac.il',
+        active: true,
+        status: 'APPROVED',
+        addedAt: '2026-11-17T08:00:00.000Z',
+        updatedAt: '2026-11-17T08:05:00.000Z',
+      });
+    });
+    await page.locator('#btnRecheckAccess').click();
+    await expect(page.locator('#totalQuestionsHeader')).toContainText('מאגר פעיל: 1079');
+    await expect(demoBanner).toBeHidden();
+
+    // 4. Reload while completely offline -> cached approval + key decrypts all 1,079 SW-cached questions
+    await page.reload();
+    await page.evaluate(async () => {
+      await navigator.serviceWorker?.ready;
+    });
+    await context.setOffline(true);
+    try {
+      await page.reload();
+      await expect(page.locator('#totalQuestionsHeader')).toContainText('מאגר פעיל: 1079');
+      await expect(demoBanner).toBeHidden();
+    } finally {
+      await context.setOffline(false);
+    }
+
+    // 5. Online revocation invalidates cached key and locks student back to 10-question Demo Mode
+    await page.evaluate(() => {
+      window.__E2E_SET_USER_ACCESS__('sara.cohen@nursing.ac.il', {
+        schemaVersion: 2,
+        email: 'sara.cohen@nursing.ac.il',
+        active: false,
+        status: 'REVOKED',
+        addedAt: '2026-11-17T08:00:00.000Z',
+        updatedAt: '2026-11-17T08:10:00.000Z',
+      });
+    });
+    await page.reload();
+    await expect(demoBanner).toBeVisible();
+    await expect(demoBanner).toHaveClass(/is-revoked/);
+    await expect(page.locator('#totalQuestionsHeader')).toContainText('מצב הדגמה: 10 שאלות פתוחות');
+    await expect(page.locator('#syncStatusIndicator')).toContainText('🚫 גישה מושהית');
   });
 });
