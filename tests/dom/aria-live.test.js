@@ -5,10 +5,12 @@ import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { Window } from 'happy-dom';
 import { mountApplication } from '../../app/js/main.js';
+import { loadTestQuestions } from '../helpers/load-test-questions.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 const repoRoot = path.resolve(__dirname, '../..');
+const questions = await loadTestQuestions();
 
 function loadAppEnv() {
   const htmlPath = path.join(repoRoot, 'app', 'index.html');
@@ -23,9 +25,6 @@ function loadAppEnv() {
 
   const document = window.document;
   document.write(htmlWithoutScripts);
-
-  const questionsJson = path.join(repoRoot, 'app', 'data', 'questions.json');
-  const questions = JSON.parse(fs.readFileSync(questionsJson, 'utf8'));
 
   mountApplication({
     window,

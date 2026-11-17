@@ -9,6 +9,7 @@ import {
   copyTextToClipboard,
   fallbackCopyTextToClipboard,
 } from '../../app/js/services/clipboard.js';
+import { loadTestQuestions } from '../helpers/load-test-questions.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -18,10 +19,7 @@ const rawHtml = fs
   .readFileSync(path.join(ROOT_DIR, 'app/index.html'), 'utf8')
   .replace(/<script\b[^>]*>[\s\S]*?<\/script>/gi, '');
 
-const parsedCatalog = JSON.parse(
-  fs.readFileSync(path.join(ROOT_DIR, 'app/data/questions.json'), 'utf8')
-);
-const sampleQuestions = Array.isArray(parsedCatalog) ? parsedCatalog : parsedCatalog.questions;
+const sampleQuestions = await loadTestQuestions();
 
 function createFullAppEnv() {
   const win = new Window({ url: 'http://127.0.0.1:4173/', width: 1440, height: 900 });

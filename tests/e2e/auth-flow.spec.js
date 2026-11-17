@@ -47,13 +47,26 @@ test.describe('AUTH-FLOW: Interactive Google Sign-In & Sign-Out Lifecycle (E2E)'
             await authCallback(null);
           }
         },
-        doc: (_db, col, id) => ({ path: `${col}/${id}` }),
-        getDoc: async () => ({
-          exists: () => Boolean(storedDocument),
-          data: () => storedDocument,
-        }),
-        setDoc: async (_ref, data) => {
-          storedDocument = { ...(storedDocument || {}), ...data };
+        doc: (_db, col, id) => ({ path: `${col}/${id}`, col, id }),
+        getDoc: async (ref) => {
+          if (ref?.col === 'allowed_users') {
+            return {
+              exists: () => true,
+              data: () => ({ active: true, status: 'APPROVED', email: ref.id }),
+            };
+          }
+          if (ref?.col === 'app_config') {
+            return { exists: () => false, data: () => null };
+          }
+          return {
+            exists: () => Boolean(storedDocument),
+            data: () => storedDocument,
+          };
+        },
+        setDoc: async (ref, data) => {
+          if (ref?.col === 'users') {
+            storedDocument = { ...(storedDocument || {}), ...data };
+          }
         },
         onSnapshot: () => () => {},
       };

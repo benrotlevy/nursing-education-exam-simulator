@@ -1,14 +1,9 @@
 import { describe, it } from 'node:test';
 import assert from 'node:assert/strict';
-import fs from 'node:fs';
-import path from 'node:path';
-import { fileURLToPath } from 'node:url';
 import { shuffleArray, getShuffledQuestionOptions } from '../../app/js/domain/shuffle.js';
+import { loadTestQuestions } from '../helpers/load-test-questions.js';
 
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
-const questionsPath = path.resolve(__dirname, '../../app/data/questions.json');
-const { questions } = JSON.parse(fs.readFileSync(questionsPath, 'utf8'));
+const questions = await loadTestQuestions();
 
 describe('app/js/domain/shuffle.js — Fisher-Yates & Option Tracking (POOL-01, POOL-02)', () => {
   it('returns a new permutation without mutating the input array and supports injectable RNG [POOL-01]', () => {

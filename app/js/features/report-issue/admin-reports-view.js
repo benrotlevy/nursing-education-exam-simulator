@@ -1,9 +1,11 @@
 /**
- * Admin Reports Dashboard View (`app/js/features/report-issue/admin-reports-view.js`)
- * Renders the administrator moderation dashboard (<dialog>) and header badge count.
+ * Admin Dashboard View (`app/js/features/report-issue/admin-reports-view.js`)
+ * Renders the tabbed administrator modal (<dialog>) for Question Issue Reports
+ * and Invite-Only Access Control Management, plus the header badge counter.
  */
 
 import { OPTION_LETTERS, REPORT_STATUSES } from '../../config.js';
+import { countAllowedUsersByStatus, filterAllowedUsers } from '../../domain/access-control.js';
 import {
   countReportsByStatus,
   filterReportsByStatus,
@@ -16,6 +18,12 @@ const STATUS_LABELS = Object.freeze({
   OPEN: 'פתוח',
   RESOLVED: 'תוקן',
   DISMISSED: 'נדחה',
+});
+
+const USER_STATUS_LABELS = Object.freeze({
+  PENDING: 'ממתין לאישור',
+  APPROVED: 'מורשה פעיל',
+  REVOKED: 'גישה מושהית',
 });
 
 function formatReportDate(isoString) {
@@ -36,12 +44,14 @@ function formatReportDate(isoString) {
 }
 
 /**
- * Shows/hides the admin dashboard button and updates its open-reports counter badge.
+ * Shows/hides the admin dashboard button and updates its total actionable counter badge
+ * (open reports + pending access requests).
  */
 export function updateAdminHeaderBadge({
   document = globalThis.document,
   user,
   openCount = 0,
+  pendingUsersCount = 0,
 } = {}) {
   if (!document) return;
   const btn = document.getElementById('btnAdminReports');
@@ -52,30 +62,48 @@ export function updateAdminHeaderBadge({
     btn.style.display = authorized ? 'inline-flex' : 'none';
   }
   if (badge) {
-    const cleanCount = Number.isFinite(Number(openCount)) ? Math.max(0, Number(openCount)) : 0;
-    badge.textContent = String(cleanCount);
-    badge.style.display = cleanCount > 0 ? 'inline-flex' : 'none';
+    const cleanOpen = Number.isFinite(Number(openCount)) ? Math.max(0, Number(openCount)) : 0;
+    const cleanPending = Number.isFinite(Number(pendingUsersCount))
+      ? Math.max(0, Number(pendingUsersCount))
+      : 0;
+    const totalCount = cleanOpen + cleanPending;
+    badge.textContent = String(totalCount);
+    badge.style.display = totalCount > 0 ? 'inline-flex' : 'none';
   }
 }
 
 /**
- * Creates the Admin Reports Dashboard View controller.
+ * Creates the Admin Dashboard View controller.
  * @param {Object} deps
  * @param {Document} deps.document
  */
 export function createAdminReportsView({ document } = {}) {
   let dialogEl = null;
   let allReports = [];
+  let allUsers = [];
   let questionsById = new Map();
+  let activeTab = 'reports'; // 'reports' | 'users'
   let activeFilter = REPORT_STATUSES.OPEN;
+  let activeUserFilter = 'ALL';
+  let userSearchQuery = '';
+  let configStatus = { hasCatalogKey: false, telegramUrl: '' };
   let isLoading = false;
+  let isUsersLoading = false;
   let busyReportId = null;
+  let busyUserEmail = null;
 
   let handlers = {
     onRefresh: null,
     onCopy: null,
     onUpdateStatus: null,
     onDelete: null,
+    onRefreshUsers: null,
+    onAddUser: null,
+    onApproveUser: null,
+    onRevokeUser: null,
+    onDeleteUser: null,
+    onSaveCatalogKey: null,
+    onSaveTelegramUrl: null,
   };
 
   function ensureDialogElement() {
@@ -104,7 +132,7 @@ export function createAdminReportsView({ document } = {}) {
         if (!el.open) el.showModal();
         return;
       } catch {
-        // Fallback for jsdom
+        // Fallback for jsdom/happy-dom
       }
     }
     el.setAttribute('open', 'open');
@@ -116,7 +144,7 @@ export function createAdminReportsView({ document } = {}) {
       try {
         if (el.open) el.close();
       } catch {
-        // Fallback for jsdom
+        // Fallback for jsdom/happy-dom
       }
     }
     el.removeAttribute('open');
@@ -261,8 +289,7 @@ export function createAdminReportsView({ document } = {}) {
     `;
   }
 
-  function render() {
-    const el = ensureDialogElement();
+  function renderReportsSection() {
     const counts = countReportsByStatus(allReports);
     const filtered = filterReportsByStatus(allReports, activeFilter);
 
@@ -299,15 +326,235 @@ export function createAdminReportsView({ document } = {}) {
       bodyHtml = `<div class="admin-reports-list">${filtered.map(renderReportCard).join('')}</div>`;
     }
 
+    return html`
+      <div class="admin-filter-bar" id="adminFilterBar">${rawHTML(chipsHtml)}</div>
+      ${rawHTML(bodyHtml)}
+    `;
+  }
+
+  function renderUserCard(userItem) {
+    const email = userItem.email || userItem.id || '';
+    const isApproved = userItem.active === true || userItem.status === 'APPROVED';
+    const effectiveStatus = isApproved
+      ? 'APPROVED'
+      : userItem.status === 'REVOKED'
+        ? 'REVOKED'
+        : 'PENDING';
+    const statusLabel = USER_STATUS_LABELS[effectiveStatus] || USER_STATUS_LABELS.PENDING;
+    const isBusy = busyUserEmail === email;
+    const disabledAttr = isBusy ? 'disabled' : '';
+
+    return html`
+      <article
+        class="admin-report-card admin-user-card user-status-${effectiveStatus}"
+        data-user-email="${email}"
+      >
+        <div class="admin-report-card-header">
+          <div class="admin-report-badges">
+            <span class="admin-status-pill user-pill-${effectiveStatus}">${statusLabel}</span>
+            <bdi class="admin-user-email-pill" dir="ltr">${email}</bdi>
+            ${rawHTML(
+              userItem.displayName
+                ? html`<span class="badge badge-source">${userItem.displayName}</span>`
+                : ''
+            )}
+          </div>
+          <span class="admin-report-date">
+            ${formatReportDate(userItem.updatedAt || userItem.addedAt)}
+          </span>
+        </div>
+
+        ${rawHTML(
+          userItem.note ? html`<div class="admin-user-note">הערה: ${userItem.note}</div>` : ''
+        )}
+
+        <div class="admin-report-actions">
+          ${rawHTML(
+            !isApproved
+              ? html`
+                  <button
+                    type="button"
+                    class="btn btn-primary btn-sm"
+                    data-user-action="approve"
+                    data-user-email="${email}"
+                    ${rawHTML(disabledAttr)}
+                  >
+                    ✅ אשר גישה
+                  </button>
+                `
+              : html`
+                  <button
+                    type="button"
+                    class="btn btn-outline btn-sm"
+                    data-user-action="revoke"
+                    data-user-email="${email}"
+                    ${rawHTML(disabledAttr)}
+                  >
+                    🚫 השהה גישה
+                  </button>
+                `
+          )}
+          <button
+            type="button"
+            class="btn btn-outline btn-sm"
+            data-user-action="delete"
+            data-user-email="${email}"
+            ${rawHTML(disabledAttr)}
+          >
+            🗑️ הסר
+          </button>
+        </div>
+      </article>
+    `;
+  }
+
+  function renderUsersSection() {
+    const counts = countAllowedUsersByStatus(allUsers);
+    const filtered = filterAllowedUsers(allUsers, activeUserFilter, userSearchQuery);
+
+    const filterChips = [
+      { id: 'ALL', label: 'הכל', count: counts.total },
+      { id: 'PENDING', label: 'ממתינים לאישור', count: counts.PENDING },
+      { id: 'APPROVED', label: 'מורשים פעילים', count: counts.APPROVED },
+      { id: 'REVOKED', label: 'מושהים', count: counts.REVOKED },
+    ];
+
+    const chipsHtml = filterChips
+      .map((chip) => {
+        const isActive = activeUserFilter === chip.id;
+        return html`
+          <button
+            type="button"
+            class="admin-filter-chip ${isActive ? 'active' : ''}"
+            data-user-filter="${chip.id}"
+            aria-pressed="${isActive ? 'true' : 'false'}"
+          >
+            <span>${chip.label}</span>
+            <span>(${String(chip.count)})</span>
+          </button>
+        `;
+      })
+      .join('');
+
+    let usersListHtml;
+    if (isUsersLoading) {
+      usersListHtml = '<div class="admin-empty-state">טוען רשימת משתמשים...</div>';
+    } else if (filtered.length === 0) {
+      usersListHtml = '<div class="admin-empty-state">אין משתמשים התואמים לסינון הנוכחי.</div>';
+    } else {
+      usersListHtml = `<div class="admin-reports-list">${filtered.map(renderUserCard).join('')}</div>`;
+    }
+
+    const keyBadgeText = configStatus.hasCatalogKey
+      ? 'מפתח פענוח מוגדר בענן ✅'
+      : 'מפתח פענוח טרם הוגדר בענן ⚠️';
+
+    return html`
+      <form class="admin-add-user-form" id="adminAddUserForm">
+        <div class="admin-add-user-fields">
+          <input
+            type="email"
+            id="adminUserEmailInput"
+            class="form-input"
+            dir="ltr"
+            required
+            maxlength="320"
+            placeholder="student@gmail.com"
+            aria-label="אימייל של משתמש חדש להוספה"
+          />
+          <input
+            type="text"
+            id="adminUserNoteInput"
+            class="form-input"
+            maxlength="300"
+            placeholder="שם הסטודנט/ית או קבוצת לימוד (אופציונלי)"
+            aria-label="הערה אופציונלית על המשתמש"
+          />
+        </div>
+        <button type="submit" class="btn btn-primary btn-sm" id="adminAddUserBtn">
+          ➕ הוסף ואשר משתמש
+        </button>
+      </form>
+
+      <div class="admin-users-toolbar">
+        <div class="admin-filter-bar" id="adminUserFilterBar">${rawHTML(chipsHtml)}</div>
+        <input
+          type="search"
+          id="adminUserSearchInput"
+          class="form-input admin-user-search"
+          value="${userSearchQuery}"
+          placeholder="חיפוש לפי אימייל, שם או הערה..."
+          aria-label="חיפוש ברשימת המשתמשים"
+        />
+      </div>
+
+      ${rawHTML(usersListHtml)}
+
+      <details
+        class="admin-question-details admin-config-details"
+        ${rawHTML(!configStatus.hasCatalogKey ? 'open' : '')}
+      >
+        <summary>🔑 הגדרות מפתח פענוח וקישור Telegram (${keyBadgeText})</summary>
+        <div class="admin-config-body">
+          <form class="admin-config-form" id="adminCatalogKeyForm">
+            <label class="form-label" for="adminCatalogKeyInput">
+              מפתח פענוח מאגר מלא (מתוך <code>.secrets/catalog-key.json</code>):
+            </label>
+            <div class="admin-config-row">
+              <input
+                type="password"
+                id="adminCatalogKeyInput"
+                class="form-input"
+                dir="ltr"
+                autocomplete="off"
+                placeholder="הדבק מחרוזת keyBase64 של 256-bit"
+              />
+              <button type="submit" class="btn btn-primary btn-sm" id="adminSaveCatalogKeyBtn">
+                💾 שמור מפתח בענן
+              </button>
+            </div>
+          </form>
+
+          <form class="admin-config-form" id="adminTelegramUrlForm">
+            <label class="form-label" for="adminTelegramUrlInput">
+              קישור לצ׳אט המנהל ב-Telegram (מוצג למשתמשים הממתינים לאישור, ללא חשיפת מספר טלפון):
+            </label>
+            <div class="admin-config-row">
+              <input
+                type="text"
+                id="adminTelegramUrlInput"
+                class="form-input"
+                dir="ltr"
+                value="${configStatus.telegramUrl || ''}"
+                placeholder="https://t.me/your_username"
+              />
+              <button type="submit" class="btn btn-outline btn-sm" id="adminSaveTelegramUrlBtn">
+                💾 שמור קישור Telegram
+              </button>
+            </div>
+          </form>
+        </div>
+      </details>
+    `;
+  }
+
+  function render() {
+    const el = ensureDialogElement();
+    const reportCounts = countReportsByStatus(allReports);
+    const userCounts = countAllowedUsersByStatus(allUsers);
+    const activeRefreshLoading = activeTab === 'users' ? isUsersLoading : isLoading;
+
+    const sectionHtml = activeTab === 'users' ? renderUsersSection() : renderReportsSection();
+
     el.innerHTML = html`
       <div class="report-dialog-header">
-        <h2 class="app-dialog-title" id="adminDialogTitle">🛡️ ניהול דיווחי שגיאות</h2>
+        <h2 class="app-dialog-title" id="adminDialogTitle">🛡️ לוח בקרה וניהול מערכת</h2>
         <div class="q-header-actions">
           <button
             type="button"
             class="btn btn-outline btn-sm"
             id="adminRefreshBtn"
-            ${rawHTML(isLoading ? 'disabled' : '')}
+            ${rawHTML(activeRefreshLoading ? 'disabled' : '')}
           >
             🔄 רענן
           </button>
@@ -315,16 +562,35 @@ export function createAdminReportsView({ document } = {}) {
             type="button"
             class="dialog-close-btn"
             id="adminDialogCloseBtn"
-            aria-label="סגור לוח דיווחים"
+            aria-label="סגור לוח ניהול"
           >
             ✕
           </button>
         </div>
       </div>
 
-      <div class="admin-filter-bar" id="adminFilterBar">${rawHTML(chipsHtml)}</div>
+      <div class="admin-tab-bar" role="tablist">
+        <button
+          type="button"
+          role="tab"
+          class="admin-tab-btn ${activeTab === 'reports' ? 'active' : ''}"
+          data-admin-tab="reports"
+          aria-selected="${activeTab === 'reports' ? 'true' : 'false'}"
+        >
+          🚩 דיווחי שאלות (${String(reportCounts.OPEN)})
+        </button>
+        <button
+          type="button"
+          role="tab"
+          class="admin-tab-btn ${activeTab === 'users' ? 'active' : ''}"
+          data-admin-tab="users"
+          aria-selected="${activeTab === 'users' ? 'true' : 'false'}"
+        >
+          👥 משתמשים מורשים (${String(userCounts.PENDING)})
+        </button>
+      </div>
 
-      ${rawHTML(bodyHtml)}
+      ${rawHTML(sectionHtml)}
     `;
 
     bindEvents(el);
@@ -334,21 +600,96 @@ export function createAdminReportsView({ document } = {}) {
     const closeBtn = el.querySelector('#adminDialogCloseBtn');
     const refreshBtn = el.querySelector('#adminRefreshBtn');
     const filterBar = el.querySelector('#adminFilterBar');
+    const userFilterBar = el.querySelector('#adminUserFilterBar');
+    const searchInput = el.querySelector('#adminUserSearchInput');
+    const addUserForm = el.querySelector('#adminAddUserForm');
+    const keyForm = el.querySelector('#adminCatalogKeyForm');
+    const telegramForm = el.querySelector('#adminTelegramUrlForm');
 
     if (closeBtn) {
       closeBtn.addEventListener('click', () => close());
     }
     if (refreshBtn) {
       refreshBtn.addEventListener('click', () => {
-        if (typeof handlers.onRefresh === 'function') handlers.onRefresh();
+        if (activeTab === 'users') {
+          if (typeof handlers.onRefreshUsers === 'function') handlers.onRefreshUsers();
+        } else if (typeof handlers.onRefresh === 'function') {
+          handlers.onRefresh();
+        }
       });
     }
+
+    el.querySelectorAll('button[data-admin-tab]').forEach((tabBtn) => {
+      tabBtn.addEventListener('click', () => {
+        const nextTab = tabBtn.dataset.adminTab || 'reports';
+        if (nextTab !== activeTab) {
+          activeTab = nextTab;
+          if (activeTab === 'users' && typeof handlers.onRefreshUsers === 'function') {
+            handlers.onRefreshUsers();
+          }
+          render();
+        }
+      });
+    });
+
     if (filterBar) {
       filterBar.addEventListener('click', (e) => {
         const chip = e.target.closest('button[data-admin-filter]');
         if (!chip) return;
         activeFilter = chip.dataset.adminFilter || 'ALL';
         render();
+      });
+    }
+
+    if (userFilterBar) {
+      userFilterBar.addEventListener('click', (e) => {
+        const chip = e.target.closest('button[data-user-filter]');
+        if (!chip) return;
+        activeUserFilter = chip.dataset.userFilter || 'ALL';
+        render();
+      });
+    }
+
+    if (searchInput) {
+      searchInput.addEventListener('input', (e) => {
+        userSearchQuery = e.target.value || '';
+        render();
+        const nextInput = el.querySelector('#adminUserSearchInput');
+        if (nextInput) {
+          nextInput.focus();
+          nextInput.setSelectionRange(userSearchQuery.length, userSearchQuery.length);
+        }
+      });
+    }
+
+    if (addUserForm) {
+      addUserForm.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const emailVal = el.querySelector('#adminUserEmailInput')?.value || '';
+        const noteVal = el.querySelector('#adminUserNoteInput')?.value || '';
+        if (typeof handlers.onAddUser === 'function') {
+          await handlers.onAddUser({ email: emailVal, note: noteVal });
+        }
+      });
+    }
+
+    if (keyForm) {
+      keyForm.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const keyVal = el.querySelector('#adminCatalogKeyInput')?.value || '';
+        if (typeof handlers.onSaveCatalogKey === 'function') {
+          await handlers.onSaveCatalogKey(keyVal);
+        }
+      });
+    }
+
+    if (telegramForm) {
+      telegramForm.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const urlVal = el.querySelector('#adminTelegramUrlInput')?.value || '';
+        if (typeof handlers.onSaveTelegramUrl === 'function') {
+          await handlers.onSaveTelegramUrl(urlVal);
+        }
       });
     }
 
@@ -372,15 +713,46 @@ export function createAdminReportsView({ document } = {}) {
         }
       });
     });
+
+    el.querySelectorAll('button[data-user-action]').forEach((btn) => {
+      btn.addEventListener('click', async () => {
+        const action = btn.dataset.userAction;
+        const email = btn.dataset.userEmail;
+        const userItem = allUsers.find((u) => (u.email || u.id) === email);
+        if (!email) return;
+
+        if (action === 'approve' && typeof handlers.onApproveUser === 'function') {
+          await handlers.onApproveUser(userItem || { email });
+        } else if (action === 'revoke' && typeof handlers.onRevokeUser === 'function') {
+          await handlers.onRevokeUser(userItem || { email });
+        } else if (action === 'delete' && typeof handlers.onDeleteUser === 'function') {
+          await handlers.onDeleteUser(userItem || { email });
+        }
+      });
+    });
   }
 
-  function open({ reports = [], allQuestions = [], loading = false, callbacks = {} } = {}) {
+  function open({
+    reports = [],
+    users = null,
+    allQuestions = [],
+    initialTab = 'reports',
+    loading = false,
+    usersLoading = false,
+    adminConfigStatus = null,
+    callbacks = {},
+  } = {}) {
     allReports = Array.isArray(reports) ? reports : [];
+    if (Array.isArray(users)) allUsers = users;
     questionsById = new Map(
       (Array.isArray(allQuestions) ? allQuestions : []).filter((q) => q?.id).map((q) => [q.id, q])
     );
+    activeTab = initialTab === 'users' ? 'users' : 'reports';
     isLoading = Boolean(loading);
+    isUsersLoading = Boolean(usersLoading);
+    if (adminConfigStatus) configStatus = { ...configStatus, ...adminConfigStatus };
     busyReportId = null;
+    busyUserEmail = null;
     handlers = { ...handlers, ...callbacks };
 
     const el = ensureDialogElement();
@@ -411,6 +783,31 @@ export function createAdminReportsView({ document } = {}) {
     if (isOpen()) render();
   }
 
+  function setUsersLoading(loading) {
+    isUsersLoading = Boolean(loading);
+    if (isOpen()) render();
+  }
+
+  function setUsers(users, adminConfigStatus = null) {
+    allUsers = Array.isArray(users) ? users : [];
+    if (adminConfigStatus) {
+      configStatus = { ...configStatus, ...adminConfigStatus };
+    }
+    isUsersLoading = false;
+    busyUserEmail = null;
+    if (isOpen()) render();
+  }
+
+  function setBusyUser(email) {
+    busyUserEmail = email || null;
+    if (isOpen()) render();
+  }
+
+  function setConfigStatus(nextStatus = {}) {
+    configStatus = { ...configStatus, ...nextStatus };
+    if (isOpen()) render();
+  }
+
   function close() {
     closeModalDialog(dialogEl);
   }
@@ -425,6 +822,10 @@ export function createAdminReportsView({ document } = {}) {
     setLoading,
     setReports,
     setBusyReport,
+    setUsersLoading,
+    setUsers,
+    setBusyUser,
+    setConfigStatus,
     isOpen,
   };
 }

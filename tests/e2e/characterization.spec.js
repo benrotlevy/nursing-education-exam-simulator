@@ -1,4 +1,7 @@
 import { test, expect } from '@playwright/test';
+import { loadTestCatalogKey } from '../helpers/load-test-questions.js';
+
+const TEST_CATALOG_KEY = loadTestCatalogKey();
 
 test.describe('Characterization E2E Suite (Laptop, Tablet, Pixel 10 Pro XL, Galaxy S25)', () => {
   test('renders appropriate responsive navigation and zero horizontal overflow across all 4 screens [NAV-01..03, A11Y-01]', async ({
@@ -119,8 +122,38 @@ test.describe('Characterization E2E Suite (Laptop, Tablet, Pixel 10 Pro XL, Gala
   test('reserves and releases a Saved Exam and updates active question pool counter [SAVED-01..05]', async ({
     page,
   }) => {
+    await page.addInitScript((catalogKey) => {
+      const user = {
+        uid: 'e2e-saved-user',
+        displayName: 'סטודנט מאושר',
+        email: 'approved@hospital.org.il',
+      };
+      window.__E2E_FIREBASE_SDK__ = {
+        GoogleAuthProvider: class {},
+        initializeApp: () => ({}),
+        getAuth: () => ({ currentUser: user }),
+        getFirestore: () => ({}),
+        onAuthStateChanged: (_auth, cb) => {
+          cb(user);
+          return () => {};
+        },
+        doc: (_db, col, id) => ({ col, id }),
+        getDoc: async (ref) => {
+          if (ref?.col === 'allowed_users') {
+            return { exists: () => true, data: () => ({ active: true, status: 'APPROVED' }) };
+          }
+          if (ref?.col === 'app_config' && ref?.id === 'catalog_key' && catalogKey) {
+            return { exists: () => true, data: () => ({ keyBase64: catalogKey }) };
+          }
+          return { exists: () => false, data: () => null };
+        },
+        setDoc: async () => {},
+        onSnapshot: () => () => {},
+      };
+    }, TEST_CATALOG_KEY);
+
     await page.goto('/');
-    await expect(page.locator('#totalQuestionsHeader')).toContainText('1079');
+    await expect(page.locator('#totalQuestionsHeader')).toContainText('מאגר פעיל: 1079');
 
     const viewport = page.viewportSize();
     const isSmartphone = viewport && viewport.width <= 640;

@@ -25,6 +25,56 @@ rules_version = '2';
 //   - releasedSavedExams: map (optional, max 200 keys) - Cross-device saved exam release tombstones
 //   - updatedAt: string | int | timestamp (required, if string max 64 chars, if int >= 0) - Last cloud sync timestamp
 //
+// Collection: question_reports
+// Document ID: {reportId}
+// Fields:
+//   - schemaVersion: int (required, == 2)
+//   - questionId: string (required, 1..64 chars)
+//   - questionText: string (required, <= 250 chars)
+//   - source: string (optional, <= 200 chars)
+//   - category: string (optional, <= 200 chars)
+//   - correctIndex: int (optional, 0..3)
+//   - issueType: string (required, enum: KEY_ERROR | EXPLANATION_ERROR | TYPO_TEXT | OUTDATED | OTHER)
+//   - comment: string (required, 3..1000 chars)
+//   - reporterUid: string (required, == request.auth.uid on create)
+//   - reporterEmail: string (optional, <= 320 chars)
+//   - reporterName: string (optional, <= 200 chars)
+//   - status: string (required, == 'OPEN' on create; enum: OPEN | RESOLVED | DISMISSED on admin update)
+//   - adminNote: string (optional on admin update, <= 500 chars)
+//   - createdAt: string | int | timestamp (required)
+//   - updatedAt: string | int | timestamp (required)
+//   - resolvedAt: null | string | int | timestamp (optional on admin update)
+//
+// Collection: allowed_users
+// Document ID: {email} (Normalized lowercase email address matching Firebase Auth token email)
+// Fields:
+//   - schemaVersion: int (required, == 2)
+//   - email: string (required, 3..320 chars, == document ID {email})
+//   - active: bool (required; only true grants catalog/sync access)
+//   - status: string (required, enum: APPROVED | PENDING | REVOKED)
+//   - note: string (optional, <= 300 chars)
+//   - displayName: string (optional, <= 200 chars)
+//   - uid: string (optional, <= 128 chars; immutable/owned on self-request)
+//   - addedBy: string (optional, <= 320 chars)
+//   - addedAt: string | int | timestamp (required, immutable on self-update)
+//   - updatedAt: string | int | timestamp (required)
+//
+// Collection: app_config
+// Document ID: catalog_key
+// Fields:
+//   - schemaVersion: int (required, == 2)
+//   - keyBase64: string (required, 32..128 chars) - AES-256-GCM symmetric key for encrypted question catalog
+//   - updatedAt: string | int | timestamp (required)
+//   - updatedBy: string (optional, <= 320 chars)
+//
+// Collection: app_config
+// Document ID: contact
+// Fields:
+//   - schemaVersion: int (required, == 2)
+//   - telegramUrl: string (required, <= 300 chars) - Admin contact link displayed on access-pending gate
+//   - updatedAt: string | int | timestamp (required)
+//   - updatedBy: string (optional, <= 320 chars)
+//
 // ===============================================================
 
 service cloud.firestore {
@@ -47,6 +97,20 @@ service cloud.firestore {
           request.auth.token.email == 'benjaminrotlevy@gmail.com' ||
           request.auth.token.email == 'benjamin@rotlevy.com'
         );
+    }
+
+    // Check if the authenticated, email-verified user is actively allowlisted in /allowed_users/{email}
+    function isApprovedUser() {
+      return isAuthenticated() &&
+        request.auth.token.email_verified == true &&
+        request.auth.token.email is string &&
+        exists(/databases/$(database)/documents/allowed_users/$(request.auth.token.email)) &&
+        get(/databases/$(database)/documents/allowed_users/$(request.auth.token.email)).data.active == true;
+    }
+
+    // Check if the authenticated user is either an Admin or an actively approved user
+    function isAuthorizedUser() {
+      return isAdmin() || isApprovedUser();
     }
 
     // Check if the authenticated user owns the document at /users/{userId}
@@ -249,23 +313,164 @@ service cloud.firestore {
         isValidUpdatedAt(data.updatedAt);
     }
 
+    function isValidAllowedUserStatus(val) {
+      return val is string && (
+        val == 'APPROVED' ||
+        val == 'PENDING' ||
+        val == 'REVOKED'
+      );
+    }
+
+    function isValidAllowedUserDocument(data, emailId) {
+      return hasOnlyAllowedFields([
+          'schemaVersion',
+          'email',
+          'active',
+          'status',
+          'note',
+          'displayName',
+          'uid',
+          'addedBy',
+          'addedAt',
+          'updatedAt'
+        ]) &&
+        hasRequiredFields([
+          'schemaVersion',
+          'email',
+          'active',
+          'status',
+          'addedAt',
+          'updatedAt'
+        ]) &&
+        data.schemaVersion is int &&
+        data.schemaVersion == 2 &&
+        data.email is string &&
+        data.email == emailId &&
+        data.email.size() >= 3 &&
+        data.email.size() <= 320 &&
+        data.active is bool &&
+        isValidAllowedUserStatus(data.status) &&
+        isValidOptionalString(data, 'note', 0, 300) &&
+        isValidOptionalString(data, 'displayName', 0, 200) &&
+        isValidOptionalString(data, 'uid', 0, 128) &&
+        isValidOptionalString(data, 'addedBy', 0, 320) &&
+        isValidUpdatedAt(data.addedAt) &&
+        isValidUpdatedAt(data.updatedAt);
+    }
+
+    function isValidSelfPendingAccessRequest(data, emailId) {
+      return isAuthenticated() &&
+        request.auth.token.email_verified == true &&
+        request.auth.token.email is string &&
+        request.auth.token.email == emailId &&
+        !exists(/databases/$(database)/documents/allowed_users/$(emailId)) &&
+        uidUnchanged() &&
+        isValidAllowedUserDocument(data, emailId) &&
+        data.active == false &&
+        data.status == 'PENDING';
+    }
+
+    function isValidSelfPendingNoteUpdate(data, existingData, emailId) {
+      return isAuthenticated() &&
+        request.auth.token.email_verified == true &&
+        request.auth.token.email is string &&
+        request.auth.token.email == emailId &&
+        existingData.active == false &&
+        existingData.status == 'PENDING' &&
+        isValidAllowedUserDocument(data, emailId) &&
+        data.active == false &&
+        data.status == 'PENDING' &&
+        data.addedAt == existingData.addedAt &&
+        (!('uid' in data) ||
+          (data.uid == request.auth.uid &&
+           (!('uid' in existingData) || data.uid == existingData.uid)));
+    }
+
+    function isValidCatalogKeyDocument(data) {
+      return hasOnlyAllowedFields([
+          'schemaVersion',
+          'keyBase64',
+          'updatedAt',
+          'updatedBy'
+        ]) &&
+        hasRequiredFields([
+          'schemaVersion',
+          'keyBase64',
+          'updatedAt'
+        ]) &&
+        data.schemaVersion is int &&
+        data.schemaVersion == 2 &&
+        data.keyBase64 is string &&
+        data.keyBase64.size() >= 32 &&
+        data.keyBase64.size() <= 128 &&
+        isValidOptionalString(data, 'updatedBy', 0, 320) &&
+        isValidUpdatedAt(data.updatedAt);
+    }
+
+    function isValidContactConfigDocument(data) {
+      return hasOnlyAllowedFields([
+          'schemaVersion',
+          'telegramUrl',
+          'updatedAt',
+          'updatedBy'
+        ]) &&
+        hasRequiredFields([
+          'schemaVersion',
+          'telegramUrl',
+          'updatedAt'
+        ]) &&
+        data.schemaVersion is int &&
+        data.schemaVersion == 2 &&
+        data.telegramUrl is string &&
+        data.telegramUrl.size() <= 300 &&
+        isValidOptionalString(data, 'updatedBy', 0, 320) &&
+        isValidUpdatedAt(data.updatedAt);
+    }
+
     // ===============================================================
     // Collection Rules
     // ===============================================================
 
+    // Invite-Only Access Control Allowlist (Admin-managed; verified users may read own entry or request PENDING access)
+    match /allowed_users/{email} {
+      allow get: if isAdmin() ||
+        (isAuthenticated() &&
+         request.auth.token.email_verified == true &&
+         request.auth.token.email == email);
+      allow list, delete: if isAdmin();
+      allow create: if (isAdmin() && isValidAllowedUserDocument(request.resource.data, email)) ||
+        isValidSelfPendingAccessRequest(request.resource.data, email);
+      allow update: if (isAdmin() && isValidAllowedUserDocument(request.resource.data, email)) ||
+        isValidSelfPendingNoteUpdate(request.resource.data, resource.data, email);
+    }
+
+    // Key-Gated Encrypted Catalog Symmetric Key (Readable ONLY by verified Admins or actively approved users)
+    match /app_config/catalog_key {
+      allow get: if isAuthorizedUser();
+      allow create, update: if isAdmin() && isValidCatalogKeyDocument(request.resource.data);
+      allow list, delete: if false;
+    }
+
+    // Access-Gate Admin Contact Configuration (Readable by any signed-in user to display Telegram contact info)
+    match /app_config/contact {
+      allow get: if isAuthenticated();
+      allow create, update: if isAdmin() && isValidContactConfigDocument(request.resource.data);
+      allow list, delete: if false;
+    }
+
     // User Progress & Quarantine Zone Documents
-    // Strictly private to the authenticated document owner (protects PII such as email/displayName)
+    // Strictly private to the authenticated, authorized document owner (protects PII such as email/displayName)
     match /users/{userId} {
-      allow read: if isOwner(userId);
-      allow create: if isOwner(userId) && uidUnchanged() && isValidUserDocument(request.resource.data);
-      allow update: if isOwner(userId) && uidNotModified() && isValidUserDocument(request.resource.data);
+      allow read: if isOwner(userId) && isAuthorizedUser();
+      allow create: if isOwner(userId) && isAuthorizedUser() && uidUnchanged() && isValidUserDocument(request.resource.data);
+      allow update: if isOwner(userId) && isAuthorizedUser() && uidNotModified() && isValidUserDocument(request.resource.data);
       // Users reset progress via in-place update (resetCloudData), never by deleting the document
       allow delete: if false;
     }
 
-    // Question Issue Reports (Authenticated users submit; ONLY verified Admins read/resolve/delete)
+    // Question Issue Reports (Authorized users submit; ONLY verified Admins read/resolve/delete)
     match /question_reports/{reportId} {
-      allow create: if isAuthenticated() && isValidQuestionReport(request.resource.data);
+      allow create: if isAuthorizedUser() && isValidQuestionReport(request.resource.data);
       allow read, delete: if isAdmin();
       allow update: if isAdmin() &&
         hasOnlyAllowedFields([

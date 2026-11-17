@@ -86,11 +86,11 @@ Make the simulator installable directly from Chrome on Android, Windows, macOS, 
 
 ---
 
-## 3. Invite-Only Access Control (Approved Users Managed by Admin)
+## 3. Invite-Only Access Control (Approved Users Managed by Admin) ✅ *(Implemented in v2.4.0)*
 
 ### Overview
 
-Restrict access to the simulator so that only users explicitly approved by the administrator can sign in and use the application, with an intuitive interface inside the Admin Dashboard to add or revoke approved email addresses.
+Implemented with **AES-256-GCM Key-Gated Encrypted Catalog (`questions.enc.json`)**, **10-Question Public Demo Mode (`questions-demo.json`, supporting Study Mode & 10-question mini-exam)**, **Pending Student Telegram Approval Requests + Optional Admin Telegram Chat Link**, and **2-Tab Admin Management UI**.
 
 ### Data Model & Security Rules (`firestore.rules`)
 

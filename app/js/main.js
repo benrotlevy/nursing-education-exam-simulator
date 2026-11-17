@@ -1,17 +1,21 @@
 /**
  * Application Entrypoint (`app/js/main.js`)
  * Wires Store, Storage (`v2` keys), Router, Toast, Dialog, Question Repository,
- * Event Delegation, and all 4 Feature Controllers (`exam`, `study`, `saved-exams`, `stats`).
+ * Event Delegation, Invite-Only Access Control, Demo Mode, and Feature Controllers.
  */
 
-import { CATEGORIES } from './config.js';
+import { ACCESS_STATUSES, CATEGORIES, TOTAL_CATALOG_QUESTIONS } from './config.js';
 import { createStore, createInitialState } from './core/store.js';
 import { createStorageAdapter } from './core/storage.js';
 import { createRouter } from './core/router.js';
 import { delegate, onAction } from './core/events.js';
 import { createToastController } from './ui/toast.js';
 import { createDialogController } from './ui/dialog.js';
-import { loadQuestionsCatalog } from './services/question-repository.js';
+import {
+  clearQuestionsCatalogCache,
+  loadEncryptedQuestionsCatalog,
+  loadQuestionsCatalog,
+} from './services/question-repository.js';
 import { getQuarantinedQuestionIdSet, extractUniqueSources } from './domain/question-pool.js';
 import { populateExamSetupSelectors } from './features/exam/exam-view.js';
 import { createExamController } from './features/exam/exam-controller.js';
@@ -20,7 +24,9 @@ import { createStudyController } from './features/study/study-controller.js';
 import { createSavedExamsController } from './features/saved-exams/saved-exams-controller.js';
 import { createStatsController } from './features/stats/stats-controller.js';
 import { createAuthController } from './features/auth/auth-controller.js';
+import { createDemoBannerView } from './features/auth/demo-banner-view.js';
 import { createReportService } from './services/report-service.js';
+import { createAccessControlService } from './services/access-control-service.js';
 import { createReportController } from './features/report-issue/report-controller.js';
 import { createPwaService } from './services/pwa.js';
 
@@ -40,6 +46,7 @@ export function mountApplication({
   const storage = createStorageAdapter({ localStorage, sessionStorage });
   const toast = createToastController({ document });
   const dialog = createDialogController({ document });
+  const demoBannerView = createDemoBannerView({ document });
 
   const confirmAction =
     customConfirmAction ||
@@ -50,6 +57,15 @@ export function mountApplication({
     });
 
   const controllers = {};
+  let hasFullCatalog = false;
+  let latestAccessDecision = {
+    status: ACCESS_STATUSES.GUEST,
+    approved: false,
+    isAdmin: false,
+    keyBase64: '',
+    telegramUrl: '',
+    note: '',
+  };
 
   const router = createRouter({
     document,
@@ -82,7 +98,14 @@ export function mountApplication({
 
     const headerEl = document?.getElementById('totalQuestionsHeader');
     if (headerEl) {
-      if (quarantinedCount === 0) {
+      if (
+        !hasFullCatalog &&
+        !preloadedQuestions &&
+        totalCount > 0 &&
+        totalCount < TOTAL_CATALOG_QUESTIONS
+      ) {
+        headerEl.textContent = `מצב הדגמה: ${totalCount} שאלות פתוחות מתוך ${TOTAL_CATALOG_QUESTIONS} שאלות במאגר`;
+      } else if (quarantinedCount === 0) {
         headerEl.textContent = `מאגר פעיל: ${totalCount} שאלות מאומתות`;
       } else {
         headerEl.textContent = `מאגר פעיל: ${activeCount} שאלות (${quarantinedCount} שמורות ב-${savedCount} מבחנים) • ${totalCount} סה"כ`;
@@ -101,6 +124,24 @@ export function mountApplication({
     }
 
     router.updateMobileSectionIndicator();
+  }
+
+  function renderDemoBanner() {
+    if (preloadedQuestions) return;
+    const state = store.getState();
+    const loadedCount = Array.isArray(state.allQuestions) ? state.allQuestions.length : 0;
+    const currentUser = state.auth?.user || null;
+
+    demoBannerView.render({
+      status: latestAccessDecision.status,
+      approved: latestAccessDecision.approved,
+      isAdmin: latestAccessDecision.isAdmin,
+      hasFullCatalog,
+      user: currentUser,
+      note: latestAccessDecision.note || '',
+      telegramUrl: latestAccessDecision.telegramUrl || '',
+      loadedCount: loadedCount || 10,
+    });
   }
 
   function updateMistakesUI() {
@@ -203,6 +244,50 @@ export function mountApplication({
     },
   });
 
+  let accessControlService = null;
+
+  async function unlockFullCatalogWithKey(keyBase64) {
+    if (!keyBase64 || hasFullCatalog || preloadedQuestions) {
+      return hasFullCatalog;
+    }
+    const cryptoImpl = window?.crypto || globalThis.crypto;
+    const fullQuestions = await loadEncryptedQuestionsCatalog({
+      keyBase64,
+      url: './data/questions.enc.json',
+      fetchImpl: fetchFn,
+      cryptoImpl,
+    });
+    hasFullCatalog = true;
+    if (window) window.EXAM_QUESTIONS = fullQuestions;
+    bootstrapWithQuestions(fullQuestions, { preserveActiveTab: true });
+    renderDemoBanner();
+    return true;
+  }
+
+  async function revertToDemoCatalogIfNeeded() {
+    if (preloadedQuestions || !hasFullCatalog) {
+      return;
+    }
+    hasFullCatalog = false;
+    if (window) window.EXAM_QUESTIONS = null;
+    clearQuestionsCatalogCache();
+    store.setState(
+      {
+        activeExamScreen: 'SETUP',
+        currentExam: null,
+        currentStudy: null,
+      },
+      'app/revert-demo'
+    );
+    try {
+      const demoQuestions = await loadQuestionsCatalog('./data/questions-demo.json', fetchFn);
+      if (window) window.EXAM_QUESTIONS = demoQuestions;
+      bootstrapWithQuestions(demoQuestions, { preserveActiveTab: true });
+    } catch (err) {
+      console.warn('Could not reload demo catalog on sign-out:', err);
+    }
+  }
+
   const authController = createAuthController({
     document,
     store,
@@ -210,6 +295,31 @@ export function mountApplication({
     toast,
     notifyError: (message) => dialog.alertDialog({ title: 'שגיאת התחברות לענן', message }),
     firebaseSdk,
+    resolveCloudAuthorization: async (user) => {
+      if (!accessControlService) {
+        return { allowed: true };
+      }
+      const decision = await accessControlService.checkUserAccess(user);
+      latestAccessDecision = { ...decision };
+
+      if (decision.approved) {
+        if (decision.keyBase64 && !hasFullCatalog && !preloadedQuestions) {
+          try {
+            await unlockFullCatalogWithKey(decision.keyBase64);
+          } catch (decryptErr) {
+            console.warn('Failed to decrypt full catalog:', decryptErr);
+          }
+        }
+      } else {
+        await revertToDemoCatalogIfNeeded();
+      }
+
+      renderDemoBanner();
+      return {
+        allowed: Boolean(decision.approved),
+        status: decision.status,
+      };
+    },
     onRemoteMerged: () => {
       updateMistakesUI();
       updateHeaderCounter();
@@ -217,8 +327,29 @@ export function mountApplication({
       savedExamsController.renderSavedExamsUI();
     },
     onAuthChanged: (user) => {
+      if (!user) {
+        accessControlService?.clearCachedApproval?.();
+        latestAccessDecision = {
+          status: ACCESS_STATUSES.GUEST,
+          approved: false,
+          isAdmin: false,
+          keyBase64: '',
+          telegramUrl: latestAccessDecision.telegramUrl || '',
+          note: '',
+        };
+        revertToDemoCatalogIfNeeded().then(() => {
+          renderDemoBanner();
+        });
+      }
       reportController.onAuthChanged(user);
     },
+  });
+
+  accessControlService = createAccessControlService({
+    cloudSync: authController.cloudSync,
+    localStorage,
+    fetchFn,
+    navigator: window?.navigator ?? navigator,
   });
 
   const reportService = createReportService({
@@ -241,9 +372,56 @@ export function mountApplication({
     store,
     cloudSync: authController.cloudSync,
     reportService,
+    accessControlService,
     toast,
     dialog,
     authController,
+    onCatalogKeyUpdated: async (keyBase64) => {
+      if (keyBase64 && !hasFullCatalog && !preloadedQuestions) {
+        await unlockFullCatalogWithKey(keyBase64);
+      }
+    },
+    onContactConfigUpdated: (telegramUrl) => {
+      latestAccessDecision = { ...latestAccessDecision, telegramUrl };
+      renderDemoBanner();
+    },
+  });
+
+  demoBannerView.setHandlers({
+    onSubmitRequest: async ({ note }) => {
+      demoBannerView.setSubmitting(true);
+      const res = await accessControlService.submitAccessRequest({ note });
+      demoBannerView.setSubmitting(false);
+
+      if (res.alreadyApproved) {
+        toast?.showToast(res.message);
+        await authController.refreshAuthorization();
+        return;
+      }
+
+      if (res.ok) {
+        latestAccessDecision = { ...latestAccessDecision, note };
+      }
+      toast?.showToast(res.message || 'שליחת הבקשה הושלמה.');
+    },
+    onRecheckAccess: async () => {
+      demoBannerView.setChecking(true);
+      try {
+        const ok = await authController.refreshAuthorization();
+        if (ok && hasFullCatalog) {
+          toast?.showToast(`אושרת! המאגר המלא (${TOTAL_CATALOG_QUESTIONS} שאלות) נפתח בהצלחה 🎉`);
+        } else if (ok) {
+          toast?.showToast('חשבונך מאושר! (ממתין להגדרת מפתח המאגר בענן)');
+        } else {
+          toast?.showToast('הגישה עדיין ממתינה לאישור מנהל המערכת.');
+        }
+      } finally {
+        demoBannerView.setChecking(false);
+      }
+    },
+    onOpenAdminSetup: () => {
+      reportController.openAdminDashboard({ initialTab: 'users' });
+    },
   });
 
   controllers.exam = examController;
@@ -252,7 +430,7 @@ export function mountApplication({
   controllers.stats = statsController;
   controllers.auth = authController;
 
-  function bootstrapWithQuestions(rawQuestions = []) {
+  function bootstrapWithQuestions(rawQuestions = [], { preserveActiveTab = false } = {}) {
     const questions = Array.isArray(rawQuestions)
       ? rawQuestions
       : Array.isArray(rawQuestions?.questions)
@@ -310,8 +488,13 @@ export function mountApplication({
     statsController.renderStats();
     savedExamsController.renderSavedExamsUI();
 
-    const initialTab = storage.loadActiveTab('exam');
-    router.switchTab(initialTab);
+    if (preserveActiveTab) {
+      const currentTab = store.getState().activeTab || 'exam';
+      router.switchTab(currentTab);
+    } else {
+      const initialTab = storage.loadActiveTab('exam');
+      router.switchTab(initialTab);
+    }
   }
 
   // Declarative event delegation (`data-action`)
@@ -371,6 +554,9 @@ export function mountApplication({
     'open-admin-reports': () => {
       reportController.openAdminDashboard();
     },
+    'open-admin-users': () => {
+      reportController.openAdminDashboard({ initialTab: 'users' });
+    },
     'install-pwa': () => {
       pwaService.promptInstall();
     },
@@ -400,6 +586,8 @@ export function mountApplication({
       savedExamsController,
       statsController,
       authController,
+      accessControlService,
+      demoBannerView,
       reportService,
       reportController,
       pwaService,
@@ -447,17 +635,44 @@ export function mountApplication({
       : null);
 
   if (resolvedPreloaded) {
+    hasFullCatalog = resolvedPreloaded.length >= TOTAL_CATALOG_QUESTIONS;
     bootstrapWithQuestions(resolvedPreloaded);
   } else {
-    loadQuestionsCatalog('./data/questions.json', fetchFn)
-      .then((questions) => {
-        if (window) window.EXAM_QUESTIONS = questions;
-        bootstrapWithQuestions(questions);
-      })
-      .catch((err) => {
-        console.error('Failed to load ./data/questions.json:', err);
-        bootstrapWithQuestions([]);
+    // Try optimistic offline unlock if user has cached approval + key on this device;
+    // otherwise boot immediately with the 10-question Demo Catalog.
+    const cachedApproval = accessControlService.loadCachedApproval();
+    if (cachedApproval?.approved === true && cachedApproval?.keyBase64) {
+      latestAccessDecision = {
+        status: ACCESS_STATUSES.APPROVED,
+        approved: true,
+        isAdmin: false,
+        keyBase64: cachedApproval.keyBase64,
+        telegramUrl: cachedApproval.telegramUrl || '',
+        note: '',
+      };
+      unlockFullCatalogWithKey(cachedApproval.keyBase64).catch(async () => {
+        try {
+          const demoQuestions = await loadQuestionsCatalog('./data/questions-demo.json', fetchFn);
+          if (window) window.EXAM_QUESTIONS = demoQuestions;
+          bootstrapWithQuestions(demoQuestions);
+          renderDemoBanner();
+        } catch (demoErr) {
+          console.error('Failed to load demo catalog:', demoErr);
+          bootstrapWithQuestions([]);
+        }
       });
+    } else {
+      loadQuestionsCatalog('./data/questions-demo.json', fetchFn)
+        .then((questions) => {
+          if (window) window.EXAM_QUESTIONS = questions;
+          bootstrapWithQuestions(questions);
+          renderDemoBanner();
+        })
+        .catch((err) => {
+          console.error('Failed to load ./data/questions-demo.json:', err);
+          bootstrapWithQuestions([]);
+        });
+    }
   }
 
   if (autoInitCloudSync || firebaseSdk) {

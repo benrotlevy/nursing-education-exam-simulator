@@ -1,19 +1,14 @@
 import { describe, it } from 'node:test';
 import assert from 'node:assert/strict';
-import fs from 'node:fs';
-import path from 'node:path';
-import { fileURLToPath } from 'node:url';
 import {
   createStudyDeck,
   ensureStudyQuestionShuffle,
   answerStudyQuestion,
   advanceStudyQuestion,
 } from '../../app/js/domain/study-session.js';
+import { loadTestQuestions } from '../helpers/load-test-questions.js';
 
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
-const questionsPath = path.resolve(__dirname, '../../app/data/questions.json');
-const { questions: allQuestions } = JSON.parse(fs.readFileSync(questionsPath, 'utf8'));
+const allQuestions = await loadTestQuestions();
 
 describe('app/js/domain/study-session.js — Study Deck, Immediate Feedback & Wrap-Around (STUDY-01..STUDY-03)', () => {
   it('filters study deck by category or mistakesOnly [STUDY-01]', () => {

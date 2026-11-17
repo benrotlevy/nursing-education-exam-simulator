@@ -6,6 +6,20 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 
 ---
 
+## [2.4.0] - 2026-11-17
+
+### Added
+
+- **Invite-Only Access Control & Key-Gated Encrypted Question Catalog (`ACCESS-SEC`)**:
+  - Added isomorphic Web Crypto AES-256-GCM encryption/decryption (`app/js/services/catalog-crypto.js`) and CLI tool `npm run encrypt:questions` (`tools/encrypt-questions.js`), encrypting all 1,079 questions into `app/data/questions.enc.json` while extracting 10 representative sample questions into `app/data/questions-demo.json`.
+  - Excluded plaintext `app/data/questions.json`, `data-pipeline/source/clean_questions.json`, and local `.secrets/` from git tracking via `.gitignore` and added CI-safe test fixtures (`tests/helpers/load-test-questions.js`).
+  - Updated `firestore.rules` with `/allowed_users/{email}`, `/app_config/catalog_key`, `/app_config/contact`, and `isAuthorizedUser()` enforcement on `/users/{userId}` and `/question_reports/{reportId}`, verified by Invariant H in `tests/integration/firestore-rules.test.js`.
+  - Built `app/js/domain/access-control.js`, `app/js/services/access-control-service.js`, and `app/js/features/auth/demo-banner-view.js` with 10-question Guest/Pending Demo Mode (allowing Study Mode and 10-question mini-exam), automatic first-sign-in `PENDING` registration, 1-time Telegram push notification alerts (updating `tools/cloudflare-worker-telegram.js` with backward-compatible fallback), optional Admin Telegram chat link (`https://t.me/...`), and offline PWA key caching under `nursing_access_approval_v1`.
+  - Upgraded Admin Dashboard (`app/js/features/report-issue/admin-reports-view.js` and `report-controller.js`) with a 2-tab switcher (`🚩 דיווחי שאלות` | `👥 משתמשים מורשים`), 1-tap `✅ אשר גישה` / `🚫 השהה גישה` / `🗑️ הסר` actions, manual add-user form, and Cloud Encryption Key + Telegram Contact URL configuration panel.
+  - Bumped Service Worker cache (`app/sw.js`) to `nursing-exam-sim-v2.4.0` to precache `questions-demo.json`, `questions.enc.json`, and all new modules, and verified across unit (`tests/unit/access-control.test.js`, `tests/unit/catalog-crypto.test.js`), DOM (`tests/dom/report-issue.test.js`), and cross-viewport Playwright E2E (`tests/e2e/access-control.spec.js`) suites.
+
+---
+
 ## [2.3.0] - 2026-11-15
 
 ### Added

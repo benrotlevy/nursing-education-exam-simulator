@@ -115,7 +115,15 @@ test.describe('Progressive Web App (PWA) Offline Support', () => {
         where: () => ({}),
         orderBy: () => ({}),
         limit: () => ({}),
-        getDoc: async () => ({ exists: () => false, data: () => null }),
+        getDoc: async (ref) => {
+          if (ref?.path?.startsWith('allowed_users/')) {
+            return {
+              exists: () => true,
+              data: () => ({ active: true, status: 'APPROVED', email: ref.id }),
+            };
+          }
+          return { exists: () => false, data: () => null };
+        },
         setDoc: async () => {},
         addDoc: async () => ({ id: 'rpt_online' }),
         onSnapshot: () => () => {},

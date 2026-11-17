@@ -1,14 +1,9 @@
 import { describe, it } from 'node:test';
 import assert from 'node:assert/strict';
-import fs from 'node:fs';
-import path from 'node:path';
-import { fileURLToPath } from 'node:url';
 import { createRetryWrongExamSession } from '../../app/js/domain/exam-session.js';
+import { loadTestQuestions } from '../helpers/load-test-questions.js';
 
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
-const questionsPath = path.resolve(__dirname, '../../app/data/questions.json');
-const { questions: allQuestions } = JSON.parse(fs.readFileSync(questionsPath, 'utf8'));
+const allQuestions = await loadTestQuestions();
 
 describe('app/js/domain/exam-session.js — Retry Wrong Questions Generation (EXAM-12)', () => {
   it('creates retry-wrong exam with exactly the incorrect and unanswered question IDs [EXAM-12 Scenario A]', () => {

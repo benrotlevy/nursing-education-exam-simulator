@@ -37,7 +37,15 @@ function injectMockFirebaseScript(initialUser = null, initialReports = {}) {
         where: () => ({}),
         orderBy: () => ({}),
         limit: () => ({}),
-        getDoc: async () => ({ exists: () => false, data: () => ({}) }),
+        getDoc: async (ref) => {
+          if (ref?.path === 'allowed_users') {
+            return {
+              exists: () => true,
+              data: () => ({ active: true, status: 'APPROVED', email: ref.id }),
+            };
+          }
+          return { exists: () => false, data: () => ({}) };
+        },
         setDoc: async (ref, data) => {
           if (ref.path === 'question_reports') {
             storeMap.set(ref.id, { ...data });

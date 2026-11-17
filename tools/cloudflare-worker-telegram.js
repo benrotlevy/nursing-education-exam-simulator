@@ -18,6 +18,7 @@ const MAX_FIELD_LEN = Object.freeze({
   reporterName: 100,
   reporterEmail: 120,
   reportId: 128,
+  note: 300,
 });
 
 function escapeTelegramHtml(value) {
@@ -111,6 +112,41 @@ function formatTelegramMessage(body) {
   return lines.join('\n');
 }
 
+function formatNewUserSignInMessage(body) {
+  const email = escapeTelegramHtml(clampField(body.email, MAX_FIELD_LEN.reporterEmail));
+  const displayName = escapeTelegramHtml(
+    clampField(body.displayName || 'משתמש חדש', MAX_FIELD_LEN.reporterName)
+  );
+  const note = escapeTelegramHtml(clampField(body.note || '', MAX_FIELD_LEN.note));
+  const isApproved = body.status === 'APPROVED';
+  const heading = isApproved
+    ? '✅ <b>התחברות ראשונה של משתמש מאושר</b>'
+    : body.isExplicitRequest
+      ? '📩 <b>בקשת אישור גישה חדשה למאגר</b>'
+      : '👤 <b>משתמש חדש התחבר למערכת (ממתין לאישור)</b>';
+
+  const lines = [
+    heading,
+    '',
+    `<b>שם:</b> ${displayName}`,
+    `<b>אימייל לאישור:</b> <code>${email}</code>`,
+  ];
+
+  if (note) {
+    lines.push(`<b>הערת הסטודנט:</b> ${note}`);
+  }
+
+  if (!isApproved) {
+    lines.push(
+      '',
+      'לפתיחת לוח הניהול ואישור בלחיצה אחת:',
+      '<a href="https://benrotlevy.github.io/nursing-education-exam-simulator/">סימולטור הדרכה קלינית בסיעוד</a>'
+    );
+  }
+
+  return lines.join('\n');
+}
+
 export default {
   async fetch(request, env) {
     const corsHeaders = buildCorsHeaders(request, env);
@@ -150,19 +186,30 @@ export default {
       });
     }
 
-    if (
-      !payload ||
-      payload.type !== 'QUESTION_ISSUE_REPORT' ||
-      typeof payload.questionId !== 'string' ||
-      !payload.questionId.trim() ||
-      typeof payload.comment !== 'string' ||
-      payload.comment.trim().length < 3
-    ) {
+    const isReportPayload =
+      payload &&
+      payload.type === 'QUESTION_ISSUE_REPORT' &&
+      typeof payload.questionId === 'string' &&
+      payload.questionId.trim().length > 0 &&
+      typeof payload.comment === 'string' &&
+      payload.comment.trim().length >= 3;
+
+    const isNewUserPayload =
+      payload &&
+      payload.type === 'NEW_USER_SIGN_IN' &&
+      typeof payload.email === 'string' &&
+      payload.email.trim().length >= 3;
+
+    if (!isReportPayload && !isNewUserPayload) {
       return new Response(JSON.stringify({ ok: false, error: 'Invalid report payload' }), {
         status: 400,
         headers: { 'Content-Type': 'application/json', ...corsHeaders },
       });
     }
+
+    const messageText = isNewUserPayload
+      ? formatNewUserSignInMessage(payload)
+      : formatTelegramMessage(payload);
 
     const telegramEndpoint = `https://api.telegram.org/bot${env.TELEGRAM_BOT_TOKEN}/sendMessage`;
     const telegramResponse = await fetch(telegramEndpoint, {
@@ -170,7 +217,7 @@ export default {
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
         chat_id: env.TELEGRAM_CHAT_ID,
-        text: formatTelegramMessage(payload),
+        text: messageText,
         parse_mode: 'HTML',
         disable_web_page_preview: true,
       }),

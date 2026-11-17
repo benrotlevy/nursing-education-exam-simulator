@@ -5,13 +5,14 @@
  */
 
 const CACHE_PREFIX = 'nursing-exam-sim-';
-const CACHE_NAME = `${CACHE_PREFIX}v2.3.0`;
+const CACHE_NAME = `${CACHE_PREFIX}v2.4.0`;
 
 const CORE_ASSETS = [
   './',
   './index.html',
   './manifest.webmanifest',
-  './data/questions.json',
+  './data/questions-demo.json',
+  './data/questions.enc.json',
   './icons/icon.svg',
   './icons/icon-192.png',
   './icons/icon-512.png',
@@ -40,6 +41,7 @@ const CORE_ASSETS = [
   './js/core/router.js',
   './js/core/storage.js',
   './js/core/store.js',
+  './js/domain/access-control.js',
   './js/domain/ai-prompt.js',
   './js/domain/exam-session.js',
   './js/domain/explanation-parser.js',
@@ -52,6 +54,7 @@ const CORE_ASSETS = [
   './js/domain/sync-merge.js',
   './js/features/auth/auth-controller.js',
   './js/features/auth/auth-view.js',
+  './js/features/auth/demo-banner-view.js',
   './js/features/exam/exam-controller.js',
   './js/features/exam/exam-view.js',
   './js/features/report-issue/admin-reports-view.js',
@@ -63,6 +66,8 @@ const CORE_ASSETS = [
   './js/features/stats/stats-view.js',
   './js/features/study/study-controller.js',
   './js/features/study/study-view.js',
+  './js/services/access-control-service.js',
+  './js/services/catalog-crypto.js',
   './js/services/clipboard.js',
   './js/services/cloud-sync.js',
   './js/services/pwa.js',

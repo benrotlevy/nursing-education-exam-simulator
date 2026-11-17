@@ -20,7 +20,26 @@ export const STORAGE_KEYS = Object.freeze({
   EXAM_SESSION: 'nursing_exam_session_v2',
   STUDY_SESSION: 'nursing_study_session_v2',
   ACTIVE_TAB: 'nursing_active_tab_v2',
+  ACCESS_APPROVAL: 'nursing_access_approval_v1',
+  SIGNIN_NOTIFIED: 'nursing_signin_notified_v1',
 });
+
+export const TOTAL_CATALOG_QUESTIONS = 1079;
+
+export const ACCESS_STATUSES = Object.freeze({
+  GUEST: 'GUEST',
+  CHECKING: 'CHECKING',
+  APPROVED: 'APPROVED',
+  PENDING: 'PENDING',
+  REVOKED: 'REVOKED',
+});
+
+export const ACCESS_LIMITS = Object.freeze({
+  MAX_NOTE_LENGTH: 300,
+  MAX_EMAIL_LENGTH: 320,
+});
+
+export const DEFAULT_TELEGRAM_ADMIN_URL = '';
 
 export const LIMITS = Object.freeze({
   MAX_SAVED_EXAMS: 3,

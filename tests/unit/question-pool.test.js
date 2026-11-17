@@ -1,8 +1,5 @@
 import { describe, it } from 'node:test';
 import assert from 'node:assert/strict';
-import fs from 'node:fs';
-import path from 'node:path';
-import { fileURLToPath } from 'node:url';
 import {
   getQuarantinedQuestionIdSet,
   getActiveQuestionPool,
@@ -10,11 +7,9 @@ import {
   getAvailableFullExams,
   filterQuestionsPool,
 } from '../../app/js/domain/question-pool.js';
+import { loadTestQuestions } from '../helpers/load-test-questions.js';
 
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
-const questionsPath = path.resolve(__dirname, '../../app/data/questions.json');
-const { questions: allQuestions } = JSON.parse(fs.readFileSync(questionsPath, 'utf8'));
+const allQuestions = await loadTestQuestions();
 
 describe('app/js/domain/question-pool.js — Quarantine Isolation & Pool Filtering (POOL-03..POOL-05)', () => {
   it('excludes quarantined saved-exam question IDs from active pool with zero leaks [POOL-03]', () => {

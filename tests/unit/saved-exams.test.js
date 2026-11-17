@@ -1,19 +1,14 @@
 import { describe, it } from 'node:test';
 import assert from 'node:assert/strict';
-import fs from 'node:fs';
-import path from 'node:path';
-import { fileURLToPath } from 'node:url';
 import {
   reserveExamSlot,
   createSavedExamRun,
   releaseSavedExamSlot,
 } from '../../app/js/domain/saved-exams.js';
 import { getActiveQuestionPool } from '../../app/js/domain/question-pool.js';
+import { loadTestQuestions } from '../helpers/load-test-questions.js';
 
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
-const questionsPath = path.resolve(__dirname, '../../app/data/questions.json');
-const { questions: allQuestions } = JSON.parse(fs.readFileSync(questionsPath, 'utf8'));
+const allQuestions = await loadTestQuestions();
 
 describe('app/js/domain/saved-exams.js — Saved Exams Quarantine Lifecycle (SAVED-01..SAVED-05)', () => {
   it('reserves up to 3 full exams, quarantines their questions, launches saved runs, and releases slots [SAVED-01..SAVED-05]', () => {

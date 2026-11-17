@@ -39,5 +39,10 @@ temp_*.txt
 # Environment variables & Secrets
 .env
 .env.*
+.secrets/
 *.pem
 *.key
+
+# Unencrypted Full Question Catalogs (local-only; deployed repo ships questions-demo.json + questions.enc.json)
+app/data/questions.json
+data-pipeline/source/clean_questions.json

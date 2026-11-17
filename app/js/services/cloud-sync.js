@@ -58,6 +58,7 @@ export function createCloudSyncService({
   onSyncFlash = null,
   onSyncStatusChanged = null,
   onSignInLoadingChange = null,
+  resolveCloudAuthorization = null,
   debounceMs = 600,
   setTimeoutFn = globalThis.setTimeout,
   clearTimeoutFn = globalThis.clearTimeout,
@@ -71,6 +72,7 @@ export function createCloudSyncService({
   let unsubscribeSnapshot = null;
   let pushDebounceTimer = null;
   let initialized = false;
+  let cloudSyncAuthorized = typeof resolveCloudAuthorization !== 'function';
 
   function isBrowserOffline() {
     const nav = navigator || window?.navigator;
@@ -98,12 +100,12 @@ export function createCloudSyncService({
   // Track offline/online transitions and flush pending offline mutations when restored
   if (window && typeof window.addEventListener === 'function') {
     window.addEventListener('offline', () => {
-      if (auth && auth.currentUser) {
+      if (auth && auth.currentUser && cloudSyncAuthorized) {
         updateSyncStatus('offline', 'cloud-sync/offline');
       }
     });
     window.addEventListener('online', () => {
-      if (auth && auth.currentUser) {
+      if (auth && auth.currentUser && cloudSyncAuthorized) {
         updateSyncStatus('synced', 'cloud-sync/online');
         schedulePush();
       }
@@ -181,7 +183,7 @@ export function createCloudSyncService({
   }
 
   async function pushNow() {
-    if (!sdk || !auth || !auth.currentUser || !db || !store) return false;
+    if (!sdk || !auth || !auth.currentUser || !db || !store || !cloudSyncAuthorized) return false;
     if (isBrowserOffline()) {
       updateSyncStatus('offline', 'cloud-sync/offline');
       return false;
@@ -227,7 +229,7 @@ export function createCloudSyncService({
   }
 
   function schedulePush() {
-    if (!sdk || !auth || !auth.currentUser) return;
+    if (!sdk || !auth || !auth.currentUser || !cloudSyncAuthorized) return;
     clearTimeoutFn(pushDebounceTimer);
     pushDebounceTimer = setTimeoutFn(() => {
       pushNow();
@@ -235,7 +237,7 @@ export function createCloudSyncService({
   }
 
   async function resetCloudData() {
-    if (!sdk || !auth || !auth.currentUser || !db) return false;
+    if (!sdk || !auth || !auth.currentUser || !db || !cloudSyncAuthorized) return false;
     try {
       const state = store ? store.getState() : {};
       const userDocRef = sdk.doc(db, 'users', auth.currentUser.uid);
@@ -271,7 +273,14 @@ export function createCloudSyncService({
   }
 
   async function handleAuthUserChange(user) {
-    const initialSyncStatus = user ? (isBrowserOffline() ? 'offline' : 'synced') : 'idle';
+    cloudSyncAuthorized = user ? typeof resolveCloudAuthorization !== 'function' : false;
+    const initialSyncStatus = user
+      ? cloudSyncAuthorized
+        ? isBrowserOffline()
+          ? 'offline'
+          : 'synced'
+        : 'pending'
+      : 'idle';
     if (store) {
       store.setState(
         {
@@ -291,11 +300,47 @@ export function createCloudSyncService({
       );
     }
 
-    if (typeof onAuthChanged === 'function') {
+    if (user && typeof resolveCloudAuthorization === 'function') {
+      let authDecision;
+      try {
+        authDecision = await resolveCloudAuthorization(user);
+      } catch (err) {
+        console.warn('Cloud authorization check failed:', err);
+        authDecision = { allowed: false, status: 'PENDING' };
+      }
+
+      // Guard against stale async completion if user signed out/switched mid-check
+      if (auth && auth.currentUser?.uid !== user.uid) {
+        return;
+      }
+
+      const allowed = Boolean(
+        typeof authDecision === 'boolean' ? authDecision : authDecision?.allowed
+      );
+      cloudSyncAuthorized = allowed;
+
+      const resolvedStatus = allowed
+        ? isBrowserOffline()
+          ? 'offline'
+          : 'synced'
+        : authDecision?.status === 'REVOKED'
+          ? 'revoked'
+          : 'pending';
+
+      updateSyncStatus(resolvedStatus, 'cloud-sync/authorization-resolved');
+      if (typeof onAuthChanged === 'function') {
+        onAuthChanged(user, authDecision);
+      }
+
+      if (!allowed) {
+        unbindSession();
+        return;
+      }
+    } else if (typeof onAuthChanged === 'function') {
       onAuthChanged(user);
     }
 
-    if (user && sdk && db) {
+    if (user && sdk && db && cloudSyncAuthorized) {
       const userDocRef = sdk.doc(db, 'users', user.uid);
       try {
         const snap = await sdk.getDoc(userDocRef);
@@ -391,7 +436,11 @@ export function createCloudSyncService({
     }
     try {
       await sdk.signInWithPopup(auth, provider);
-      toast?.showToast('התחברת בהצלחה! מסנכרן עם הענן ☁️');
+      toast?.showToast(
+        cloudSyncAuthorized
+          ? 'התחברת בהצלחה! מסנכרן עם הענן ☁️'
+          : 'התחברת בהצלחה! החשבון ממתין לאישור מנהל לפתיחת המאגר המלא.'
+      );
       return true;
     } catch (err) {
       console.error('Firebase Sign-in error:', err);
@@ -443,11 +492,19 @@ export function createCloudSyncService({
     return { sdk, auth, db, initialized };
   }
 
+  async function refreshAuthorization() {
+    if (!auth) return false;
+    await handleAuthUserChange(auth.currentUser || null);
+    return cloudSyncAuthorized;
+  }
+
   return {
     init,
     signIn,
     signOut,
     unbindSession,
+    refreshAuthorization,
+    isCloudSyncAuthorized: () => cloudSyncAuthorized,
     getAuthUser,
     getFirebaseContext,
     schedulePush,

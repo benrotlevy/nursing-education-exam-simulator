@@ -7,6 +7,7 @@ import { Window } from 'happy-dom';
 import { mountApplication } from '../../app/js/main.js';
 import { renderExamResultsView } from '../../app/js/features/exam/exam-view.js';
 import { STORAGE_KEYS } from '../../app/js/config.js';
+import { loadTestQuestions } from '../helpers/load-test-questions.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -16,10 +17,7 @@ const rawHtml = fs
   .readFileSync(path.join(ROOT_DIR, 'app/index.html'), 'utf8')
   .replace(/<script\b[^>]*>[\s\S]*?<\/script>/gi, '');
 
-const catalogData = JSON.parse(
-  fs.readFileSync(path.join(ROOT_DIR, 'app/data/questions.json'), 'utf8')
-);
-const allQuestions = Array.isArray(catalogData) ? catalogData : catalogData.questions;
+const allQuestions = await loadTestQuestions();
 
 function createTestDOM(initialSessionStorage = {}) {
   const win = new Window({

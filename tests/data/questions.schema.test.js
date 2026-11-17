@@ -8,6 +8,7 @@ import {
   normalizeOrigExplanation,
   stripLiteratureLine,
 } from '../../tools/build-questions.js';
+import { loadTestQuestions } from '../helpers/load-test-questions.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -15,10 +16,19 @@ const repoRoot = path.resolve(__dirname, '../..');
 
 const sourcePath = path.join(repoRoot, 'data-pipeline', 'source', 'clean_questions.json');
 const runtimePath = path.join(repoRoot, 'app', 'data', 'questions.json');
+const demoPath = path.join(repoRoot, 'app', 'data', 'questions-demo.json');
+const encryptedPath = path.join(repoRoot, 'app', 'data', 'questions.enc.json');
 
-const sourceQuestions = JSON.parse(fs.readFileSync(sourcePath, 'utf8'));
-const runtimePayload = JSON.parse(fs.readFileSync(runtimePath, 'utf8'));
-const runtimeQuestions = runtimePayload.questions;
+const hasLocalPlaintextCatalogs = fs.existsSync(sourcePath) && fs.existsSync(runtimePath);
+const sourceQuestions = hasLocalPlaintextCatalogs
+  ? JSON.parse(fs.readFileSync(sourcePath, 'utf8'))
+  : null;
+const runtimePayload = hasLocalPlaintextCatalogs
+  ? JSON.parse(fs.readFileSync(runtimePath, 'utf8'))
+  : null;
+const runtimeQuestions = runtimePayload ? runtimePayload.questions : await loadTestQuestions();
+const demoPayload = JSON.parse(fs.readFileSync(demoPath, 'utf8'));
+const encryptedEnvelope = JSON.parse(fs.readFileSync(encryptedPath, 'utf8'));
 
 function escapeHTML(str) {
   if (!str) return '';
@@ -167,11 +177,29 @@ function renderExplanationHTML(q) {
 }
 
 describe('Step 5 Data Integrity & Schema Verification (DATA-01..DATA-05)', () => {
-  it('Check 1: 1-to-1 field equivalence across all 1,079 questions between source and runtime JSON', () => {
+  it('Check 1: Demo & encrypted catalog integrity plus 1-to-1 source equivalence when local plaintext exists', () => {
+    assert.equal(demoPayload.demo, true);
+    assert.equal(demoPayload.totalCatalogQuestions, 1079);
+    assert.equal(demoPayload.totalQuestions, 10);
+    assert.equal(demoPayload.questions.length, 10);
+
+    assert.equal(encryptedEnvelope.version, 1);
+    assert.equal(encryptedEnvelope.alg, 'AES-256-GCM');
+    assert.equal(encryptedEnvelope.totalQuestions, 1079);
+    assert.ok(typeof encryptedEnvelope.iv === 'string' && encryptedEnvelope.iv.length >= 16);
+    assert.ok(
+      typeof encryptedEnvelope.ciphertext === 'string' && encryptedEnvelope.ciphertext.length > 1000
+    );
+
+    assert.equal(runtimeQuestions.length, 1079);
+
+    if (!hasLocalPlaintextCatalogs) {
+      return;
+    }
+
     assert.equal(runtimePayload.schemaVersion, 2);
     assert.equal(runtimePayload.totalQuestions, 1079);
     assert.equal(sourceQuestions.length, 1079);
-    assert.equal(runtimeQuestions.length, 1079);
 
     for (let i = 0; i < sourceQuestions.length; i++) {
       const src = sourceQuestions[i];
@@ -212,29 +240,39 @@ describe('Step 5 Data Integrity & Schema Verification (DATA-01..DATA-05)', () =>
   });
 
   it('Check 2: Proof that only 100% duplicate fields were removed from runtime JSON', () => {
-    for (const src of sourceQuestions) {
-      assert.ok(
-        typeof src.shortExplanation === 'string' && src.shortExplanation.trim().length > 0,
-        `Missing shortExplanation on ${src.id}`
-      );
-      assert.ok(
-        typeof src.detailedExplanation === 'string' && src.detailedExplanation.trim().length > 0,
-        `Missing detailedExplanation on ${src.id}`
-      );
-      assert.strictEqual(
-        src.aiExplanation,
-        src.detailedExplanation,
-        `aiExplanation is not identical to detailedExplanation on ${src.id}`
-      );
+    if (hasLocalPlaintextCatalogs) {
+      for (const src of sourceQuestions) {
+        assert.ok(
+          typeof src.shortExplanation === 'string' && src.shortExplanation.trim().length > 0,
+          `Missing shortExplanation on ${src.id}`
+        );
+        assert.ok(
+          typeof src.detailedExplanation === 'string' && src.detailedExplanation.trim().length > 0,
+          `Missing detailedExplanation on ${src.id}`
+        );
+        assert.strictEqual(
+          src.aiExplanation,
+          src.detailedExplanation,
+          `aiExplanation is not identical to detailedExplanation on ${src.id}`
+        );
+      }
     }
 
-    for (const dst of runtimeQuestions) {
+    for (const dst of [...runtimeQuestions, ...demoPayload.questions]) {
       assert.strictEqual('aiExplanation' in dst, false, `aiExplanation leaked on ${dst.id}`);
       assert.strictEqual('explanation' in dst, false, `explanation leaked on ${dst.id}`);
     }
   });
 
   it('Check 3: Byte-for-byte UI rendered output equivalence (renderExplanationHTML) across all 1,079 questions', () => {
+    if (!hasLocalPlaintextCatalogs) {
+      for (const q of [...runtimeQuestions, ...demoPayload.questions]) {
+        const html = renderExplanationHTML(q);
+        assert.ok(html.includes('expl-short-card'), `Missing expl-short-card on ${q.id}`);
+      }
+      return;
+    }
+
     for (let i = 0; i < sourceQuestions.length; i++) {
       const srcHtml = renderExplanationHTML(sourceQuestions[i]);
       const dstHtml = renderExplanationHTML(runtimeQuestions[i]);

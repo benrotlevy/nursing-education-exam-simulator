@@ -1,8 +1,5 @@
 import { describe, it } from 'node:test';
 import assert from 'node:assert/strict';
-import fs from 'node:fs';
-import path from 'node:path';
-import { fileURLToPath } from 'node:url';
 import {
   createExamSession,
   ensureExamQuestionShuffle,
@@ -14,11 +11,9 @@ import {
   gradeExamSession,
   createRetryWrongExamSession,
 } from '../../app/js/domain/exam-session.js';
+import { loadTestQuestions } from '../helpers/load-test-questions.js';
 
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
-const questionsPath = path.resolve(__dirname, '../../app/data/questions.json');
-const { questions: allQuestions } = JSON.parse(fs.readFileSync(questionsPath, 'utf8'));
+const allQuestions = await loadTestQuestions();
 
 describe('app/js/domain/exam-session.js — Exam Lifecycle & Grading (EXAM-01..EXAM-09)', () => {
   it('samples the requested count (10/25/50/100/MISTAKES_ONLY) and rejects empty mistakes pool [EXAM-01, EXAM-02]', () => {

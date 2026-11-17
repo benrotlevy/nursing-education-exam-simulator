@@ -1,14 +1,9 @@
 import { describe, it } from 'node:test';
 import assert from 'node:assert/strict';
-import fs from 'node:fs';
-import path from 'node:path';
-import { fileURLToPath } from 'node:url';
 import { renderExplanationHTML } from '../../app/js/ui/explanation-card.js';
+import { loadTestQuestions } from '../helpers/load-test-questions.js';
 
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
-const questionsPath = path.resolve(__dirname, '../../app/data/questions.json');
-const { questions: allQuestions } = JSON.parse(fs.readFileSync(questionsPath, 'utf8'));
+const allQuestions = await loadTestQuestions();
 
 describe('app/js/ui/explanation-card.js — Explanation Card DOM Rendering (STUDY-04, SEC-01)', () => {
   it('renders "בשורה אחת" summary, rationale block, and distractor cards across all 1,079 questions with zero literature leaks [STUDY-04]', () => {

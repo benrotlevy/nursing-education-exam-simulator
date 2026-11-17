@@ -5,6 +5,7 @@ import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { Window } from 'happy-dom';
 import { mountApplication } from '../../app/js/main.js';
+import { loadTestQuestions } from '../helpers/load-test-questions.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -19,20 +20,8 @@ function resolveIndexHtmlPath() {
 }
 
 // Cache questions once across tests for fast execution
-let cachedQuestions = null;
+const cachedQuestions = await loadTestQuestions();
 function getSampleQuestions() {
-  if (cachedQuestions) return cachedQuestions;
-  const appJson = path.join(repoRoot, 'app', 'data', 'questions.json');
-  if (fs.existsSync(appJson)) {
-    const parsed = JSON.parse(fs.readFileSync(appJson, 'utf8'));
-    cachedQuestions = Array.isArray(parsed) ? parsed : parsed.questions;
-    return cachedQuestions;
-  }
-  const pipelineJson = path.join(repoRoot, 'data-pipeline', 'source', 'clean_questions.json');
-  const cleanJson = fs.existsSync(pipelineJson)
-    ? pipelineJson
-    : path.join(repoRoot, 'data', 'clean_questions.json');
-  cachedQuestions = JSON.parse(fs.readFileSync(cleanJson, 'utf8'));
   return cachedQuestions;
 }
 

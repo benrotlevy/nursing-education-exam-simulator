@@ -21,8 +21,16 @@ test.describe('AUTH-RTL: Statistics Cloud Sync Badge & Saved Exams Count RTL Bid
           setTimeout(() => cb(mockUser), 0);
           return () => {};
         },
-        doc: (_db, col, id) => ({ path: `${col}/${id}` }),
-        getDoc: async () => ({ exists: () => false, data: () => null }),
+        doc: (_db, col, id) => ({ path: `${col}/${id}`, id }),
+        getDoc: async (ref) => {
+          if (ref?.path?.startsWith('allowed_users/')) {
+            return {
+              exists: () => true,
+              data: () => ({ active: true, status: 'APPROVED', email: ref.id }),
+            };
+          }
+          return { exists: () => false, data: () => null };
+        },
         setDoc: async () => {},
         onSnapshot: () => () => {},
       };

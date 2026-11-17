@@ -50,8 +50,10 @@ function createInMemoryStorage() {
   };
 }
 
-function createMockFirebaseSdk(initialDocs = {}) {
+function createMockFirebaseSdk(initialDocs = {}, initialUsers = {}) {
   const reportsStore = new Map(Object.entries(initialDocs));
+  const usersStore = new Map(Object.entries(initialUsers));
+  const defaultApproved = { active: true, status: 'APPROVED' };
   let authListener = null;
   let snapshotListener = null;
   let currentUser = null;
@@ -67,6 +69,7 @@ function createMockFirebaseSdk(initialDocs = {}) {
 
   return {
     reportsStore,
+    usersStore,
     copiedWrites,
     setUser(user) {
       currentUser = user;
@@ -99,12 +102,21 @@ function createMockFirebaseSdk(initialDocs = {}) {
       where: () => ({}),
       orderBy: () => ({}),
       limit: () => ({}),
-      getDoc: async () => ({ exists: () => false, data: () => ({}) }),
+      getDoc: async (ref) => {
+        if (ref?.path === 'allowed_users') {
+          const data = usersStore.has(ref.id) ? usersStore.get(ref.id) : defaultApproved;
+          return { exists: () => Boolean(data), data: () => data };
+        }
+        return { exists: () => false, data: () => ({}) };
+      },
       setDoc: async (ref, data, opts) => {
         if (ref.path === 'question_reports') {
           const prev = reportsStore.get(ref.id) || {};
           reportsStore.set(ref.id, opts?.merge ? { ...prev, ...data } : { ...data });
           notifySnapshots();
+        } else if (ref.path === 'allowed_users') {
+          const prev = usersStore.get(ref.id) || {};
+          usersStore.set(ref.id, opts?.merge ? { ...prev, ...data } : { ...data });
         }
       },
       addDoc: async (_col, data) => {
@@ -119,15 +131,22 @@ function createMockFirebaseSdk(initialDocs = {}) {
         notifySnapshots();
       },
       deleteDoc: async (ref) => {
+        if (ref?.path === 'allowed_users') {
+          usersStore.delete(ref.id);
+          return;
+        }
         reportsStore.delete(ref.id);
         notifySnapshots();
       },
-      getDocs: async () => ({
-        docs: Array.from(reportsStore.entries()).map(([id, data]) => ({
-          id,
-          data: () => data,
-        })),
-      }),
+      getDocs: async (ref) => {
+        const targetMap = ref?.path === 'allowed_users' ? usersStore : reportsStore;
+        return {
+          docs: Array.from(targetMap.entries()).map(([id, data]) => ({
+            id,
+            data: () => data,
+          })),
+        };
+      },
       onSnapshot: (_ref, onNext) => {
         if (_ref?.path === 'question_reports') {
           snapshotListener = onNext;
@@ -142,10 +161,10 @@ function createMockFirebaseSdk(initialDocs = {}) {
   };
 }
 
-async function setupReportEnv(initialDocs = {}) {
+async function setupReportEnv(initialDocs = {}, initialUsers = {}) {
   const win = new Window({ url: 'http://127.0.0.1:4173/' });
   win.document.body.innerHTML = rawHtml;
-  const mockFb = createMockFirebaseSdk(initialDocs);
+  const mockFb = createMockFirebaseSdk(initialDocs, initialUsers);
   const webhookCalls = [];
   const clipboardWrites = [];
   Object.defineProperty(win.navigator, 'clipboard', {
@@ -345,5 +364,52 @@ describe('Question Issue Reporting & Admin Dashboard DOM Flow', () => {
 
     cancelBtn.click();
     assert.equal(document.getElementById('reportIssueDialog').hasAttribute('open'), false);
+  });
+
+  it('switches to Admin Approved Users tab and approves pending user / adds user', async () => {
+    const { win, document, mockFb } = await setupReportEnv(
+      {},
+      {
+        'newstu@example.com': {
+          schemaVersion: 2,
+          email: 'newstu@example.com',
+          active: false,
+          status: 'PENDING',
+          note: 'שנה ד הדסה',
+          displayName: 'נועם',
+          addedAt: '2026-11-17T08:00:00.000Z',
+          updatedAt: '2026-11-17T08:00:00.000Z',
+        },
+      }
+    );
+
+    mockFb.setUser({
+      uid: 'admin_uid_2',
+      displayName: 'Benjamin Rotlevy',
+      email: 'benjaminrotlevy@gmail.com',
+    });
+    await new Promise((r) => setTimeout(r, 20));
+
+    document.getElementById('btnAdminReports').click();
+    await new Promise((r) => setTimeout(r, 20));
+
+    const adminDialog = document.getElementById('adminReportsDialog');
+    adminDialog.querySelector('button[data-admin-tab="users"]').click();
+    await new Promise((r) => setTimeout(r, 25));
+
+    assert.match(adminDialog.textContent, /newstu@example\.com/);
+    adminDialog.querySelector('button[data-user-action="approve"]').click();
+    await new Promise((r) => setTimeout(r, 25));
+    assert.equal(mockFb.usersStore.get('newstu@example.com').active, true);
+    assert.equal(mockFb.usersStore.get('newstu@example.com').status, 'APPROVED');
+
+    // Add manual user via form
+    document.getElementById('adminUserEmailInput').value = 'added@example.com';
+    document.getElementById('adminUserNoteInput').value = 'מכללה';
+    document
+      .getElementById('adminAddUserForm')
+      .dispatchEvent(new win.Event('submit', { bubbles: true, cancelable: true }));
+    await new Promise((r) => setTimeout(r, 25));
+    assert.equal(mockFb.usersStore.get('added@example.com').active, true);
   });
 });

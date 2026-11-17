@@ -98,6 +98,14 @@ function compileFirestoreRules(rulesSource) {
   // 3. Transpile CEL / Rules expression operators to JavaScript
   function transformExpression(expr) {
     let res = expr;
+    // Replace exists(/databases/$(database)/documents/...) & get(/databases/$(database)/documents/...)
+    res = res.replace(
+      /(exists|get)\(\s*\/databases\/\$\(database\)\/documents((?:\$\([^)]+\)|[^)])+)\)/g,
+      (_full, fnName, docPath) => {
+        const templatePath = docPath.replace(/\$\(([^)]+)\)/g, '${$1}');
+        return `__${fnName}(\`${templatePath}\`)`;
+      }
+    );
     // Replace 'expr is type' -> '__is(expr, "type")'
     res = res.replace(/([a-zA-Z0-9_.[\]]+)\s+is\s+([a-zA-Z]+)/g, '__is($1, "$2")');
     // Replace 'obj.keys().hasAll(' -> '__hasAll(obj, '
@@ -149,7 +157,26 @@ function compileFirestoreRules(rulesSource) {
   }
 
   const code = `
-    return function evaluate({ request, resource, path, operation }) {
+    return function evaluate({ request, resource, path, operation, db }) {
+      const defaultDb = {
+        '/allowed_users/alice@hospital.org.il': {
+          schemaVersion: 2,
+          email: 'alice@hospital.org.il',
+          active: true,
+          status: 'APPROVED',
+        },
+      };
+      const activeDb = db !== undefined ? db : defaultDb;
+
+      function __exists(docPath) {
+        return Object.prototype.hasOwnProperty.call(activeDb, docPath) && activeDb[docPath] != null;
+      }
+
+      function __get(docPath) {
+        const data = __exists(docPath) ? activeDb[docPath] : {};
+        return { data };
+      }
+
       function __is(val, type) {
         if (val === undefined || val === null) return false;
         switch (type) {
@@ -247,6 +274,7 @@ function compileFirestoreRules(rulesSource) {
           function evaluateBlock_${idx}(matchParams) {
             const userId = matchParams.userId;
             const reportId = matchParams.reportId;
+            const email = matchParams.email;
             const document = matchParams.document;
             ${blockRulesCode}
             return false;
@@ -317,8 +345,14 @@ describe('firestore.rules — Automated Security Rules Logic Verification (SEC-0
     assert.ok(compiled.functions.includes('isOwner'));
     assert.ok(compiled.functions.includes('isValidUserDocument'));
     assert.ok(compiled.functions.includes('isValidQuestionReport'));
+    assert.ok(compiled.functions.includes('isApprovedUser'));
+    assert.ok(compiled.functions.includes('isAuthorizedUser'));
+    assert.ok(compiled.functions.includes('isValidAllowedUserDocument'));
     assert.ok(compiled.matchPaths.includes('/users/{userId}'));
     assert.ok(compiled.matchPaths.includes('/question_reports/{reportId}'));
+    assert.ok(compiled.matchPaths.includes('/allowed_users/{email}'));
+    assert.ok(compiled.matchPaths.includes('/app_config/catalog_key'));
+    assert.ok(compiled.matchPaths.includes('/app_config/contact'));
     assert.ok(compiled.matchPaths.includes('/{document=**}'));
   });
 
@@ -377,7 +411,9 @@ describe('firestore.rules — Automated Security Rules Logic Verification (SEC-0
   describe('Invariant B: Authenticated owner Alice reading/writing /users/alice is permitted [SEC-04.b]', () => {
     it('permits Alice (auth.uid == "alice") reading /users/alice', () => {
       const allowed = evaluate({
-        request: { auth: { uid: 'alice' } },
+        request: {
+          auth: { uid: 'alice', token: { email: 'alice@hospital.org.il', email_verified: true } },
+        },
         resource: { data: createValidUserDoc() },
         path: '/users/alice',
         operation: 'read',
@@ -388,7 +424,10 @@ describe('firestore.rules — Automated Security Rules Logic Verification (SEC-0
     it('permits Alice creating /users/alice with a schema-compliant user document', () => {
       const doc = createValidUserDoc();
       const allowed = evaluate({
-        request: { auth: { uid: 'alice' }, resource: { data: doc } },
+        request: {
+          auth: { uid: 'alice', token: { email: 'alice@hospital.org.il', email_verified: true } },
+          resource: { data: doc },
+        },
         resource: { data: {} },
         path: '/users/alice',
         operation: 'create',
@@ -410,7 +449,10 @@ describe('firestore.rules — Automated Security Rules Logic Verification (SEC-0
       });
 
       const allowed = evaluate({
-        request: { auth: { uid: 'alice' }, resource: { data: updatedDoc } },
+        request: {
+          auth: { uid: 'alice', token: { email: 'alice@hospital.org.il', email_verified: true } },
+          resource: { data: updatedDoc },
+        },
         resource: { data: existingDoc },
         path: '/users/alice',
         operation: 'update',
@@ -432,7 +474,10 @@ describe('firestore.rules — Automated Security Rules Logic Verification (SEC-0
       };
 
       const allowed = evaluate({
-        request: { auth: { uid: 'alice' }, resource: { data: minimalDoc } },
+        request: {
+          auth: { uid: 'alice', token: { email: 'alice@hospital.org.il', email_verified: true } },
+          resource: { data: minimalDoc },
+        },
         resource: { data: {} },
         path: '/users/alice',
         operation: 'create',
@@ -455,7 +500,10 @@ describe('firestore.rules — Automated Security Rules Logic Verification (SEC-0
 
       assert.equal(
         evaluate({
-          request: { auth: { uid: 'alice' }, resource: { data: withReleased } },
+          request: {
+            auth: { uid: 'alice', token: { email: 'alice@hospital.org.il', email_verified: true } },
+            resource: { data: withReleased },
+          },
           resource: { data: createValidUserDoc() },
           path: '/users/alice',
           operation: 'update',
@@ -467,7 +515,7 @@ describe('firestore.rules — Automated Security Rules Logic Verification (SEC-0
       assert.equal(
         evaluate({
           request: {
-            auth: { uid: 'alice' },
+            auth: { uid: 'alice', token: { email: 'alice@hospital.org.il', email_verified: true } },
             resource: { data: { ...createValidUserDoc(), releasedSavedExams: ['bad'] } },
           },
           resource: { data: createValidUserDoc() },
@@ -483,7 +531,9 @@ describe('firestore.rules — Automated Security Rules Logic Verification (SEC-0
   describe('Invariant C: Authenticated user Alice reading/writing /users/bob is rejected [SEC-04.c]', () => {
     it('rejects Alice reading /users/bob (cross-user data exfiltration)', () => {
       const allowed = evaluate({
-        request: { auth: { uid: 'alice' } },
+        request: {
+          auth: { uid: 'alice', token: { email: 'alice@hospital.org.il', email_verified: true } },
+        },
         resource: { data: createValidUserDoc() },
         path: '/users/bob',
         operation: 'read',
@@ -493,7 +543,10 @@ describe('firestore.rules — Automated Security Rules Logic Verification (SEC-0
 
     it('rejects Alice creating /users/bob (cross-user document injection)', () => {
       const allowed = evaluate({
-        request: { auth: { uid: 'alice' }, resource: { data: createValidUserDoc() } },
+        request: {
+          auth: { uid: 'alice', token: { email: 'alice@hospital.org.il', email_verified: true } },
+          resource: { data: createValidUserDoc() },
+        },
         resource: { data: {} },
         path: '/users/bob',
         operation: 'create',
@@ -503,7 +556,10 @@ describe('firestore.rules — Automated Security Rules Logic Verification (SEC-0
 
     it('rejects Alice updating /users/bob (cross-user document tampering)', () => {
       const allowed = evaluate({
-        request: { auth: { uid: 'alice' }, resource: { data: createValidUserDoc() } },
+        request: {
+          auth: { uid: 'alice', token: { email: 'alice@hospital.org.il', email_verified: true } },
+          resource: { data: createValidUserDoc() },
+        },
         resource: { data: createValidUserDoc() },
         path: '/users/bob',
         operation: 'update',
@@ -513,7 +569,9 @@ describe('firestore.rules — Automated Security Rules Logic Verification (SEC-0
 
     it('rejects Alice deleting /users/bob', () => {
       const allowed = evaluate({
-        request: { auth: { uid: 'alice' } },
+        request: {
+          auth: { uid: 'alice', token: { email: 'alice@hospital.org.il', email_verified: true } },
+        },
         resource: { data: createValidUserDoc() },
         path: '/users/bob',
         operation: 'delete',
@@ -525,7 +583,9 @@ describe('firestore.rules — Automated Security Rules Logic Verification (SEC-0
   describe('Invariant D: User deletion is strictly forbidden (allow delete: if false;) [SEC-04.d]', () => {
     it('rejects Alice attempting to delete /users/alice', () => {
       const allowed = evaluate({
-        request: { auth: { uid: 'alice' } },
+        request: {
+          auth: { uid: 'alice', token: { email: 'alice@hospital.org.il', email_verified: true } },
+        },
         resource: { data: createValidUserDoc() },
         path: '/users/alice',
         operation: 'delete',
@@ -548,7 +608,9 @@ describe('firestore.rules — Automated Security Rules Logic Verification (SEC-0
     it('rejects read and write to /admins/admin_1', () => {
       assert.equal(
         evaluate({
-          request: { auth: { uid: 'alice' } },
+          request: {
+            auth: { uid: 'alice', token: { email: 'alice@hospital.org.il', email_verified: true } },
+          },
           resource: { data: {} },
           path: '/admins/admin_1',
           operation: 'read',
@@ -557,7 +619,10 @@ describe('firestore.rules — Automated Security Rules Logic Verification (SEC-0
       );
       assert.equal(
         evaluate({
-          request: { auth: { uid: 'alice' }, resource: { data: { role: 'superadmin' } } },
+          request: {
+            auth: { uid: 'alice', token: { email: 'alice@hospital.org.il', email_verified: true } },
+            resource: { data: { role: 'superadmin' } },
+          },
           resource: { data: {} },
           path: '/admins/admin_1',
           operation: 'create',
@@ -569,7 +634,9 @@ describe('firestore.rules — Automated Security Rules Logic Verification (SEC-0
     it('rejects read and write to /audit_logs/12345', () => {
       assert.equal(
         evaluate({
-          request: { auth: { uid: 'alice' } },
+          request: {
+            auth: { uid: 'alice', token: { email: 'alice@hospital.org.il', email_verified: true } },
+          },
           path: '/audit_logs/12345',
           operation: 'read',
         }),
@@ -577,7 +644,10 @@ describe('firestore.rules — Automated Security Rules Logic Verification (SEC-0
       );
       assert.equal(
         evaluate({
-          request: { auth: { uid: 'alice' }, resource: { data: { event: 'login' } } },
+          request: {
+            auth: { uid: 'alice', token: { email: 'alice@hospital.org.il', email_verified: true } },
+            resource: { data: { event: 'login' } },
+          },
           path: '/audit_logs/12345',
           operation: 'create',
         }),
@@ -588,7 +658,9 @@ describe('firestore.rules — Automated Security Rules Logic Verification (SEC-0
     it('rejects read and write to nested subcollections (/users/alice/sessions/active)', () => {
       assert.equal(
         evaluate({
-          request: { auth: { uid: 'alice' } },
+          request: {
+            auth: { uid: 'alice', token: { email: 'alice@hospital.org.il', email_verified: true } },
+          },
           path: '/users/alice/sessions/active',
           operation: 'read',
         }),
@@ -596,7 +668,10 @@ describe('firestore.rules — Automated Security Rules Logic Verification (SEC-0
       );
       assert.equal(
         evaluate({
-          request: { auth: { uid: 'alice' }, resource: { data: { token: 'xyz' } } },
+          request: {
+            auth: { uid: 'alice', token: { email: 'alice@hospital.org.il', email_verified: true } },
+            resource: { data: { token: 'xyz' } },
+          },
           path: '/users/alice/sessions/active',
           operation: 'create',
         }),
@@ -611,7 +686,10 @@ describe('firestore.rules — Automated Security Rules Logic Verification (SEC-0
       delete docMissingMistakes.mistakes;
 
       const allowed = evaluate({
-        request: { auth: { uid: 'alice' }, resource: { data: docMissingMistakes } },
+        request: {
+          auth: { uid: 'alice', token: { email: 'alice@hospital.org.il', email_verified: true } },
+          resource: { data: docMissingMistakes },
+        },
         resource: { data: {} },
         path: '/users/alice',
         operation: 'create',
@@ -626,7 +704,10 @@ describe('firestore.rules — Automated Security Rules Logic Verification (SEC-0
       });
 
       const allowed = evaluate({
-        request: { auth: { uid: 'alice' }, resource: { data: docWithExtra } },
+        request: {
+          auth: { uid: 'alice', token: { email: 'alice@hospital.org.il', email_verified: true } },
+          resource: { data: docWithExtra },
+        },
         resource: { data: {} },
         path: '/users/alice',
         operation: 'create',
@@ -638,7 +719,10 @@ describe('firestore.rules — Automated Security Rules Logic Verification (SEC-0
       const docV1 = createValidUserDoc({ schemaVersion: 1 });
       assert.equal(
         evaluate({
-          request: { auth: { uid: 'alice' }, resource: { data: docV1 } },
+          request: {
+            auth: { uid: 'alice', token: { email: 'alice@hospital.org.il', email_verified: true } },
+            resource: { data: docV1 },
+          },
           resource: { data: {} },
           path: '/users/alice',
           operation: 'create',
@@ -650,7 +734,10 @@ describe('firestore.rules — Automated Security Rules Logic Verification (SEC-0
       const docV3 = createValidUserDoc({ schemaVersion: 3 });
       assert.equal(
         evaluate({
-          request: { auth: { uid: 'alice' }, resource: { data: docV3 } },
+          request: {
+            auth: { uid: 'alice', token: { email: 'alice@hospital.org.il', email_verified: true } },
+            resource: { data: docV3 },
+          },
           resource: { data: {} },
           path: '/users/alice',
           operation: 'create',
@@ -671,7 +758,10 @@ describe('firestore.rules — Automated Security Rules Logic Verification (SEC-0
       });
 
       const allowed = evaluate({
-        request: { auth: { uid: 'alice' }, resource: { data: docOversizedExams } },
+        request: {
+          auth: { uid: 'alice', token: { email: 'alice@hospital.org.il', email_verified: true } },
+          resource: { data: docOversizedExams },
+        },
         resource: { data: {} },
         path: '/users/alice',
         operation: 'create',
@@ -690,7 +780,10 @@ describe('firestore.rules — Automated Security Rules Logic Verification (SEC-0
       });
 
       const allowed = evaluate({
-        request: { auth: { uid: 'alice' }, resource: { data: docNegativeStats } },
+        request: {
+          auth: { uid: 'alice', token: { email: 'alice@hospital.org.il', email_verified: true } },
+          resource: { data: docNegativeStats },
+        },
         resource: { data: {} },
         path: '/users/alice',
         operation: 'create',
@@ -709,7 +802,10 @@ describe('firestore.rules — Automated Security Rules Logic Verification (SEC-0
       });
 
       const allowed = evaluate({
-        request: { auth: { uid: 'alice' }, resource: { data: docOverflowStats } },
+        request: {
+          auth: { uid: 'alice', token: { email: 'alice@hospital.org.il', email_verified: true } },
+          resource: { data: docOverflowStats },
+        },
         resource: { data: {} },
         path: '/users/alice',
         operation: 'create',
@@ -723,7 +819,10 @@ describe('firestore.rules — Automated Security Rules Logic Verification (SEC-0
       });
       assert.equal(
         evaluate({
-          request: { auth: { uid: 'alice' }, resource: { data: docLongEmail } },
+          request: {
+            auth: { uid: 'alice', token: { email: 'alice@hospital.org.il', email_verified: true } },
+            resource: { data: docLongEmail },
+          },
           resource: { data: {} },
           path: '/users/alice',
           operation: 'create',
@@ -737,7 +836,10 @@ describe('firestore.rules — Automated Security Rules Logic Verification (SEC-0
       });
       assert.equal(
         evaluate({
-          request: { auth: { uid: 'alice' }, resource: { data: docNumericEmail } },
+          request: {
+            auth: { uid: 'alice', token: { email: 'alice@hospital.org.il', email_verified: true } },
+            resource: { data: docNumericEmail },
+          },
           resource: { data: {} },
           path: '/users/alice',
           operation: 'create',
@@ -753,7 +855,10 @@ describe('firestore.rules — Automated Security Rules Logic Verification (SEC-0
       });
       assert.equal(
         evaluate({
-          request: { auth: { uid: 'alice' }, resource: { data: docLongName } },
+          request: {
+            auth: { uid: 'alice', token: { email: 'alice@hospital.org.il', email_verified: true } },
+            resource: { data: docLongName },
+          },
           resource: { data: {} },
           path: '/users/alice',
           operation: 'create',
@@ -768,7 +873,10 @@ describe('firestore.rules — Automated Security Rules Logic Verification (SEC-0
       const tamperedDoc = createValidUserDoc({ uid: 'bob' });
 
       const allowed = evaluate({
-        request: { auth: { uid: 'alice' }, resource: { data: tamperedDoc } },
+        request: {
+          auth: { uid: 'alice', token: { email: 'alice@hospital.org.il', email_verified: true } },
+          resource: { data: tamperedDoc },
+        },
         resource: { data: existingDoc },
         path: '/users/alice',
         operation: 'update',
@@ -992,6 +1100,266 @@ describe('firestore.rules — Automated Security Rules Logic Verification (SEC-0
           `Verified admin ${admin.token.email} must be able to delete reports`
         );
       }
+    });
+  });
+
+  describe('Invariant H: Invite-Only Allowlist & Encrypted Key Protection [ACCESS-SEC]', () => {
+    const adminAuth = {
+      uid: 'admin-ben-1',
+      token: { email: 'benjaminrotlevy@gmail.com', email_verified: true },
+    };
+    const pendingStudentAuth = {
+      uid: 'stu-pending-1',
+      token: { email: 'pending@nursing.ac.il', email_verified: true },
+    };
+    const approvedStudentAuth = {
+      uid: 'stu-approved-1',
+      token: { email: 'alice@hospital.org.il', email_verified: true },
+    };
+
+    it('rejects unapproved or revoked users from /users/{userId}, /question_reports, and /app_config/catalog_key', () => {
+      const customDb = {
+        '/allowed_users/revoked@nursing.ac.il': {
+          schemaVersion: 2,
+          email: 'revoked@nursing.ac.il',
+          active: false,
+          status: 'REVOKED',
+          addedAt: '2026-11-17T08:00:00.000Z',
+          updatedAt: '2026-11-17T08:00:00.000Z',
+        },
+      };
+      const revokedAuth = {
+        uid: 'stu-revoked',
+        token: { email: 'revoked@nursing.ac.il', email_verified: true },
+      };
+
+      for (const actor of [pendingStudentAuth, revokedAuth]) {
+        assert.equal(
+          evaluate({
+            request: { auth: actor },
+            path: `/users/${actor.uid}`,
+            operation: 'read',
+            db: customDb,
+          }),
+          false,
+          'Unapproved/revoked user must be denied /users/{uid} read'
+        );
+
+        assert.equal(
+          evaluate({
+            request: {
+              auth: actor,
+              resource: { data: createValidUserDoc({ email: actor.token.email }) },
+            },
+            resource: { data: {} },
+            path: `/users/${actor.uid}`,
+            operation: 'create',
+            db: customDb,
+          }),
+          false,
+          'Unapproved/revoked user must be denied /users/{uid} create'
+        );
+
+        assert.equal(
+          evaluate({
+            request: { auth: actor },
+            path: '/app_config/catalog_key',
+            operation: 'get',
+            db: customDb,
+          }),
+          false,
+          'Unapproved/revoked user must be denied /app_config/catalog_key'
+        );
+
+        assert.equal(
+          evaluate({
+            request: {
+              auth: actor,
+              resource: {
+                data: {
+                  schemaVersion: 2,
+                  questionId: 'q_001',
+                  questionText: 'שאלה',
+                  issueType: 'KEY_ERROR',
+                  comment: 'טעות במפתח התשובה',
+                  reporterUid: actor.uid,
+                  status: 'OPEN',
+                  createdAt: '2026-11-17T08:00:00.000Z',
+                  updatedAt: '2026-11-17T08:00:00.000Z',
+                },
+              },
+            },
+            resource: { data: {} },
+            path: '/question_reports/rpt_unauth',
+            operation: 'create',
+            db: customDb,
+          }),
+          false,
+          'Unapproved/revoked user must be denied creating reports'
+        );
+      }
+    });
+
+    it('permits verified student to self-create PENDING request but blocks self-approval or cross-user reads', () => {
+      const validPendingDoc = {
+        schemaVersion: 2,
+        email: 'pending@nursing.ac.il',
+        active: false,
+        status: 'PENDING',
+        note: 'סטודנט שנה ד',
+        displayName: 'דני',
+        uid: 'stu-pending-1',
+        addedBy: 'pending@nursing.ac.il',
+        addedAt: '2026-11-17T08:00:00.000Z',
+        updatedAt: '2026-11-17T08:00:00.000Z',
+      };
+
+      assert.equal(
+        evaluate({
+          request: { auth: pendingStudentAuth, resource: { data: validPendingDoc } },
+          resource: { data: {} },
+          path: '/allowed_users/pending@nursing.ac.il',
+          operation: 'create',
+          db: {},
+        }),
+        true,
+        'Student must be able to create own PENDING request'
+      );
+
+      assert.equal(
+        evaluate({
+          request: {
+            auth: pendingStudentAuth,
+            resource: { data: { ...validPendingDoc, active: true, status: 'APPROVED' } },
+          },
+          resource: { data: {} },
+          path: '/allowed_users/pending@nursing.ac.il',
+          operation: 'create',
+          db: {},
+        }),
+        false,
+        'Non-admin client MUST NOT self-approve'
+      );
+
+      assert.equal(
+        evaluate({
+          request: { auth: pendingStudentAuth },
+          path: '/allowed_users/other@nursing.ac.il',
+          operation: 'get',
+          db: {},
+        }),
+        false,
+        'Non-admin must NOT read another user allowlist document'
+      );
+
+      assert.equal(
+        evaluate({
+          request: { auth: pendingStudentAuth },
+          path: '/allowed_users',
+          operation: 'list',
+          db: {},
+        }),
+        false,
+        'Non-admin must NOT list all allowed users'
+      );
+    });
+
+    it('permits Admin full management of /allowed_users, /app_config/catalog_key, and /app_config/contact', () => {
+      const approvedDoc = {
+        schemaVersion: 2,
+        email: 'student@nursing.ac.il',
+        active: true,
+        status: 'APPROVED',
+        note: 'מכללת הדסה',
+        displayName: 'שרה',
+        uid: '',
+        addedBy: 'benjaminrotlevy@gmail.com',
+        addedAt: '2026-11-17T08:00:00.000Z',
+        updatedAt: '2026-11-17T08:00:00.000Z',
+      };
+
+      assert.equal(
+        evaluate({
+          request: { auth: adminAuth, resource: { data: approvedDoc } },
+          resource: { data: {} },
+          path: '/allowed_users/student@nursing.ac.il',
+          operation: 'create',
+          db: {},
+        }),
+        true,
+        'Admin must be able to add approved users'
+      );
+
+      assert.equal(
+        evaluate({
+          request: { auth: adminAuth },
+          path: '/allowed_users/student@nursing.ac.il',
+          operation: 'delete',
+          db: {},
+        }),
+        true,
+        'Admin must be able to remove users'
+      );
+
+      const keyPayload = {
+        schemaVersion: 2,
+        keyBase64: 'AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=',
+        updatedBy: 'benjaminrotlevy@gmail.com',
+        updatedAt: '2026-11-17T08:00:00.000Z',
+      };
+
+      assert.equal(
+        evaluate({
+          request: { auth: adminAuth, resource: { data: keyPayload } },
+          resource: { data: {} },
+          path: '/app_config/catalog_key',
+          operation: 'create',
+          db: {},
+        }),
+        true,
+        'Admin must be able to write catalog_key'
+      );
+
+      assert.equal(
+        evaluate({
+          request: { auth: approvedStudentAuth },
+          path: '/app_config/catalog_key',
+          operation: 'get',
+        }),
+        true,
+        'Approved student must be able to get catalog_key'
+      );
+
+      assert.equal(
+        evaluate({
+          request: { auth: pendingStudentAuth },
+          path: '/app_config/contact',
+          operation: 'get',
+          db: {},
+        }),
+        true,
+        'Authenticated pending user must be able to read admin Telegram contact link'
+      );
+
+      assert.equal(
+        evaluate({
+          request: {
+            auth: pendingStudentAuth,
+            resource: {
+              data: {
+                schemaVersion: 2,
+                telegramUrl: 'https://t.me/evil',
+                updatedAt: '2026-11-17T08:00:00.000Z',
+              },
+            },
+          },
+          path: '/app_config/contact',
+          operation: 'update',
+          db: {},
+        }),
+        false,
+        'Non-admin must NOT alter contact config'
+      );
     });
   });
 });

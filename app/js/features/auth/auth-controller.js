@@ -19,26 +19,28 @@ export function createAuthController({
   notifyError = null,
   firebaseSdk = null,
   sdkLoader = undefined,
+  resolveCloudAuthorization = null,
   onRemoteMerged = null,
   onAuthChanged = null,
 } = {}) {
   const cloudSync = createCloudSyncService({
     firebaseSdk,
     ...(sdkLoader ? { sdkLoader } : {}),
+    resolveCloudAuthorization,
     store,
     storage,
     toast,
     notifyError,
     window: document?.defaultView || globalThis.window,
     navigator: document?.defaultView?.navigator || globalThis.navigator,
-    onAuthChanged: (user) => {
+    onAuthChanged: (user, authDecision) => {
       renderAuthUI({
         document,
         user,
         syncStatus: store?.getState()?.auth?.syncStatus,
       });
       if (typeof onAuthChanged === 'function') {
-        onAuthChanged(user);
+        onAuthChanged(user, authDecision);
       }
     },
     onSignInLoadingChange: (isLoading) => {
@@ -64,6 +66,7 @@ export function createAuthController({
     signOut: () => cloudSync.signOut(),
     schedulePush: () => cloudSync.schedulePush(),
     resetCloudData: () => cloudSync.resetCloudData(),
+    refreshAuthorization: () => cloudSync.refreshAuthorization(),
     getAuthUser: () => cloudSync.getAuthUser(),
     renderUser: (user) => renderAuthUI({ document, user }),
   };
