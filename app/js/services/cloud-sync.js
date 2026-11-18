@@ -73,6 +73,8 @@ export function createCloudSyncService({
   let pushDebounceTimer = null;
   let initialized = false;
   let cloudSyncAuthorized = typeof resolveCloudAuthorization !== 'function';
+  let activeAuthChangePromise = null;
+  let activeAuthChangeUserUid = null;
 
   function isBrowserOffline() {
     const nav = navigator || window?.navigator;
@@ -183,6 +185,10 @@ export function createCloudSyncService({
   }
 
   async function pushNow() {
+    if (pushDebounceTimer) {
+      clearTimeoutFn(pushDebounceTimer);
+      pushDebounceTimer = null;
+    }
     if (!sdk || !auth || !auth.currentUser || !db || !store || !cloudSyncAuthorized) return false;
     if (isBrowserOffline()) {
       updateSyncStatus('offline', 'cloud-sync/offline');
@@ -230,8 +236,11 @@ export function createCloudSyncService({
 
   function schedulePush() {
     if (!sdk || !auth || !auth.currentUser || !cloudSyncAuthorized) return;
-    clearTimeoutFn(pushDebounceTimer);
+    if (pushDebounceTimer) {
+      clearTimeoutFn(pushDebounceTimer);
+    }
     pushDebounceTimer = setTimeoutFn(() => {
+      pushDebounceTimer = null;
       pushNow();
     }, debounceMs);
   }
@@ -279,7 +288,7 @@ export function createCloudSyncService({
         ? isBrowserOffline()
           ? 'offline'
           : 'synced'
-        : 'pending'
+        : 'checking'
       : 'idle';
     if (store) {
       store.setState(
@@ -298,6 +307,9 @@ export function createCloudSyncService({
         },
         'cloud-sync/auth-changed'
       );
+    }
+    if (typeof onSyncStatusChanged === 'function') {
+      onSyncStatusChanged(initialSyncStatus);
     }
 
     if (user && typeof resolveCloudAuthorization === 'function') {
@@ -401,7 +413,18 @@ export function createCloudSyncService({
 
       if (auth && typeof sdk.onAuthStateChanged === 'function') {
         sdk.onAuthStateChanged(auth, (user) => {
-          handleAuthUserChange(user);
+          const uid = user?.uid || null;
+          if (uid && uid === activeAuthChangeUserUid && activeAuthChangePromise) {
+            return;
+          }
+          activeAuthChangeUserUid = uid;
+          const runPromise = handleAuthUserChange(user);
+          activeAuthChangePromise = runPromise;
+          runPromise.finally(() => {
+            if (activeAuthChangePromise === runPromise) {
+              activeAuthChangePromise = null;
+            }
+          });
         });
       }
 
@@ -409,7 +432,14 @@ export function createCloudSyncService({
         try {
           const redirectRes = await sdk.getRedirectResult(auth);
           if (redirectRes?.user) {
-            toast?.showToast('התחברת בהצלחה! מסנכרן עם הענן ☁️');
+            if (activeAuthChangePromise) {
+              await activeAuthChangePromise;
+            }
+            toast?.showToast(
+              cloudSyncAuthorized
+                ? 'התחברת בהצלחה! מסנכרן עם הענן ☁️'
+                : 'התחברת בהצלחה! החשבון ממתין לאישור מנהל לפתיחת המאגר המלא.'
+            );
           }
         } catch (redirectErr) {
           console.warn('Redirect sign-in result notice:', redirectErr);
@@ -436,6 +466,21 @@ export function createCloudSyncService({
     }
     try {
       await sdk.signInWithPopup(auth, provider);
+      await Promise.resolve();
+      if (activeAuthChangePromise) {
+        await activeAuthChangePromise;
+      } else if (auth?.currentUser && activeAuthChangeUserUid !== auth.currentUser.uid) {
+        activeAuthChangeUserUid = auth.currentUser.uid;
+        const runPromise = handleAuthUserChange(auth.currentUser);
+        activeAuthChangePromise = runPromise;
+        try {
+          await runPromise;
+        } finally {
+          if (activeAuthChangePromise === runPromise) {
+            activeAuthChangePromise = null;
+          }
+        }
+      }
       toast?.showToast(
         cloudSyncAuthorized
           ? 'התחברת בהצלחה! מסנכרן עם הענן ☁️'
@@ -476,7 +521,7 @@ export function createCloudSyncService({
     try {
       unbindSession();
       await sdk.signOut(auth);
-      toast?.showToast('התנתקת מחשבון הענן. הנתונים ממשיכים להישמר מקומית בדפדפן.');
+      toast?.showToast('התנתקת מחשבון הענן והנתונים המקומיים נמחקו מהמכשיר.');
       return true;
     } catch (err) {
       console.error('Firebase Sign-out error:', err);
@@ -505,6 +550,7 @@ export function createCloudSyncService({
     unbindSession,
     refreshAuthorization,
     isCloudSyncAuthorized: () => cloudSyncAuthorized,
+    hasPendingPush: () => Boolean(pushDebounceTimer),
     getAuthUser,
     getFirebaseContext,
     schedulePush,

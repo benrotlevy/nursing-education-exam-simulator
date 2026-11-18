@@ -6,6 +6,20 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 
 ---
 
+## [2.4.1] - 2026-11-19
+
+### Fixed
+
+- **Eliminated False Pending Banner/Toast Flash for Admins & Approved Users**: Added an intermediate `'checking'` sync/access state across `app/js/services/cloud-sync.js`, `app/js/features/auth/auth-view.js`, `app/js/features/auth/demo-banner-view.js`, and `app/js/main.js`, and awaited in-flight authorization/decryption inside `signIn()` and `getRedirectResult()` before displaying sign-in toast feedback.
+- **Complete Admin List in Users Tab**: Updated `fetchAllowedUsers()` in `app/js/services/access-control-service.js` to include all configured `ADMIN_EMAILS` accounts (`benjaminrotlevy@gmail.com` and `benjamin@rotlevy.com`), regardless of which admin is signed in.
+- **Real-Time Auto-Unlock Upon Admin Approval**: Added `subscribeUserAccess()` / `unsubscribeUserAccess()` Firestore single-document `onSnapshot` listeners in `app/js/services/access-control-service.js` wired in `app/js/main.js` so pending users unlock all 1,079 questions immediately after Admin approval without clicking recheck.
+- **Saved Exams Demo Mode Lock**: Locked `#savedExamSourceSelect` and the Save button (`#savedAddSection button[data-action="add-saved-exam"]`) in Demo Mode and when zero exams are available in `app/js/features/saved-exams/saved-exams-view.js` and `saved-exams-controller.js`.
+- **Full Sign-Out Local Wipe & Unsynced Data Warning**: Added `clearAllLocalData()` in `app/js/core/storage.js`, `hasPendingPush()` in `app/js/services/cloud-sync.js`, and `handleUserSignOut()` in `app/js/main.js` to flush online pending pushes, warn with a confirmation dialog when local progress or an active unfinished exam is not synced to the cloud, and wipe all `localStorage` and `sessionStorage` app data plus in-memory state on sign-out.
+- **Admin Header Button Label**: Renamed `#btnAdminReports` in `app/index.html` from `דיווחים` to `ניהול`.
+- **Service Worker Cache**: Bumped `app/sw.js` cache to `nursing-exam-sim-v2.4.1`.
+
+---
+
 ## [2.4.0] - 2026-11-17
 
 ### Added

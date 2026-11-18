@@ -4,7 +4,7 @@ import { loadTestCatalogKey } from '../helpers/load-test-questions.js';
 const TEST_CATALOG_KEY = loadTestCatalogKey();
 
 function buildAccessControlMockInit() {
-  return ({ key, initialConfig = true, persistInSession = false }) => {
+  return ({ key, initialConfig = true, persistInSession = false, authDelayMs = 0 }) => {
     const SESSION_STORAGE_KEY = '__E2E_ACCESS_MOCK_DB__';
 
     function loadPersistedState() {
@@ -82,6 +82,7 @@ function buildAccessControlMockInit() {
     let activeUser = state.activeUser;
     let authCallback = null;
     const pendingListeners = [];
+    const docListeners = [];
 
     function emitPendingSnapshot() {
       const docs = Array.from(collections.allowed_users.entries())
@@ -89,6 +90,19 @@ function buildAccessControlMockInit() {
         .map(([id, d]) => ({ id, data: () => d }));
       for (const cb of pendingListeners) {
         cb({ size: docs.length, docs });
+      }
+    }
+
+    function emitDocSnapshot(colName, id) {
+      const store = collections[colName];
+      const data = store ? store.get(id) : null;
+      for (const listener of docListeners) {
+        if (listener.colName === colName && listener.id === id) {
+          listener.cb({
+            exists: () => Boolean(data),
+            data: () => data || null,
+          });
+        }
       }
     }
 
@@ -108,6 +122,7 @@ function buildAccessControlMockInit() {
       }
       savePersistedState();
       emitPendingSnapshot();
+      emitDocSnapshot('allowed_users', email);
     };
 
     window.__E2E_FIREBASE_SDK__ = {
@@ -138,12 +153,15 @@ function buildAccessControlMockInit() {
       },
       getFirestore: () => ({}),
       collection: (_db, colName) => ({ colName }),
-      doc: (_db, colName, id) => ({ colName, id }),
+      doc: (_db, colName, id) => ({ type: 'doc', colName, id }),
       query: (colRef) => colRef,
       where: () => ({}),
       orderBy: () => ({}),
       limit: () => ({}),
       getDoc: async (ref) => {
+        if (authDelayMs > 0) {
+          await new Promise((r) => setTimeout(r, authDelayMs));
+        }
         const store = collections[ref.colName];
         const data = store ? store.get(ref.id) : null;
         return {
@@ -157,14 +175,20 @@ function buildAccessControlMockInit() {
         const prev = store.get(ref.id) || {};
         store.set(ref.id, opts?.merge ? { ...prev, ...data } : { ...data });
         savePersistedState();
-        if (ref.colName === 'allowed_users') emitPendingSnapshot();
+        if (ref.colName === 'allowed_users') {
+          emitPendingSnapshot();
+          emitDocSnapshot(ref.colName, ref.id);
+        }
       },
       deleteDoc: async (ref) => {
         const store = collections[ref.colName];
         if (store) {
           store.delete(ref.id);
           savePersistedState();
-          if (ref.colName === 'allowed_users') emitPendingSnapshot();
+          if (ref.colName === 'allowed_users') {
+            emitPendingSnapshot();
+            emitDocSnapshot(ref.colName, ref.id);
+          }
         }
       },
       getDocs: async (ref) => {
@@ -176,6 +200,22 @@ function buildAccessControlMockInit() {
         };
       },
       onSnapshot: (ref, cb) => {
+        if (ref?.type === 'doc') {
+          const entry = { colName: ref.colName, id: ref.id, cb };
+          docListeners.push(entry);
+          setTimeout(() => {
+            const store = collections[ref.colName];
+            const data = store ? store.get(ref.id) : null;
+            cb({
+              exists: () => Boolean(data),
+              data: () => data || null,
+            });
+          }, 0);
+          return () => {
+            const idx = docListeners.indexOf(entry);
+            if (idx >= 0) docListeners.splice(idx, 1);
+          };
+        }
         if (ref?.colName === 'allowed_users') {
           pendingListeners.push(cb);
           emitPendingSnapshot();
@@ -208,6 +248,7 @@ test.describe('ACCESS-CONTROL E2E: Demo Mode, Telegram Approval Request & Encryp
       key: TEST_CATALOG_KEY,
       initialConfig: true,
       persistInSession: false,
+      authDelayMs: 25,
     });
 
     // 1. Guest boots in 10-question Demo Mode (with >10 question buttons & selectors locked, 10-Q mini-exam allowed)
@@ -217,10 +258,14 @@ test.describe('ACCESS-CONTROL E2E: Demo Mode, Telegram Approval Request & Encryp
     await expect(demoBanner).toBeVisible();
     await expect(demoBanner).toContainText('מצב הדגמה (10 מתוך 1079');
 
-    // Verify source/category selectors and >10 question radios are locked in Demo Mode
+    // Verify source/category selectors, Saved Exams lock controls, and >10 question radios are locked in Demo Mode
     await expect(page.locator('#examSourceSelect')).toBeDisabled();
     await expect(page.locator('#examCategorySelect')).toBeDisabled();
     await expect(page.locator('#studyCategoryFilter')).toBeDisabled();
+    await expect(page.locator('#savedExamSourceSelect')).toBeDisabled();
+    await expect(
+      page.locator('#savedAddSection button[data-action="add-saved-exam"]')
+    ).toBeDisabled();
     await expect(page.locator('input[name="examCount"][value="10"]')).toBeEnabled();
     await expect(page.locator('input[name="examCount"][value="10"]')).toBeChecked();
     for (const lockedVal of ['25', '50', '100']) {
@@ -263,42 +308,111 @@ test.describe('ACCESS-CONTROL E2E: Demo Mode, Telegram Approval Request & Encryp
     );
     expect(hasOverflow).toBe(false);
 
-    // 3. Admin signs in -> badge shows pending request -> opens Tab 2 & approves student in 1 tap
+    // 3. Admin signs in -> NO false "ממתין לאישור" flash -> button says ניהול -> shows BOTH admins + approves student in 1 tap
+    await page.evaluate(() => {
+      window.__E2E_PENDING_FLASHES__ = [];
+      const bannerEl = document.getElementById('demoModeBanner');
+      const toastEl = document.getElementById('appGlobalToast');
+      const syncEl = document.getElementById('syncStatusIndicator');
+      const obs = new MutationObserver(() => {
+        const txt = `${bannerEl?.textContent || ''} | ${toastEl?.textContent || ''} | ${syncEl?.textContent || ''}`;
+        if (txt.includes('ממתין לאישור') || bannerEl?.classList.contains('is-pending')) {
+          window.__E2E_PENDING_FLASHES__.push(txt);
+        }
+      });
+      for (const el of [bannerEl, toastEl, syncEl]) {
+        if (el)
+          obs.observe(el, {
+            childList: true,
+            subtree: true,
+            characterData: true,
+            attributes: true,
+          });
+      }
+      window.__E2E_OBS__ = obs;
+    });
+
     await page.evaluate(() => window.__E2E_SWITCH_USER__('admin'));
+    await expect(page.locator('#totalQuestionsHeader')).toContainText('מאגר פעיל: 1079');
+    const adminFlashes = await page.evaluate(() => {
+      window.__E2E_OBS__?.disconnect();
+      return window.__E2E_PENDING_FLASHES__;
+    });
+    expect(adminFlashes).toEqual([]);
+
     const adminBtn = page.locator('#btnAdminReports');
     await expect(adminBtn).toBeVisible();
+    await expect(adminBtn).toContainText('ניהול');
+    await expect(adminBtn).not.toContainText('דיווחים');
     await expect(page.locator('#adminReportsBadge')).toContainText('1');
 
     await adminBtn.click();
     const adminDialog = page.locator('#adminReportsDialog');
     await expect(adminDialog).toBeVisible();
     const usersTabBtn = adminDialog.locator('button[data-admin-tab="users"]');
-    await expect(usersTabBtn).toContainText('משתמשים מורשים (1)');
+    await expect(usersTabBtn).toContainText('משתמשים מורשים (2)');
     await expect(usersTabBtn).toContainText('⏳ 1');
     await usersTabBtn.click();
     await expect(adminDialog).toContainText('benjaminrotlevy@gmail.com');
+    await expect(adminDialog).toContainText('benjamin@rotlevy.com');
     await expect(adminDialog).toContainText('sara.cohen@nursing.ac.il');
     await expect(adminDialog).toContainText('הדסה שנה ד');
 
     await adminDialog.locator('button[data-user-action="approve"]').click();
     await expect(page.locator('#appGlobalToast')).toContainText('הגישה אושרה');
-    await expect(usersTabBtn).toContainText('משתמשים מורשים (2)');
+    await expect(usersTabBtn).toContainText('משתמשים מורשים (3)');
     await adminDialog.locator('#adminDialogCloseBtn').click();
 
     // Sign out of Admin -> catalog reverts cleanly to 10-question Demo Mode & re-locks controls
     await page.evaluate(() => window.__E2E_SWITCH_USER__(null));
     await expect(page.locator('#totalQuestionsHeader')).toContainText('מצב הדגמה: 10 שאלות פתוחות');
     await expect(page.locator('#examSourceSelect')).toBeDisabled();
+    await expect(
+      page.locator('#savedAddSection button[data-action="add-saved-exam"]')
+    ).toBeDisabled();
     await expect(page.locator('input[name="examCount"][value="50"]')).toBeDisabled();
 
-    // 4. Switch to approved student -> all 1,079 encrypted questions unlock, controls unlock & banner hides
-    await page.evaluate(() => window.__E2E_SWITCH_USER__('student'));
+    // 4. Approved student signs in via popup flow -> NO false "ממתין לאישור" toast/banner flash -> all 1,079 questions & Saved Exams unlock
+    await page.evaluate(() => {
+      window.__E2E_PENDING_FLASHES__ = [];
+      const bannerEl = document.getElementById('demoModeBanner');
+      const toastEl = document.getElementById('appGlobalToast');
+      const syncEl = document.getElementById('syncStatusIndicator');
+      const obs = new MutationObserver(() => {
+        const txt = `${bannerEl?.textContent || ''} | ${toastEl?.textContent || ''} | ${syncEl?.textContent || ''}`;
+        if (txt.includes('ממתין לאישור') || bannerEl?.classList.contains('is-pending')) {
+          window.__E2E_PENDING_FLASHES__.push(txt);
+        }
+      });
+      for (const el of [bannerEl, toastEl, syncEl]) {
+        if (el)
+          obs.observe(el, {
+            childList: true,
+            subtree: true,
+            characterData: true,
+            attributes: true,
+          });
+      }
+      window.__E2E_OBS__ = obs;
+    });
+
+    await page.locator('#btnGoogleSignIn').click();
     await expect(page.locator('#totalQuestionsHeader')).toContainText('מאגר פעיל: 1079');
+    await expect(page.locator('#appGlobalToast')).toContainText('מסנכרן עם הענן');
+    const studentFlashes = await page.evaluate(() => {
+      window.__E2E_OBS__?.disconnect();
+      return window.__E2E_PENDING_FLASHES__;
+    });
+    expect(studentFlashes).toEqual([]);
     await expect(demoBanner).toBeHidden();
     await expect(page.locator('#syncStatusIndicator')).toContainText('☁️ סנכרון ענן פעיל');
     await expect(page.locator('#examSourceSelect')).toBeEnabled();
     await expect(page.locator('#examCategorySelect')).toBeEnabled();
     await expect(page.locator('#studyCategoryFilter')).toBeEnabled();
+    await expect(page.locator('#savedExamSourceSelect')).toBeEnabled();
+    await expect(
+      page.locator('#savedAddSection button[data-action="add-saved-exam"]')
+    ).toBeEnabled();
     for (const unlockedVal of ['25', '50', '100']) {
       await expect(page.locator(`input[name="examCount"][value="${unlockedVal}"]`)).toBeEnabled();
     }
@@ -385,7 +499,7 @@ test.describe('ACCESS-CONTROL E2E: Demo Mode, Telegram Approval Request & Encryp
     expect(webhookRequests[1].type).toBe('QUESTION_ISSUE_REPORT');
     expect(webhookRequests[1].reporterEmail).toBe('sara.cohen@nursing.ac.il');
 
-    // 3. Admin approves student in Firestore; student taps "🔄 בדוק הרשאה מחדש" without signing out
+    // 3. Admin approves student in Firestore -> live listener unlocks all 1,079 questions AUTOMATICALLY without tapping recheck
     await page.evaluate(() => {
       window.__E2E_SET_USER_ACCESS__('sara.cohen@nursing.ac.il', {
         schemaVersion: 2,
@@ -396,8 +510,8 @@ test.describe('ACCESS-CONTROL E2E: Demo Mode, Telegram Approval Request & Encryp
         updatedAt: '2026-11-17T08:05:00.000Z',
       });
     });
-    await page.locator('#btnRecheckAccess').click();
     await expect(page.locator('#totalQuestionsHeader')).toContainText('מאגר פעיל: 1079');
+    await expect(page.locator('#appGlobalToast')).toContainText('אושרת!');
     await expect(demoBanner).toBeHidden();
 
     // 4. Reload while completely offline -> cached approval + key decrypts all 1,079 SW-cached questions
@@ -430,5 +544,39 @@ test.describe('ACCESS-CONTROL E2E: Demo Mode, Telegram Approval Request & Encryp
     await expect(demoBanner).toHaveClass(/is-revoked/);
     await expect(page.locator('#totalQuestionsHeader')).toContainText('מצב הדגמה: 10 שאלות פתוחות');
     await expect(page.locator('#syncStatusIndicator')).toContainText('🚫 גישה מושהית');
+
+    // 6. Unsynced local progress on sign-out shows confirmation warning; confirming clears ALL localStorage & sessionStorage data
+    await page.locator('#screenExamSetup button[data-action="start-exam"]').click();
+    await expect(page.locator('#screenActiveExam')).toBeVisible();
+
+    await page.locator('#userPill button[data-action="google-sign-out"]').click();
+    await expect(page.locator('#appModalDialog')).toBeVisible();
+    await expect(page.locator('#appModalDialogBody')).toContainText('נתונים מקומיים');
+    // Cancel keeps user signed in and active exam intact
+    await page.locator('#appModalCancelBtn').click();
+    await expect(page.locator('#screenActiveExam')).toBeVisible();
+
+    // Confirm sign-out -> signs out and wipes localStorage & sessionStorage keys completely
+    await page.locator('#userPill button[data-action="google-sign-out"]').click();
+    await page.locator('#appModalConfirmBtn').click();
+    await expect(page.locator('#userPill')).toBeHidden();
+    await expect(page.locator('#screenExamSetup')).toBeVisible();
+
+    const remainingKeys = await page.evaluate(() => ({
+      progress: localStorage.getItem('nursing_progress_v2'),
+      approval: localStorage.getItem('nursing_access_approval_v1'),
+      notified: localStorage.getItem('nursing_signin_notified_v1'),
+      examSession: sessionStorage.getItem('nursing_exam_session_v2'),
+      studySession: sessionStorage.getItem('nursing_study_session_v2'),
+      activeTab: sessionStorage.getItem('nursing_active_tab_v2'),
+    }));
+    expect(remainingKeys).toEqual({
+      progress: null,
+      approval: null,
+      notified: null,
+      examSession: null,
+      studySession: null,
+      activeTab: null,
+    });
   });
 });

@@ -395,13 +395,14 @@ describe('Question Issue Reporting & Admin Dashboard DOM Flow', () => {
 
     const adminDialog = document.getElementById('adminReportsDialog');
     const usersTabBtnBefore = adminDialog.querySelector('button[data-admin-tab="users"]');
-    assert.match(usersTabBtnBefore.textContent, /משתמשים מורשים \(1\)/);
+    assert.match(usersTabBtnBefore.textContent, /משתמשים מורשים \(2\)/);
     assert.match(usersTabBtnBefore.textContent, /⏳ 1/);
 
     usersTabBtnBefore.click();
     await new Promise((r) => setTimeout(r, 25));
 
     assert.match(adminDialog.textContent, /benjaminrotlevy@gmail\.com/);
+    assert.match(adminDialog.textContent, /benjamin@rotlevy\.com/);
     assert.match(adminDialog.textContent, /מנהל מערכת/);
     assert.match(adminDialog.textContent, /newstu@example\.com/);
     adminDialog.querySelector('button[data-user-action="approve"]').click();
@@ -410,7 +411,7 @@ describe('Question Issue Reporting & Admin Dashboard DOM Flow', () => {
     assert.equal(mockFb.usersStore.get('newstu@example.com').status, 'APPROVED');
     assert.match(
       adminDialog.querySelector('button[data-admin-tab="users"]').textContent,
-      /משתמשים מורשים \(2\)/
+      /משתמשים מורשים \(3\)/
     );
 
     // Add manual user via form
@@ -423,7 +424,7 @@ describe('Question Issue Reporting & Admin Dashboard DOM Flow', () => {
     assert.equal(mockFb.usersStore.get('added@example.com').active, true);
     assert.match(
       adminDialog.querySelector('button[data-admin-tab="users"]').textContent,
-      /משתמשים מורשים \(3\)/
+      /משתמשים מורשים \(4\)/
     );
   });
 });

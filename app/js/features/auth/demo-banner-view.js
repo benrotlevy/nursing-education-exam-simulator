@@ -33,8 +33,13 @@ export function createDemoBannerView({ document = globalThis.document } = {}) {
     const el = getBannerEl();
     if (!el) return;
 
-    // Fully unlocked: hide demo banner completely
-    if (approved && hasFullCatalog) {
+    // Hide banner while checking authorization, once full catalog is unlocked,
+    // or for approved non-admin users whose catalog decryption is completing.
+    if (
+      status === ACCESS_STATUSES.CHECKING ||
+      (approved && hasFullCatalog) ||
+      (approved && !isAdmin)
+    ) {
       el.hidden = true;
       el.innerHTML = '';
       el.className = 'demo-mode-banner';
@@ -108,7 +113,7 @@ export function createDemoBannerView({ document = globalThis.document } = {}) {
     }
 
     // Signed in user waiting for admin approval (PENDING)
-    if (user && !approved) {
+    if (user && !approved && status !== ACCESS_STATUSES.CHECKING) {
       el.className = 'demo-mode-banner is-pending';
       el.innerHTML = html`
         <div class="demo-banner-content">

@@ -67,6 +67,7 @@ export function createAuthController({
     schedulePush: () => cloudSync.schedulePush(),
     resetCloudData: () => cloudSync.resetCloudData(),
     refreshAuthorization: () => cloudSync.refreshAuthorization(),
+    hasPendingPush: () => cloudSync.hasPendingPush(),
     getAuthUser: () => cloudSync.getAuthUser(),
     renderUser: (user) => renderAuthUI({ document, user }),
   };

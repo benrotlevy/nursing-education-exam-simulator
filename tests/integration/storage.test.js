@@ -111,4 +111,49 @@ describe('app/js/core/storage.js — Persistence & Corrupt-JSON Resilience (SYNC
     storage.saveActiveTab('saved-exams');
     assert.equal(storage.loadActiveTab(), 'saved-exams');
   });
+
+  it('clears all localStorage, sessionStorage, and memory fallback keys on clearAllLocalData()', () => {
+    const localStorage = createMemoryStorage();
+    const sessionStorage = createMemoryStorage();
+    const storage = createStorageAdapter({ localStorage, sessionStorage });
+
+    storage.saveProgress({
+      mistakes: new Set(['Q1']),
+      savedExams: [{ id: 's1', sourceName: 'Src', questionIds: ['Q1'], savedAt: '2026-11-18' }],
+      releasedSavedExams: {},
+      userStats: { totalAnswered: 5, totalCorrect: 4, examsCompleted: 1, categoryStats: {} },
+    });
+    localStorage.setItem('nursing_access_approval_v1', JSON.stringify({ approved: true }));
+    localStorage.setItem('nursing_signin_notified_v1', JSON.stringify({ 'a@b.com': true }));
+    storage.saveExamSession('ACTIVE', {
+      questions: sampleQuestions,
+      currentIndex: 0,
+      userAnswers: { 0: 1 },
+      flagged: new Set(),
+      eliminated: {},
+      shuffledOptionsCache: {},
+    });
+    storage.saveStudySession({
+      questions: sampleQuestions,
+      currentIndex: 0,
+      mistakesOnly: false,
+      selectedCategory: 'ALL',
+      userAnswers: {},
+      shuffledOptionsCache: {},
+    });
+    storage.saveActiveTab('stats');
+
+    storage.clearAllLocalData();
+
+    assert.equal(localStorage.getItem('nursing_progress_v2'), null);
+    assert.equal(localStorage.getItem('nursing_access_approval_v1'), null);
+    assert.equal(localStorage.getItem('nursing_signin_notified_v1'), null);
+    assert.equal(sessionStorage.getItem('nursing_exam_session_v2'), null);
+    assert.equal(sessionStorage.getItem('nursing_study_session_v2'), null);
+    assert.equal(sessionStorage.getItem('nursing_active_tab_v2'), null);
+    assert.equal(storage.fallbackMemoryMap.size, 0);
+    assert.equal(storage.loadExamSession(sampleQuestions), null);
+    assert.equal(storage.loadStudySession(sampleQuestions), null);
+    assert.equal(storage.loadProgress().userStats.totalAnswered, 0);
+  });
 });

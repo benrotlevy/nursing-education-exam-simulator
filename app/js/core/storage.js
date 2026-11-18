@@ -378,6 +378,35 @@ export function createStorageAdapter({
     }
   }
 
+  function clearAllLocalData() {
+    const localKeysToRemove = [
+      STORAGE_KEYS.PROGRESS,
+      STORAGE_KEYS.ACCESS_APPROVAL,
+      STORAGE_KEYS.SIGNIN_NOTIFIED,
+    ];
+    const sessionKeysToRemove = [
+      STORAGE_KEYS.EXAM_SESSION,
+      STORAGE_KEYS.STUDY_SESSION,
+      STORAGE_KEYS.ACTIVE_TAB,
+    ];
+    for (const key of localKeysToRemove) {
+      fallbackMemoryMap.delete(key);
+      try {
+        localStorage?.removeItem(key);
+      } catch {
+        // Ignore storage errors
+      }
+    }
+    for (const key of sessionKeysToRemove) {
+      fallbackMemoryMap.delete(key);
+      try {
+        sessionStorage?.removeItem(key);
+      } catch {
+        // Ignore storage errors
+      }
+    }
+  }
+
   const storageAdapter = {
     loadProgress,
     saveProgress,
@@ -388,6 +417,7 @@ export function createStorageAdapter({
     loadStudySession,
     saveActiveTab,
     loadActiveTab,
+    clearAllLocalData,
     bindToast,
     bindDocument,
     fallbackMemoryMap,

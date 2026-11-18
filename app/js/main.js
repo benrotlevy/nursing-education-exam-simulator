@@ -27,6 +27,7 @@ import { createAuthController } from './features/auth/auth-controller.js';
 import { createDemoBannerView } from './features/auth/demo-banner-view.js';
 import { createReportService } from './services/report-service.js';
 import { createAccessControlService } from './services/access-control-service.js';
+import { isAdminUser } from './domain/question-report.js';
 import { createReportController } from './features/report-issue/report-controller.js';
 import { createPwaService } from './services/pwa.js';
 
@@ -59,6 +60,7 @@ export function mountApplication({
   const controllers = {};
   let hasFullCatalog = false;
   let catalogEpoch = 0;
+  let hadAuthenticatedUser = false;
   let latestAccessDecision = {
     status: ACCESS_STATUSES.GUEST,
     approved: false,
@@ -215,6 +217,7 @@ export function mountApplication({
     router,
     toast,
     confirmAction,
+    getIsDemoMode: () => !hasFullCatalog && !preloadedQuestions,
     onPoolChanged: () => {
       updateHeaderCounter();
       studyController.initStudyMode();
@@ -304,10 +307,26 @@ export function mountApplication({
     notifyError: (message) => dialog.alertDialog({ title: 'שגיאת התחברות לענן', message }),
     firebaseSdk,
     resolveCloudAuthorization: async (user) => {
+      hadAuthenticatedUser = true;
+      const userIsAdmin = isAdminUser(user);
+      latestAccessDecision = {
+        status: ACCESS_STATUSES.CHECKING,
+        approved: userIsAdmin,
+        isAdmin: userIsAdmin,
+        keyBase64: '',
+        telegramUrl: latestAccessDecision.telegramUrl || '',
+        note: '',
+      };
+      renderDemoBanner();
+
       if (!accessControlService) {
         return { allowed: true };
       }
       const decision = await accessControlService.checkUserAccess(user);
+      const authNow = authController.getAuthUser();
+      if (authNow && authNow.uid !== user.uid) {
+        return { allowed: false, status: ACCESS_STATUSES.GUEST };
+      }
       if (!decision.approved) {
         catalogEpoch += 1;
       }
@@ -325,6 +344,31 @@ export function mountApplication({
         await revertToDemoCatalogIfNeeded();
       }
 
+      if (!decision.isAdmin) {
+        accessControlService.subscribeUserAccess(
+          user,
+          () => {
+            const currentUser = authController.getAuthUser();
+            if (!currentUser || currentUser.uid !== user.uid) return;
+            const prevApproved = Boolean(latestAccessDecision.approved);
+            authController.refreshAuthorization().then((ok) => {
+              if (!prevApproved && ok) {
+                toast?.showToast(
+                  hasFullCatalog
+                    ? `אושרת! המאגר המלא (${TOTAL_CATALOG_QUESTIONS} שאלות) נפתח בהצלחה 🎉`
+                    : 'חשבונך אושר על ידי מנהל המערכת! 🎉'
+                );
+              } else if (prevApproved && !ok) {
+                toast?.showToast('הגישה לחשבונך הושהתה על ידי מנהל המערכת.');
+              }
+            });
+          },
+          { status: decision.status, approved: decision.approved }
+        );
+      } else {
+        accessControlService.unsubscribeUserAccess();
+      }
+
       renderDemoBanner();
       return {
         allowed: Boolean(decision.approved),
@@ -338,8 +382,13 @@ export function mountApplication({
       savedExamsController.renderSavedExamsUI();
     },
     onAuthChanged: (user) => {
-      if (!user) {
+      if (user) {
+        hadAuthenticatedUser = true;
+      } else {
+        const wasSignedIn = hadAuthenticatedUser;
+        hadAuthenticatedUser = false;
         catalogEpoch += 1;
+        accessControlService?.unsubscribeUserAccess?.();
         accessControlService?.clearCachedApproval?.();
         latestAccessDecision = {
           status: ACCESS_STATUSES.GUEST,
@@ -349,7 +398,39 @@ export function mountApplication({
           telegramUrl: latestAccessDecision.telegramUrl || '',
           note: '',
         };
+        if (wasSignedIn) {
+          storage.clearAllLocalData();
+          const fresh = createInitialState();
+          store.setState(
+            {
+              mistakes: fresh.mistakes,
+              mistakeTimestamps: fresh.mistakeTimestamps,
+              savedExams: fresh.savedExams,
+              releasedSavedExams: fresh.releasedSavedExams,
+              userStats: fresh.userStats,
+              activeExamScreen: fresh.activeExamScreen,
+              currentExam: fresh.currentExam,
+              currentStudy: fresh.currentStudy,
+            },
+            'auth/signout-clear-local'
+          );
+          studyController.initStudyMode({ selectedCategory: 'ALL', mistakesOnly: false });
+          if (store.getState().activeTab === 'study') {
+            studyController.syncStudyDOM();
+          }
+          updateMistakesUI();
+          updateHeaderCounter();
+          statsController.renderStats();
+          savedExamsController.renderSavedExamsUI();
+          if (store.getState().activeTab === 'exam') {
+            router.switchTab('exam');
+          }
+          storage.clearAllLocalData();
+        }
         revertToDemoCatalogIfNeeded().then(() => {
+          if (wasSignedIn) {
+            storage.clearAllLocalData();
+          }
           renderDemoBanner();
         });
       }
@@ -557,6 +638,50 @@ export function mountApplication({
     }
   }
 
+  async function handleUserSignOut() {
+    const activeUser = authController.getAuthUser();
+    if (!activeUser) {
+      return false;
+    }
+
+    if (authController.cloudSync.isCloudSyncAuthorized() && authController.hasPendingPush()) {
+      await authController.cloudSync.pushNow();
+    }
+
+    const state = store.getState();
+    const syncStatus = state.auth?.syncStatus || 'idle';
+    const authorized = authController.cloudSync.isCloudSyncAuthorized();
+    const hasPendingPush = Boolean(authController.hasPendingPush());
+    const hasStoredProgress =
+      (state.userStats?.totalAnswered || 0) > 0 ||
+      (state.userStats?.examsCompleted || 0) > 0 ||
+      (state.mistakes?.size || 0) > 0 ||
+      (state.savedExams?.length || 0) > 0;
+    const hasUnfinishedExam =
+      state.activeExamScreen === 'ACTIVE' && (state.currentExam?.questions?.length || 0) > 0;
+
+    const isCloudSynced = authorized && syncStatus === 'synced' && !hasPendingPush;
+    const hasUnsyncedData = (hasStoredProgress && !isCloudSynced) || hasUnfinishedExam;
+
+    if (hasUnsyncedData) {
+      const confirmed = await confirmAction({
+        title: 'התנתקות ומחיקת נתונים מקומיים',
+        message:
+          hasUnfinishedExam && isCloudSynced
+            ? 'קיים מבחן פעיל שטרם הוגש. ההתנתקות תמחק את כל הנתונים המקומיים מהמכשיר. להמשיך?'
+            : 'שים לב: קיימים נתונים מקומיים שטרם סונכרנו לענן (סטטיסטיקות, טעויות או מבחנים שמורים).\nבעת ההתנתקות כל הנתונים המקומיים יימחקו מהמכשיר. להמשיך?',
+        confirmText: 'התנתק ומחק נתונים מקומיים',
+        cancelText: 'בטל',
+        danger: true,
+      });
+      if (!confirmed) {
+        return false;
+      }
+    }
+
+    return authController.signOut();
+  }
+
   // Declarative event delegation (`data-action`)
   onAction(document, {
     'switch-tab': (_event, el) => {
@@ -603,7 +728,7 @@ export function mountApplication({
       authController.signIn();
     },
     'google-sign-out': () => {
-      authController.signOut();
+      handleUserSignOut();
     },
     'open-report-dialog': (_event, actionEl) => {
       reportController.openReportDialog({
@@ -633,7 +758,7 @@ export function mountApplication({
   if (window) {
     window.cloudSync = authController.cloudSync;
     window.triggerGoogleSignIn = () => authController.signIn();
-    window.triggerGoogleSignOut = () => authController.signOut();
+    window.triggerGoogleSignOut = () => handleUserSignOut();
 
     window.app = {
       store,

@@ -1,6 +1,6 @@
 {
   "name": "nursing-education-exam-simulator",
-  "version": "2.4.0",
+  "version": "2.4.1",
   "private": true,
   "description": "Clinical Preceptorship Nursing Exam Simulator (Ministry of Health Israel)",
   "type": "module",
@@ -16,7 +16,7 @@
     "test:integration": "node --test tests/integration",
     "test:data": "node --test tests/data",
     "test:dom": "node --test tests/dom",
-    "test": "node --test",
+    "test": "node --test --test-concurrency=4",
     "test:e2e": "playwright test",
     "build:data": "node tools/build-questions.js",
     "encrypt:questions": "node tools/encrypt-questions.js",

@@ -20,13 +20,19 @@ export function createSavedExamsController({
   confirmAction,
   onPoolChanged,
   onExamStarted,
+  getIsDemoMode = null,
 } = {}) {
+  function isDemoLocked() {
+    return typeof getIsDemoMode === 'function' ? Boolean(getIsDemoMode()) : false;
+  }
+
   function renderSavedExamsUI() {
     const state = store.getState();
     renderSavedExamsView({
       document,
       allQuestions: state.allQuestions,
       savedExams: state.savedExams,
+      isDemoMode: isDemoLocked(),
     });
   }
 
@@ -43,6 +49,10 @@ export function createSavedExamsController({
   }
 
   function addSelectedExamToSavedZone() {
+    if (isDemoLocked()) {
+      toast?.showToast('שמירת מבחנים מלאים זמינה למשתמשים מורשים במאגר המלא בלבד.');
+      return false;
+    }
     const state = store.getState();
     const select = document?.getElementById('savedExamSourceSelect');
     const selectedSource = select ? select.value : '';

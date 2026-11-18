@@ -5,7 +5,7 @@
  */
 
 const CACHE_PREFIX = 'nursing-exam-sim-';
-const CACHE_NAME = `${CACHE_PREFIX}v2.4.0`;
+const CACHE_NAME = `${CACHE_PREFIX}v2.4.1`;
 
 const CORE_ASSETS = [
   './',

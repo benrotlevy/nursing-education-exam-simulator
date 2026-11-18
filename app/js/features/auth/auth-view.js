@@ -78,12 +78,16 @@ export function renderSyncStatus({ document = globalThis.document, syncStatus = 
   const statsSub = document.querySelector('#statsCloudSyncInfo .cloud-sync-active-sub');
 
   const isOffline = syncStatus === 'offline';
+  const isChecking = syncStatus === 'checking';
   const isError = syncStatus === 'error' || syncStatus === 'revoked';
   const isPending = syncStatus === 'pending';
 
   let indicatorText = '☁️ סנכרון ענן פעיל';
   let statsSubText = 'סנכרון ענן פעיל';
-  if (isOffline) {
+  if (isChecking) {
+    indicatorText = '🔄 מאמת הרשאות וסנכרון...';
+    statsSubText = 'מאמת הרשאות וסנכרון...';
+  } else if (isOffline) {
     indicatorText = '📴 מצב לא מקוון (נשמר מקומית)';
     statsSubText = 'מצב לא מקוון (נשמר מקומית)';
   } else if (syncStatus === 'revoked') {
@@ -99,16 +103,16 @@ export function renderSyncStatus({ document = globalThis.document, syncStatus = 
 
   if (indicator) {
     indicator.textContent = indicatorText;
-    indicator.classList?.toggle('sync-indicator-offline', isOffline || isPending);
+    indicator.classList?.toggle('sync-indicator-offline', isOffline || isPending || isChecking);
     indicator.classList?.toggle('sync-indicator-error', isError);
-    if (isOffline || isError || isPending) {
+    if (isOffline || isError || isPending || isChecking) {
       indicator.classList?.remove('sync-indicator-flashing');
     }
   }
 
   if (statsSub) {
     statsSub.textContent = statsSubText;
-    statsSub.classList?.toggle('sync-indicator-offline', isOffline || isPending);
+    statsSub.classList?.toggle('sync-indicator-offline', isOffline || isPending || isChecking);
     statsSub.classList?.toggle('sync-indicator-error', isError);
   }
 }

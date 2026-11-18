@@ -10,6 +10,7 @@ export function renderSavedExamsView({
   document = globalThis.document,
   allQuestions = [],
   savedExams = [],
+  isDemoMode = false,
 } = {}) {
   const listEl = document?.getElementById('savedExamsList');
   const slotsCountEl = document?.getElementById('savedSlotsCount');
@@ -36,18 +37,40 @@ export function renderSavedExamsView({
     if (addSectionEl) addSectionEl.style.display = 'block';
     if (limitNoticeEl) limitNoticeEl.style.display = 'none';
 
+    const addBtnEl =
+      addSectionEl?.querySelector?.('button[data-action="add-saved-exam"]') ||
+      document?.querySelector?.('#savedAddSection button[data-action="add-saved-exam"]') ||
+      null;
+    const lockMsg = 'שמירת מבחנים מלאים זמינה למשתמשים מורשים במאגר המלא בלבד';
+
     if (selectEl) {
       selectEl.innerHTML = '';
-      const availableExams = getAvailableFullExams(allQuestions, savedExams);
-      if (availableExams.length === 0) {
-        selectEl.innerHTML = '<option value="">אין מבחנים נוספים זמינים לשמירה</option>';
+      if (isDemoMode) {
+        selectEl.innerHTML = `<option value="">${lockMsg}</option>`;
+        selectEl.disabled = true;
+        selectEl.title = lockMsg;
+        if (addBtnEl) {
+          addBtnEl.disabled = true;
+          addBtnEl.title = lockMsg;
+        }
       } else {
-        availableExams.forEach((e) => {
-          const opt = document.createElement('option');
-          opt.value = e.sourceName;
-          opt.textContent = `${e.sourceName} (${e.questionCount} שאלות)`;
-          selectEl.appendChild(opt);
-        });
+        selectEl.disabled = false;
+        selectEl.title = '';
+        if (addBtnEl) {
+          addBtnEl.disabled = false;
+          addBtnEl.title = '';
+        }
+        const availableExams = getAvailableFullExams(allQuestions, savedExams);
+        if (availableExams.length === 0) {
+          selectEl.innerHTML = '<option value="">אין מבחנים נוספים זמינים לשמירה</option>';
+        } else {
+          availableExams.forEach((e) => {
+            const opt = document.createElement('option');
+            opt.value = e.sourceName;
+            opt.textContent = `${e.sourceName} (${e.questionCount} שאלות)`;
+            selectEl.appendChild(opt);
+          });
+        }
       }
     }
   }

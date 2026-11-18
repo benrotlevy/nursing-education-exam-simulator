@@ -8,6 +8,7 @@
 import {
   ACCESS_LIMITS,
   ACCESS_STATUSES,
+  ADMIN_EMAILS,
   DEFAULT_TELEGRAM_ADMIN_URL,
   SCHEMA_VERSION,
   STORAGE_KEYS,
@@ -80,6 +81,7 @@ export function createAccessControlService({
   requestTimeoutMs = 10000,
 } = {}) {
   let unsubscribePendingListener = null;
+  let unsubscribeUserAccessListener = null;
 
   function isBrowserOffline() {
     return Boolean(navigator && navigator.onLine === false);
@@ -435,12 +437,28 @@ export function createAccessControlService({
         });
       }
 
-      const adminEmail = normalizeEmail(fb.auth.currentUser?.email);
-      if (adminEmail && !seenEmails.has(adminEmail)) {
+      const currentEmail = normalizeEmail(fb.auth.currentUser?.email);
+      for (const rawAdminEmail of ADMIN_EMAILS) {
+        const cleanAdminEmail = normalizeEmail(rawAdminEmail);
+        if (!cleanAdminEmail) continue;
+        if (seenEmails.has(cleanAdminEmail)) {
+          const existing = items.find(
+            (entry) => normalizeEmail(entry.email || entry.id) === cleanAdminEmail
+          );
+          if (existing) {
+            existing.isAdminAccount = true;
+            existing.active = true;
+            existing.status = 'APPROVED';
+          }
+          continue;
+        }
         items.push({
-          id: adminEmail,
-          email: adminEmail,
-          displayName: fb.auth.currentUser?.displayName || 'מנהל מערכת',
+          id: cleanAdminEmail,
+          email: cleanAdminEmail,
+          displayName:
+            cleanAdminEmail === currentEmail && fb.auth.currentUser?.displayName
+              ? fb.auth.currentUser.displayName
+              : 'מנהל מערכת',
           active: true,
           status: 'APPROVED',
           note: 'מנהל מערכת (Admin קבוע)',
@@ -448,6 +466,7 @@ export function createAccessControlService({
           addedAt: '',
           updatedAt: '',
         });
+        seenEmails.add(cleanAdminEmail);
       }
 
       return items;
@@ -715,6 +734,75 @@ export function createAccessControlService({
     }
   }
 
+  function unsubscribeUserAccess() {
+    if (typeof unsubscribeUserAccessListener === 'function') {
+      unsubscribeUserAccessListener();
+      unsubscribeUserAccessListener = null;
+    }
+  }
+
+  /**
+   * Listens in real time to `/allowed_users/{email}` for the signed-in non-admin user
+   * so Admin approval or revocation unlocks/locks the app automatically without manual recheck.
+   */
+  async function subscribeUserAccess(user, onAccessDocChanged, initialState = {}) {
+    unsubscribeUserAccess();
+    const cleanEmail = normalizeEmail(user?.email);
+    if (!cleanEmail || isAdminUser(user)) {
+      return () => {};
+    }
+
+    const fb = await ensureFirebaseReady();
+    if (
+      !fb.ready ||
+      !fb.auth?.currentUser ||
+      normalizeEmail(fb.auth.currentUser.email) !== cleanEmail ||
+      typeof fb.sdk.doc !== 'function' ||
+      typeof fb.sdk.onSnapshot !== 'function'
+    ) {
+      return () => {};
+    }
+
+    const trackedState = {
+      key: `${initialState.status || ''}:${Boolean(initialState.approved)}`,
+    };
+
+    try {
+      const userAccessRef = fb.sdk.doc(fb.db, ALLOWED_USERS_COLLECTION, cleanEmail);
+      unsubscribeUserAccessListener = fb.sdk.onSnapshot(
+        userAccessRef,
+        (docSnap) => {
+          if (docSnap?.metadata?.fromCache && isBrowserOffline()) {
+            return;
+          }
+          const exists = Boolean(
+            docSnap && typeof docSnap.exists === 'function' && docSnap.exists()
+          );
+          const data = exists ? docSnap.data() || {} : null;
+          const evaluated = evaluateUserAccessState({
+            user: fb.auth?.currentUser || user,
+            allowedDoc: data,
+            isOnline: true,
+          });
+          const nextKey = `${evaluated.status}:${Boolean(evaluated.approved)}`;
+          if (nextKey !== trackedState.key) {
+            trackedState.key = nextKey;
+            if (typeof onAccessDocChanged === 'function') {
+              onAccessDocChanged(evaluated);
+            }
+          }
+        },
+        (err) => {
+          console.warn('User access snapshot listener warning:', err);
+        }
+      );
+      return unsubscribeUserAccess;
+    } catch (err) {
+      console.warn('Could not attach user access listener:', err);
+      return () => {};
+    }
+  }
+
   return {
     checkUserAccess,
     submitAccessRequest,
@@ -727,6 +815,8 @@ export function createAccessControlService({
     saveContactConfig,
     subscribePendingRequestsCount,
     unsubscribePendingRequests,
+    subscribeUserAccess,
+    unsubscribeUserAccess,
     clearCachedApproval,
     loadCachedApproval,
   };
