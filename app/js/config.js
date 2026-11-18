@@ -63,6 +63,7 @@ export const FIREBASE_CONFIG = Object.freeze({
 });
 
 export const ADMIN_EMAILS = Object.freeze(['benjaminrotlevy@gmail.com', 'benjamin@rotlevy.com']);
+export const DEFAULT_ADMIN_DISPLAY_NAME = 'Benjamin Rotlevy';
 
 export const REPORT_ISSUE_TYPES = Object.freeze({
   KEY_ERROR: Object.freeze({

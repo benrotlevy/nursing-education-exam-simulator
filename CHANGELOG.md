@@ -6,6 +6,16 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 
 ---
 
+## [2.4.3] - 2026-11-19
+
+### Fixed
+
+- **Consistent Admin Display Name Tag**: Added `DEFAULT_ADMIN_DISPLAY_NAME` (`Benjamin Rotlevy`) in `app/js/config.js` and updated `fetchAllowedUsers()` in `app/js/services/access-control-service.js` so both Admin cards in `👥 משתמשים מורשים` display the owner name tag consistently rather than showing a generic fallback for the second Admin email.
+- **Disabled Save Exam Button Styling in Demo Mode**: Added explicit `.btn:disabled, .btn[disabled]` styling (`#e2e8f0` background, muted text, `opacity: 0.65`, `cursor: not-allowed`, `pointer-events: none`) in `app/styles/components/buttons.css` and reinforced `#savedAddSection button[data-action="add-saved-exam"]` locking in `syncDemoModeLocks()` (`app/js/main.js`).
+- **Service Worker Cache**: Bumped `app/sw.js` cache to `nursing-exam-sim-v2.4.3`.
+
+---
+
 ## [2.4.2] - 2026-11-19
 
 ### Fixed

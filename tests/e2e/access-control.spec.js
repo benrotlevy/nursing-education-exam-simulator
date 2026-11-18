@@ -263,9 +263,9 @@ test.describe('ACCESS-CONTROL E2E: Demo Mode, Telegram Approval Request & Encryp
     await expect(page.locator('#examCategorySelect')).toBeDisabled();
     await expect(page.locator('#studyCategoryFilter')).toBeDisabled();
     await expect(page.locator('#savedExamSourceSelect')).toBeDisabled();
-    await expect(
-      page.locator('#savedAddSection button[data-action="add-saved-exam"]')
-    ).toBeDisabled();
+    const savedAddBtn = page.locator('#savedAddSection button[data-action="add-saved-exam"]');
+    await expect(savedAddBtn).toBeDisabled();
+    await expect(savedAddBtn).toHaveCSS('pointer-events', 'none');
     await expect(page.locator('input[name="examCount"][value="10"]')).toBeEnabled();
     await expect(page.locator('input[name="examCount"][value="10"]')).toBeChecked();
     for (const lockedVal of ['25', '50', '100']) {

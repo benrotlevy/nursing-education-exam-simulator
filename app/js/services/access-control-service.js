@@ -9,6 +9,7 @@ import {
   ACCESS_LIMITS,
   ACCESS_STATUSES,
   ADMIN_EMAILS,
+  DEFAULT_ADMIN_DISPLAY_NAME,
   DEFAULT_TELEGRAM_ADMIN_URL,
   SCHEMA_VERSION,
   STORAGE_KEYS,
@@ -507,7 +508,7 @@ export function createAccessControlService({
         });
       }
 
-      const currentEmail = normalizeEmail(fb.auth.currentUser?.email);
+      const adminDisplayName = fb.auth.currentUser?.displayName || DEFAULT_ADMIN_DISPLAY_NAME;
       for (const rawAdminEmail of ADMIN_EMAILS) {
         const cleanAdminEmail = normalizeEmail(rawAdminEmail);
         if (!cleanAdminEmail) continue;
@@ -519,16 +520,16 @@ export function createAccessControlService({
             existing.isAdminAccount = true;
             existing.active = true;
             existing.status = 'APPROVED';
+            if (!existing.displayName || existing.displayName === 'מנהל מערכת') {
+              existing.displayName = adminDisplayName;
+            }
           }
           continue;
         }
         items.push({
           id: cleanAdminEmail,
           email: cleanAdminEmail,
-          displayName:
-            cleanAdminEmail === currentEmail && fb.auth.currentUser?.displayName
-              ? fb.auth.currentUser.displayName
-              : 'מנהל מערכת',
+          displayName: adminDisplayName,
           active: true,
           status: 'APPROVED',
           note: 'מנהל מערכת (Admin קבוע)',

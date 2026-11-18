@@ -403,7 +403,12 @@ describe('Question Issue Reporting & Admin Dashboard DOM Flow', () => {
 
     assert.match(adminDialog.textContent, /benjaminrotlevy@gmail\.com/);
     assert.match(adminDialog.textContent, /benjamin@rotlevy\.com/);
-    assert.match(adminDialog.textContent, /מנהל מערכת/);
+    assert.equal(
+      Array.from(adminDialog.querySelectorAll('.admin-user-card')).filter((card) =>
+        card.textContent.includes('Benjamin Rotlevy')
+      ).length >= 2,
+      true
+    );
     assert.match(adminDialog.textContent, /newstu@example\.com/);
     adminDialog.querySelector('button[data-user-action="approve"]').click();
     await new Promise((r) => setTimeout(r, 25));

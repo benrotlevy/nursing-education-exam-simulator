@@ -581,6 +581,22 @@ export function mountApplication({
     if (isDemoMode && !hasEnabledChecked && radio10) {
       radio10.checked = true;
     }
+
+    const savedSelect = document.getElementById('savedExamSourceSelect');
+    const savedAddBtn = document.querySelector?.(
+      '#savedAddSection button[data-action="add-saved-exam"]'
+    );
+    const savedLockMsg = 'שמירת מבחנים מלאים זמינה למשתמשים מורשים במאגר המלא בלבד';
+    if (isDemoMode) {
+      if (savedSelect) {
+        savedSelect.disabled = true;
+        savedSelect.title = savedLockMsg;
+      }
+      if (savedAddBtn) {
+        savedAddBtn.disabled = true;
+        savedAddBtn.title = savedLockMsg;
+      }
+    }
   }
 
   function bootstrapWithQuestions(rawQuestions = [], { preserveActiveTab = false } = {}) {
