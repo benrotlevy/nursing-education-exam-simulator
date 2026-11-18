@@ -18,6 +18,7 @@ import {
   buildAllowedUserPayload,
   buildNewUserTelegramPayloads,
   buildPendingAccessRequestPayload,
+  evaluateAccessRequestCooldown,
   evaluateUserAccessState,
   isValidEmailAddress,
   normalizeEmail,
@@ -79,6 +80,7 @@ export function createAccessControlService({
   fetchFn = globalThis.fetch,
   navigator = globalThis.navigator,
   requestTimeoutMs = 10000,
+  nowFn = () => Date.now(),
 } = {}) {
   let unsubscribePendingListener = null;
   let unsubscribeUserAccessListener = null;
@@ -119,17 +121,50 @@ export function createAccessControlService({
     }
   }
 
-  function wasSignInNotified(email) {
+  function readSignInNotificationEntry(email) {
     const clean = normalizeEmail(email);
     const map = readJsonStorage(localStorage, STORAGE_KEYS.SIGNIN_NOTIFIED);
-    return Boolean(clean && map && map[clean]);
+    const entry = clean && map ? map[clean] : null;
+    if (!entry) return null;
+    if (typeof entry === 'string') {
+      return { signInNotifiedAt: entry, lastRequestAt: '' };
+    }
+    return typeof entry === 'object' ? entry : null;
+  }
+
+  function wasSignInNotified(email) {
+    return Boolean(readSignInNotificationEntry(email));
+  }
+
+  function getLastLocalRequestAt(email) {
+    const entry = readSignInNotificationEntry(email);
+    if (!entry?.lastRequestAt) return 0;
+    const ms = Date.parse(String(entry.lastRequestAt));
+    return Number.isFinite(ms) ? ms : 0;
   }
 
   function markSignInNotified(email) {
     const clean = normalizeEmail(email);
     if (!clean) return;
     const map = readJsonStorage(localStorage, STORAGE_KEYS.SIGNIN_NOTIFIED) || {};
-    map[clean] = new Date().toISOString();
+    const prev = readSignInNotificationEntry(clean);
+    map[clean] = {
+      signInNotifiedAt: prev?.signInNotifiedAt || new Date(nowFn()).toISOString(),
+      lastRequestAt: prev?.lastRequestAt || '',
+    };
+    writeJsonStorage(localStorage, STORAGE_KEYS.SIGNIN_NOTIFIED, map);
+  }
+
+  function markExplicitRequestSent(email, timestampMs = nowFn()) {
+    const clean = normalizeEmail(email);
+    if (!clean) return;
+    const map = readJsonStorage(localStorage, STORAGE_KEYS.SIGNIN_NOTIFIED) || {};
+    const prev = readSignInNotificationEntry(clean);
+    const iso = new Date(timestampMs).toISOString();
+    map[clean] = {
+      signInNotifiedAt: prev?.signInNotifiedAt || iso,
+      lastRequestAt: iso,
+    };
     writeJsonStorage(localStorage, STORAGE_KEYS.SIGNIN_NOTIFIED, map);
   }
 
@@ -238,6 +273,7 @@ export function createAccessControlService({
     let telegramUrl = normalizeTelegramChatUrl(DEFAULT_TELEGRAM_ADMIN_URL);
     let lookupFailed = false;
     let firstTimePendingCreated = false;
+    let docExistedOnServer = false;
 
     if (fb.ready && !offline && typeof fb.sdk.getDoc === 'function') {
       const contactInfo = await fetchContactConfigInternal(fb);
@@ -250,6 +286,7 @@ export function createAccessControlService({
 
           if (allowSnap && typeof allowSnap.exists === 'function' && allowSnap.exists()) {
             allowedDoc = allowSnap.data() || null;
+            docExistedOnServer = true;
           } else {
             // First time this signed-in user hits the app -> create a PENDING entry & alert admin once
             const pendingPayload = buildPendingAccessRequestPayload({ user });
@@ -312,28 +349,39 @@ export function createAccessControlService({
       clearCachedApproval();
     }
 
-    // Send 1-time Telegram push alert on first-ever unapproved sign-in (or non-admin still pending on first browser session)
+    // Send 1-time Telegram push alert only when a user signs in for the very first time (not if doc already existed on server)
     if (!decision.approved && !adminFlag && !offline) {
-      const shouldNotify =
-        firstTimePendingCreated ||
-        (decision.status === ACCESS_STATUSES.PENDING && !wasSignInNotified(cleanEmail));
-      if (shouldNotify) {
-        const sent = await dispatchNewUserTelegramAlert({
-          user,
-          note: allowedDoc?.note || '',
-          isExplicitRequest: false,
-          status: 'PENDING',
-        });
-        if (sent) {
-          markSignInNotified(cleanEmail);
+      if (docExistedOnServer) {
+        markSignInNotified(cleanEmail);
+      } else {
+        const shouldNotify =
+          firstTimePendingCreated ||
+          (decision.status === ACCESS_STATUSES.PENDING && !wasSignInNotified(cleanEmail));
+        if (shouldNotify) {
+          const sent = await dispatchNewUserTelegramAlert({
+            user,
+            note: allowedDoc?.note || '',
+            isExplicitRequest: false,
+            status: 'PENDING',
+          });
+          if (sent) {
+            markSignInNotified(cleanEmail);
+          }
         }
       }
     }
+
+    const requestCooldown = evaluateAccessRequestCooldown({
+      allowedDoc,
+      lastLocalRequestAt: getLastLocalRequestAt(cleanEmail),
+      nowMs: nowFn(),
+    });
 
     return {
       ...decision,
       isAdmin: adminFlag,
       note: allowedDoc?.note || '',
+      requestCooldownUntil: requestCooldown.cooldownUntil,
     };
   }
 
@@ -380,10 +428,30 @@ export function createAccessControlService({
         };
       }
 
+      const cooldown = evaluateAccessRequestCooldown({
+        allowedDoc: existingData,
+        lastLocalRequestAt: getLastLocalRequestAt(cleanEmail),
+        nowMs: nowFn(),
+      });
+      if (cooldown.inCooldown) {
+        return {
+          ok: false,
+          cooldown: true,
+          remainingMinutes: cooldown.remainingMinutes,
+          requestCooldownUntil: cooldown.cooldownUntil,
+          message: `בקשת גישה כבר נשלחה לאחרונה. ניתן לשלוח בקשה נוספת בעוד ${cooldown.remainingMinutes} דקות.`,
+        };
+      }
+
+      const existingAddedMs = existingData?.addedAt ? Date.parse(String(existingData.addedAt)) : 0;
+      const safeAddedMs = Number.isFinite(existingAddedMs) ? existingAddedMs : 0;
+      const reqNowMs = Math.max(nowFn(), safeAddedMs + 1);
+
       const payload = buildPendingAccessRequestPayload({
         user,
         note: cleanNote,
         existingAddedAt: existingData?.addedAt || '',
+        now: new Date(reqNowMs),
       });
 
       await withTimeout(fb.sdk.setDoc(allowRef, payload), requestTimeoutMs);
@@ -392,11 +460,13 @@ export function createAccessControlService({
         note: cleanNote,
         isExplicitRequest: true,
         status: 'PENDING',
+        now: new Date(reqNowMs),
       });
-      markSignInNotified(cleanEmail);
+      markExplicitRequestSent(cleanEmail, reqNowMs);
 
       return {
         ok: true,
+        requestCooldownUntil: reqNowMs + ACCESS_LIMITS.REQUEST_COOLDOWN_MS,
         message: 'בקשת הגישה נשלחה למנהל המערכת! תקבל אישור בקרוב.',
       };
     } catch (err) {

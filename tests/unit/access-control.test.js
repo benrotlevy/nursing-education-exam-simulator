@@ -6,6 +6,7 @@ import {
   buildNewUserTelegramPayloads,
   buildPendingAccessRequestPayload,
   countAllowedUsersByStatus,
+  evaluateAccessRequestCooldown,
   evaluateUserAccessState,
   filterAllowedUsers,
   isValidEmailAddress,
@@ -136,6 +137,52 @@ describe('app/js/domain/access-control.js — Invite-Only Domain Rules', () => {
     assert.equal(modernPayload.email, 'sara@test.org');
     assert.equal(compatiblePayload.type, 'QUESTION_ISSUE_REPORT');
     assert.ok(compatiblePayload.comment.includes('sara@test.org'));
+    assert.ok(!compatiblePayload.comment.includes('לחיצה ארוכה/קצרה'));
+    assert.ok(compatiblePayload.comment.includes('לאישור בלחיצה אחת'));
+
+    // Cooldown logic: initial sign-in doc (addedAt === updatedAt) allows first explicit request
+    const t0 = Date.parse('2026-11-19T00:00:00.000Z');
+    assert.equal(
+      evaluateAccessRequestCooldown({
+        allowedDoc: {
+          addedAt: '2026-11-19T00:00:00.000Z',
+          updatedAt: '2026-11-19T00:00:00.000Z',
+        },
+        nowMs: t0 + 5000,
+      }).inCooldown,
+      false
+    );
+
+    // Explicit request (updatedAt > addedAt) locks for 10 minutes
+    const activeCooldown = evaluateAccessRequestCooldown({
+      allowedDoc: {
+        addedAt: '2026-11-19T00:00:00.000Z',
+        updatedAt: '2026-11-19T00:01:00.000Z',
+      },
+      nowMs: Date.parse('2026-11-19T00:03:00.000Z'),
+    });
+    assert.equal(activeCooldown.inCooldown, true);
+    assert.equal(activeCooldown.remainingMinutes, 8);
+
+    // Local timestamp alone also enforces 10-minute cooldown, and clears after 10 minutes
+    assert.equal(
+      evaluateAccessRequestCooldown({
+        lastLocalRequestAt: t0,
+        nowMs: t0 + 9 * 60 * 1000,
+      }).inCooldown,
+      true
+    );
+    assert.equal(
+      evaluateAccessRequestCooldown({
+        allowedDoc: {
+          addedAt: '2026-11-19T00:00:00.000Z',
+          updatedAt: '2026-11-19T00:01:00.000Z',
+        },
+        lastLocalRequestAt: Date.parse('2026-11-19T00:01:00.000Z'),
+        nowMs: Date.parse('2026-11-19T00:11:00.000Z'),
+      }).inCooldown,
+      false
+    );
 
     const sampleUsers = [
       { email: 'a@x.com', active: true, status: 'APPROVED', updatedAt: '2026-11-17T09:00:00Z' },

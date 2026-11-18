@@ -37,6 +37,7 @@ export const ACCESS_STATUSES = Object.freeze({
 export const ACCESS_LIMITS = Object.freeze({
   MAX_NOTE_LENGTH: 300,
   MAX_EMAIL_LENGTH: 320,
+  REQUEST_COOLDOWN_MS: 10 * 60 * 1000,
 });
 
 export const DEFAULT_TELEGRAM_ADMIN_URL = '';

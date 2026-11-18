@@ -247,6 +247,53 @@ export function evaluateUserAccessState({
 }
 
 /**
+ * Evaluates whether an explicit access request is within the 10-minute cooldown window.
+ * @param {Object} [params]
+ * @returns {{ inCooldown: boolean, remainingMs: number, remainingMinutes: number, cooldownUntil: number }}
+ */
+export function evaluateAccessRequestCooldown({
+  allowedDoc = null,
+  lastLocalRequestAt = 0,
+  nowMs = Date.now(),
+  cooldownMs = ACCESS_LIMITS.REQUEST_COOLDOWN_MS,
+} = {}) {
+  const hasExplicitDocUpdate = Boolean(
+    allowedDoc &&
+    allowedDoc.updatedAt &&
+    allowedDoc.addedAt &&
+    String(allowedDoc.updatedAt) !== String(allowedDoc.addedAt)
+  );
+  const docRequestAtMs = hasExplicitDocUpdate ? Date.parse(String(allowedDoc.updatedAt)) : 0;
+  const parsedLocalMs =
+    typeof lastLocalRequestAt === 'number'
+      ? lastLocalRequestAt
+      : lastLocalRequestAt
+        ? Date.parse(String(lastLocalRequestAt))
+        : 0;
+
+  const validDocMs = Number.isFinite(docRequestAtMs) ? docRequestAtMs : 0;
+  const validLocalMs = Number.isFinite(parsedLocalMs) ? parsedLocalMs : 0;
+  const lastRequestAtMs = Math.max(validDocMs, validLocalMs);
+
+  if (lastRequestAtMs > 0 && nowMs >= lastRequestAtMs && nowMs - lastRequestAtMs < cooldownMs) {
+    const remainingMs = cooldownMs - (nowMs - lastRequestAtMs);
+    return {
+      inCooldown: true,
+      remainingMs,
+      remainingMinutes: Math.max(1, Math.ceil(remainingMs / 60000)),
+      cooldownUntil: lastRequestAtMs + cooldownMs,
+    };
+  }
+
+  return {
+    inCooldown: false,
+    remainingMs: 0,
+    remainingMinutes: 0,
+    cooldownUntil: 0,
+  };
+}
+
+/**
  * Formats a notification payload for the Cloudflare Telegram Worker.
  * Includes both the `NEW_USER_SIGN_IN` fields and compatible fallback fields for legacy Workers.
  * @param {Object} params
@@ -290,7 +337,7 @@ export function buildNewUserTelegramPayloads({
   if (cleanNote) {
     commentParts.push(`הערה: ${cleanNote}`);
   }
-  commentParts.push('לחיצה ארוכה/קצרה על האימייל בדפדפן הניהול תאפשר אישור בלחיצה אחת.');
+  commentParts.push('לאישור בלחיצה אחת: פתח את לוח הניהול (🛡️ ניהול -> משתמשים מורשים).');
 
   const compatiblePayload = {
     type: 'QUESTION_ISSUE_REPORT',

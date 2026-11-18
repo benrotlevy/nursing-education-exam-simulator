@@ -15,6 +15,14 @@ export function createDemoBannerView({ document = globalThis.document } = {}) {
   };
   let isSubmitting = false;
   let isChecking = false;
+  let currentCooldownUntil = 0;
+
+  function getCooldownRemainingMinutes() {
+    if (!currentCooldownUntil || Date.now() >= currentCooldownUntil) {
+      return 0;
+    }
+    return Math.max(1, Math.ceil((currentCooldownUntil - Date.now()) / 60000));
+  }
 
   function getBannerEl() {
     return document?.getElementById('demoModeBanner') || null;
@@ -29,7 +37,9 @@ export function createDemoBannerView({ document = globalThis.document } = {}) {
     note = '',
     telegramUrl = '',
     loadedCount = 10,
+    requestCooldownUntil = 0,
   } = {}) {
+    currentCooldownUntil = Number(requestCooldownUntil) || 0;
     const el = getBannerEl();
     if (!el) return;
 
@@ -114,6 +124,13 @@ export function createDemoBannerView({ document = globalThis.document } = {}) {
 
     // Signed in user waiting for admin approval (PENDING)
     if (user && !approved && status !== ACCESS_STATUSES.CHECKING) {
+      const cooldownMinutes = getCooldownRemainingMinutes();
+      const requestDisabled = isSubmitting || cooldownMinutes > 0;
+      const requestLabel = isSubmitting
+        ? 'שולח בקשה...'
+        : cooldownMinutes > 0
+          ? `✓ הבקשה נשלחה (המתן ${cooldownMinutes} דק׳)`
+          : '📩 שלח בקשת אישור גישה';
       el.className = 'demo-mode-banner is-pending';
       el.innerHTML = html`
         <div class="demo-banner-content">
@@ -140,9 +157,9 @@ export function createDemoBannerView({ document = globalThis.document } = {}) {
               type="button"
               class="btn btn-primary btn-sm"
               id="btnSendAccessRequest"
-              ${rawHTML(isSubmitting ? 'disabled' : '')}
+              ${rawHTML(requestDisabled ? 'disabled' : '')}
             >
-              ${isSubmitting ? 'שולח בקשה...' : '📩 שלח בקשת אישור גישה'}
+              ${requestLabel}
             </button>
             ${rawHTML(
               telegramUrl
@@ -233,8 +250,13 @@ export function createDemoBannerView({ document = globalThis.document } = {}) {
     isSubmitting = Boolean(submitting);
     const btn = document?.getElementById('btnSendAccessRequest');
     if (btn) {
-      btn.disabled = isSubmitting;
-      btn.textContent = isSubmitting ? 'שולח בקשה...' : '📩 שלח בקשת אישור גישה';
+      const cooldownMinutes = getCooldownRemainingMinutes();
+      btn.disabled = isSubmitting || cooldownMinutes > 0;
+      btn.textContent = isSubmitting
+        ? 'שולח בקשה...'
+        : cooldownMinutes > 0
+          ? `✓ הבקשה נשלחה (המתן ${cooldownMinutes} דק׳)`
+          : '📩 שלח בקשת אישור גישה';
     }
   }
 

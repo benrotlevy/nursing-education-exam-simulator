@@ -294,13 +294,22 @@ test.describe('ACCESS-CONTROL E2E: Demo Mode, Telegram Approval Request & Encryp
     expect(webhookRequests[0].type).toBe('NEW_USER_SIGN_IN');
     expect(webhookRequests[0].email).toBe('sara.cohen@nursing.ac.il');
 
-    // Student sends explicit request with cohort note -> 2nd Telegram notification
+    // Student sends explicit request with cohort note -> 2nd Telegram notification, then button enters 10-min cooldown
     await page.locator('#accessRequestNoteInput').fill('הדסה שנה ד');
     await page.locator('#btnSendAccessRequest').click();
     await expect(page.locator('#appGlobalToast')).toContainText('בקשת הגישה נשלחה');
     expect(webhookRequests).toHaveLength(2);
     expect(webhookRequests[1].isExplicitRequest).toBe(true);
     expect(webhookRequests[1].note).toBe('הדסה שנה ד');
+    await expect(page.locator('#btnSendAccessRequest')).toBeDisabled();
+    await expect(page.locator('#btnSendAccessRequest')).toContainText('הבקשה נשלחה');
+
+    const cooldownRes = await page.evaluate(() =>
+      window.app.accessControlService.submitAccessRequest({ note: 'ניסיון ספאם' })
+    );
+    expect(cooldownRes.ok).toBe(false);
+    expect(cooldownRes.cooldown).toBe(true);
+    expect(webhookRequests).toHaveLength(2);
 
     // Zero horizontal overflow on Demo/Pending banner across all viewports
     const hasOverflow = await page.evaluate(

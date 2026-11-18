@@ -68,6 +68,7 @@ export function mountApplication({
     keyBase64: '',
     telegramUrl: '',
     note: '',
+    requestCooldownUntil: 0,
   };
 
   const router = createRouter({
@@ -144,6 +145,7 @@ export function mountApplication({
       note: latestAccessDecision.note || '',
       telegramUrl: latestAccessDecision.telegramUrl || '',
       loadedCount: loadedCount || 10,
+      requestCooldownUntil: latestAccessDecision.requestCooldownUntil || 0,
     });
   }
 
@@ -316,6 +318,7 @@ export function mountApplication({
         keyBase64: '',
         telegramUrl: latestAccessDecision.telegramUrl || '',
         note: '',
+        requestCooldownUntil: 0,
       };
       renderDemoBanner();
 
@@ -397,6 +400,7 @@ export function mountApplication({
           keyBase64: '',
           telegramUrl: latestAccessDecision.telegramUrl || '',
           note: '',
+          requestCooldownUntil: 0,
         };
         if (wasSignedIn) {
           storage.clearAllLocalData();
@@ -493,8 +497,19 @@ export function mountApplication({
       }
 
       if (res.ok) {
-        latestAccessDecision = { ...latestAccessDecision, note };
+        latestAccessDecision = {
+          ...latestAccessDecision,
+          note,
+          requestCooldownUntil:
+            res.requestCooldownUntil || latestAccessDecision.requestCooldownUntil || 0,
+        };
+      } else if (res.cooldown && res.requestCooldownUntil) {
+        latestAccessDecision = {
+          ...latestAccessDecision,
+          requestCooldownUntil: res.requestCooldownUntil,
+        };
       }
+      renderDemoBanner();
       toast?.showToast(res.message || 'שליחת הבקשה הושלמה.');
     },
     onRecheckAccess: async () => {

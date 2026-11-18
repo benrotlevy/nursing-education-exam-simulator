@@ -6,6 +6,19 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 
 ---
 
+## [2.4.2] - 2026-11-19
+
+### Fixed
+
+- **10-Minute Cooldown Against Telegram Access Request Spam**:
+  - Added `ACCESS_LIMITS.REQUEST_COOLDOWN_MS` (10 minutes) in `app/js/config.js` and `evaluateAccessRequestCooldown()` in `app/js/domain/access-control.js` checking both server `allowed_users/{email}.updatedAt` (after initial creation) and local `SIGNIN_NOTIFIED` request timestamps.
+  - Updated `checkUserAccess()` and `submitAccessRequest()` in `app/js/services/access-control-service.js` so existing server records do not re-send `NEW_USER_SIGN_IN` alerts on repeated sign-ins, and explicit access requests are blocked for 10 minutes with a remaining-minutes countdown.
+  - Updated `app/js/features/auth/demo-banner-view.js` and `app/js/main.js` so `#btnSendAccessRequest` stays disabled with `✓ הבקשה נשלחה (המתן X דק׳)` during the cooldown window.
+- **Cleaner Fallback Telegram Text**: Replaced the confusing `'לחיצה ארוכה/קצרה על האימייל בדפדפן הניהול תאפשר אישור בלחיצה אחת.'` fallback string in `buildNewUserTelegramPayloads()` with `'לאישור בלחיצה אחת: פתח את לוח הניהול (🛡️ ניהול -> משתמשים מורשים).'`.
+- **Service Worker Cache**: Bumped `app/sw.js` cache to `nursing-exam-sim-v2.4.2`.
+
+---
+
 ## [2.4.1] - 2026-11-19
 
 ### Fixed
