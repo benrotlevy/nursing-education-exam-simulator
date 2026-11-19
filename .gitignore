@@ -47,7 +47,8 @@ temp_*.txt
 app/data/questions.json
 data-pipeline/source/clean_questions.json
 
-# Firebase CLI Cache & Debug Logs
+# Firebase & Cloudflare CLI Cache & Debug Logs
 .firebase/
+.wrangler/
 firebase-debug.log*
 firestore-debug.log*
