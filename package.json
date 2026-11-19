@@ -21,7 +21,7 @@
     "build:data": "node tools/build-questions.js",
     "encrypt:questions": "node tools/encrypt-questions.js",
     "deploy:rules": "npx -y firebase-tools@latest deploy --only firestore:rules",
-    "deploy:worker": "npx -y wrangler@3 deploy --keep-vars",
+    "deploy:worker": "npx -y wrangler@latest deploy --keep-vars",
     "verify": "npm run lint && npm test"
   },
   "devDependencies": {
