@@ -20,6 +20,7 @@
     "test:e2e": "playwright test",
     "build:data": "node tools/build-questions.js",
     "encrypt:questions": "node tools/encrypt-questions.js",
+    "deploy:rules": "npx -y firebase-tools@latest deploy --only firestore:rules",
     "verify": "npm run lint && npm test"
   },
   "devDependencies": {
