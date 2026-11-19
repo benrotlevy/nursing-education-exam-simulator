@@ -24,3 +24,12 @@ Follow [`docs/standards/08-TESTING-STRATEGY.md`](docs/standards/08-TESTING-STRAT
 - Run `npm run format`, `npm run verify`, and `npx playwright test --reporter=list` before pushing a release.
 - Whenever `firestore.rules` is modified, run `npm run deploy:rules` (after explicit confirmation / rule compliance).
 - Whenever `tools/cloudflare-worker-telegram.js` is modified, run `npm run deploy:worker` alongside pushing client updates so production backend and frontend never drift.
+
+---
+
+# Core Architecture, Security & UX Invariants (`docs/standards/01`–`11`, `docs/adr/0001`–`0004`)
+
+- **Vanilla ES Modules & Static Deploy (`01`, `02`, `ADR-0001`, `ADR-0002`)**: `./app` is deployed directly to GitHub Pages with no bundler. Never import outside `app/` from runtime code, and keep `app/js/domain/*` 100% pure (zero DOM, storage, or network dependencies).
+- **State & PWA Cache Discipline (`06`, `ADR-0003`)**: Preserve `v2` schema compatibility across `store` and `storage` (`nursing_*_v2`), avoid inline `onclick="..."` or `window.*` coupling for new features (`data-action` delegation), and whenever adding/renaming files under `app/` or bumping a release, update `CORE_ASSETS` and bump `CACHE_NAME` in `app/sw.js`.
+- **Security & Secret Hygiene (`07`, `10`)**: Never commit plaintext `app/data/questions.json`, `data-pipeline/source/clean_questions.json`, or `.secrets/`; only `app/data/questions-demo.json` (10 sample questions) and AES-256-GCM `app/data/questions.enc.json` belong in git. Render dynamic HTML through `html` (`app/js/ui/dom.js`), validate external URLs (`https:` only), and delegate `firestore.rules` edits to `firestore-rules-author`.
+- **CSS, RTL & Mobile UX (`04`, `05`, `11`)**: Keep zero `<style>` tags and zero static presentation inline `style="..."` in `app/index.html`, and ensure every static class in `app/index.html` has a corresponding rule in `app/styles/`. Isolate LTR tokens (emails, fractions, English names) inside `<bdi>` / `dir="ltr"`, keep interactive hit areas `>= 44x44px`, and maintain zero horizontal overflow down to `320px`.
