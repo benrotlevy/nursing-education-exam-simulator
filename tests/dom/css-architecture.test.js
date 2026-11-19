@@ -96,4 +96,30 @@ describe('Step 6 Modular CSS Architecture & Selector Integrity', () => {
       );
     }
   });
+
+  it('defines explicit disabled and demo-locked visual rules for interactive controls', () => {
+    const buttonsCss = fs.readFileSync(path.join(stylesDir, 'components', 'buttons.css'), 'utf8');
+    const formsCss = fs.readFileSync(path.join(stylesDir, 'components', 'forms.css'), 'utf8');
+
+    assert.match(
+      buttonsCss,
+      /\.btn:disabled[\s\S]*pointer-events:\s*none/,
+      'buttons.css must define .btn:disabled with pointer-events: none'
+    );
+    assert.match(
+      buttonsCss,
+      /\.btn:disabled[\s\S]*cursor:\s*not-allowed/,
+      'buttons.css must define .btn:disabled with cursor: not-allowed'
+    );
+    assert.match(
+      formsCss,
+      /\.form-select:disabled/,
+      'forms.css must define .form-select:disabled styling'
+    );
+    assert.match(
+      formsCss,
+      /\.pill-option\.is-demo-locked/,
+      'forms.css must define .pill-option.is-demo-locked styling'
+    );
+  });
 });

@@ -16,8 +16,8 @@ Every refactoring step branch (`docs/*`, `chore/*`, `test/*`, `refactor/*`, `fix
 
 - [ ] Unit tests (`tests/unit/`) pass for all modified/added domain logic.
 - [ ] Data schema tests (`tests/data/`) pass against the 1,079 questions.
-- [ ] Integration & DOM tests (`tests/integration/`, `tests/dom/`) pass.
-- [ ] End-to-End & visual regression tests (`npm run test:e2e`) pass on both Desktop (`1280×800`) and Mobile Pixel (`412×915`) viewports.
+- [ ] Integration & DOM tests (`tests/integration/`, `tests/dom/`) pass (including CSS disabled/locked visual invariants).
+- [ ] End-to-End & visual regression tests (`npm run test:e2e`) pass on all configured viewports (`laptop`, `tablet`, `pixel-10-pro-xl`, `galaxy-s25`), including `MutationObserver` no-flash checks, Role × Tab lock matrix, real-time `onSnapshot` auto-unlock, double-submit cooldown, and Sign-Out zero-residue verification.
 - [ ] [`docs/STPR.md`](../STPR.md) traceability matrix and execution report are updated to reflect new/passing tests.
 
 ## ✅ 3. Accessibility, RTL & Mobile UX
@@ -25,10 +25,12 @@ Every refactoring step branch (`docs/*`, `chore/*`, `test/*`, `refactor/*`, `fix
 - [ ] All interactive controls are keyboard-focusable and operable via `Enter` / `Space`.
 - [ ] Hebrew RTL layout (`dir="rtl"`) renders without horizontal overflow at `360px`, `412px`, `768px`, and `1280px` widths.
 - [ ] Mobile bottom navigation bar and active section indicator remain synchronized across all tabs.
+- [ ] Expanded/renamed features have aligned button labels, modal titles, and fallback messages.
 
-## ✅ 4. Git Hygiene & Checkpoint Reporting
+## ✅ 4. Full-Stack Deployment, Git Hygiene & Checkpoint Reporting
 
-- [ ] Work was performed on a dedicated step branch cut from `release/v2` (`main` untouched).
+- [ ] When `firestore.rules` changed, deployed via `npm run deploy:rules`.
+- [ ] When `tools/cloudflare-worker-telegram.js` changed, deployed via `npm run deploy:worker`.
 - [ ] Commits follow Conventional Commits format.
 - [ ] Branch is pushed to `origin`.
-- [ ] A clear **Checkpoint Report** is presented to the user summarizing changes, test counts, any deviations or surprises, and awaiting explicit approval before continuing.
+- [ ] A clear summary is presented reporting exact changes and verified test/command counts.

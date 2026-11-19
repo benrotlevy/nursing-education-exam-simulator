@@ -53,3 +53,12 @@ describe('exam-session: toggleEliminateOption', () => {
 ```
 
 Include the **STPR Requirement ID** (e.g., `[EXAM-05]`) in test descriptions wherever applicable to maintain bidirectional traceability with `docs/STPR.md`.
+
+---
+
+## 5. Mandatory Pre-Release Bug-Prevention Gates
+
+1. **Simulated Async Latency + No-Bad-Flash Observer**: Auth, Firestore, and WebCrypto mocks in E2E suites must simulate realistic async latency (`authDelayMs >= 25`) and attach a `MutationObserver` across state transitions to prove intermediate `'pending'` banners/toasts never flash for Admin or Approved accounts.
+2. **Role × Tab Matrix & Computed Disabled Visual Check**: Lock/permission controls must be tested across all 4 tabs (`Exam`, `Study`, `Saved Exams`, `Stats`) for every role (`Guest`, `Pending`, `Revoked`, `Approved`, `Admin`), checking both HTML `disabled` state and computed CSS (`pointer-events: none` / muted appearance).
+3. **Abuse, Double-Submit Cooldown & Zero-Residue Sign-Out**: Every external dispatch action (Telegram webhooks, Firestore writes) must test rapid repeat clicks/reloads against rate limits; cross-user approvals/revocations must unlock/lock automatically via `onSnapshot` without clicking manual refresh controls; and Sign-Out must verify unsynced confirmation prompts plus empty `localStorage`/`sessionStorage` after confirmation.
+4. **Pre-Interaction Counters, Config-Array Parity & Copy Alignment**: Assert badges/tab counts immediately on mount/open before switching tabs, loop over all entries in config arrays (such as `ADMIN_EMAILS`) to confirm consistent card/name tag rendering, and review trigger labels against dialog titles and fallback text whenever scope evolves.
