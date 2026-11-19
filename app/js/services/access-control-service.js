@@ -382,6 +382,7 @@ export function createAccessControlService({
       ...decision,
       isAdmin: adminFlag,
       note: allowedDoc?.note || '',
+      lookupFailed: Boolean(lookupFailed),
       requestCooldownUntil: requestCooldown.cooldownUntil,
     };
   }
@@ -479,7 +480,7 @@ export function createAccessControlService({
   /**
    * Fetches all `/allowed_users` documents for the Admin Dashboard.
    */
-  async function fetchAllowedUsers() {
+  async function fetchAllowedUsers({ throwOnError = false } = {}) {
     const fb = await ensureFirebaseReady();
     if (!fb.ready || !isAdminUser(fb.auth.currentUser)) {
       return [];
@@ -543,6 +544,9 @@ export function createAccessControlService({
       return items;
     } catch (err) {
       console.error('Failed to fetch allowed users:', err);
+      if (throwOnError) {
+        throw err;
+      }
       return [];
     }
   }

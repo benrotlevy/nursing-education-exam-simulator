@@ -6,6 +6,19 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 
 ---
 
+## [2.4.4] - 2026-11-19
+
+### Fixed
+
+- **Complete Network Error User Feedback**:
+  - Updated [`app/js/main.js`](app/js/main.js) to surface clear error banners/toasts on initial or fallback Demo catalog fetch failure (`#totalQuestionsHeader` + toast), encrypted catalog decryption failure, and online access-control lookup failures.
+  - Updated [`app/js/services/cloud-sync.js`](app/js/services/cloud-sync.js) to notify users on `getRedirectResult()`, `signOut()`, and `resetCloudData()` failures (updating `syncStatus` cleanly on reset failures).
+  - Updated [`app/js/services/report-service.js`](app/js/services/report-service.js), [`app/js/services/access-control-service.js`](app/js/services/access-control-service.js), and [`app/js/features/report-issue/report-controller.js`](app/js/features/report-issue/report-controller.js) so Admin dashboard fetch failures and cloud key decryption failures stop loading spinners cleanly and display toast error messages.
+- **Dependency Security**: Resolved all 3 moderate `minimatch` devDependency advisories via `npm audit fix` (`0 vulnerabilities`).
+- **Service Worker Cache**: Bumped `app/sw.js` cache to `nursing-exam-sim-v2.4.4`.
+
+---
+
 ## [2.4.3] - 2026-11-19
 
 ### Fixed

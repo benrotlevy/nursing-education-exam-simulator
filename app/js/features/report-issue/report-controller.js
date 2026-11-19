@@ -105,25 +105,37 @@ export function createReportController({
   async function loadAdminReports() {
     if (!reportService) return;
     adminReportsView.setLoading(true);
-    const reports = await reportService.fetchReports({ maxResults: 150 });
-    currentReports = reports;
-    adminReportsView.setReports(reports, store.getState().allQuestions || []);
+    try {
+      const reports = await reportService.fetchReports({ maxResults: 150, throwOnError: true });
+      currentReports = reports;
+      adminReportsView.setReports(reports, store.getState().allQuestions || []);
+    } catch (err) {
+      console.warn('Admin reports load failed:', err);
+      adminReportsView.setLoading(false);
+      toast?.showToast('שגיאה בטעינת דיווחי השאלות מהענן. בדוק את החיבור לאינטרנט.');
+    }
   }
 
   async function loadAdminUsers() {
     if (!accessControlService) return;
     adminReportsView.setUsersLoading(true);
-    const [users, cfg] = await Promise.all([
-      accessControlService.fetchAllowedUsers(),
-      accessControlService.fetchAdminConfigStatus(),
-    ]);
-    currentUsers = users;
-    currentConfigStatus = cfg;
-    pendingUsersCount = users.filter(
-      (u) => u && u.active !== true && u.status !== 'REVOKED'
-    ).length;
-    syncBadge();
-    adminReportsView.setUsers(currentUsers, currentConfigStatus);
+    try {
+      const [users, cfg] = await Promise.all([
+        accessControlService.fetchAllowedUsers({ throwOnError: true }),
+        accessControlService.fetchAdminConfigStatus(),
+      ]);
+      currentUsers = users;
+      currentConfigStatus = cfg;
+      pendingUsersCount = users.filter(
+        (u) => u && u.active !== true && u.status !== 'REVOKED'
+      ).length;
+      syncBadge();
+      adminReportsView.setUsers(currentUsers, currentConfigStatus);
+    } catch (err) {
+      console.warn('Admin users load failed:', err);
+      adminReportsView.setUsersLoading(false);
+      toast?.showToast('שגיאה בטעינת רשימת המשתמשים מהענן. בדוק את החיבור לאינטרנט.');
+    }
   }
 
   async function handleCopyReport(report, fullQuestion) {
@@ -285,10 +297,20 @@ export function createReportController({
     }
     currentConfigStatus = { ...currentConfigStatus, hasCatalogKey: true };
     adminReportsView.setConfigStatus(currentConfigStatus);
-    toast?.showToast('מפתח הפענוח נשמר בענן! טוען מאגר מלא 🔑');
     if (typeof onCatalogKeyUpdated === 'function') {
-      await onCatalogKeyUpdated(String(keyBase64 || '').trim());
+      try {
+        const unlocked = await onCatalogKeyUpdated(String(keyBase64 || '').trim());
+        if (unlocked === false) {
+          toast?.showToast('המפתח נשמר בענן אך פענוח המאגר נכשל — ודא שהמפתח תקין.');
+          return;
+        }
+      } catch (unlockErr) {
+        console.warn('Catalog key reload warning:', unlockErr);
+        toast?.showToast('המפתח נשמר בענן אך פענוח המאגר נכשל — ודא שהמפתח תקין.');
+        return;
+      }
     }
+    toast?.showToast('מפתח הפענוח נשמר בענן! טוען מאגר מלא 🔑');
   }
 
   async function handleSaveTelegramUrl(telegramUrl) {

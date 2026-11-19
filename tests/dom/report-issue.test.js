@@ -432,4 +432,28 @@ describe('Question Issue Reporting & Admin Dashboard DOM Flow', () => {
       /משתמשים מורשים \(4\)/
     );
   });
+
+  it('shows toast error feedback and stops loading spinner when Admin dashboard fetch fails', async () => {
+    const { document, mockFb } = await setupReportEnv();
+    mockFb.setUser({
+      uid: 'admin_uid_err',
+      displayName: 'Benjamin Rotlevy',
+      email: 'benjaminrotlevy@gmail.com',
+    });
+    await new Promise((r) => setTimeout(r, 20));
+
+    mockFb.sdk.getDocs = async () => {
+      throw new Error('Simulated Firestore getDocs timeout');
+    };
+
+    document.getElementById('btnAdminReports').click();
+    await new Promise((r) => setTimeout(r, 30));
+
+    const toastEl = document.getElementById('appGlobalToast');
+    assert.ok(toastEl.classList.contains('visible'), 'Error toast must be visible');
+    assert.match(toastEl.textContent, /שגיאה בטעינת/);
+
+    const refreshBtn = document.getElementById('adminRefreshBtn');
+    assert.equal(refreshBtn.disabled, false, 'Loading state must reset after fetch error');
+  });
 });

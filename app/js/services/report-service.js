@@ -186,7 +186,7 @@ export function createReportService({
   /**
    * Fetches all question reports for the authenticated administrator (newest first).
    */
-  async function fetchReports({ maxResults = 100 } = {}) {
+  async function fetchReports({ maxResults = 100, throwOnError = false } = {}) {
     const fb = await ensureFirebaseReady();
     if (!fb.ready) return [];
 
@@ -199,28 +199,38 @@ export function createReportService({
       return [];
     }
 
-    const colRef = fb.sdk.collection(fb.db, COLLECTION_NAME);
-    let qRef = colRef;
-    if (
-      typeof fb.sdk.query === 'function' &&
-      typeof fb.sdk.orderBy === 'function' &&
-      typeof fb.sdk.limit === 'function'
-    ) {
-      qRef = fb.sdk.query(colRef, fb.sdk.orderBy('createdAt', 'desc'), fb.sdk.limit(maxResults));
-    }
-
-    const snapshot = await fb.sdk.getDocs(qRef);
-    const results = [];
-    if (snapshot && Array.isArray(snapshot.docs)) {
-      for (const docSnap of snapshot.docs) {
-        results.push({ id: docSnap.id, ...(docSnap.data() || {}) });
+    try {
+      const colRef = fb.sdk.collection(fb.db, COLLECTION_NAME);
+      let qRef = colRef;
+      if (
+        typeof fb.sdk.query === 'function' &&
+        typeof fb.sdk.orderBy === 'function' &&
+        typeof fb.sdk.limit === 'function'
+      ) {
+        qRef = fb.sdk.query(colRef, fb.sdk.orderBy('createdAt', 'desc'), fb.sdk.limit(maxResults));
       }
-    } else if (snapshot && typeof snapshot.forEach === 'function') {
-      snapshot.forEach((docSnap) => {
-        results.push({ id: docSnap.id, ...(docSnap.data() || {}) });
-      });
+
+      const snapshot = await withTimeout(fb.sdk.getDocs(qRef), writeTimeoutMs, () =>
+        createOfflineReportError('REPORT_FETCH_TIMEOUT')
+      );
+      const results = [];
+      if (snapshot && Array.isArray(snapshot.docs)) {
+        for (const docSnap of snapshot.docs) {
+          results.push({ id: docSnap.id, ...(docSnap.data() || {}) });
+        }
+      } else if (snapshot && typeof snapshot.forEach === 'function') {
+        snapshot.forEach((docSnap) => {
+          results.push({ id: docSnap.id, ...(docSnap.data() || {}) });
+        });
+      }
+      return results;
+    } catch (err) {
+      console.error('Failed to fetch question reports:', err);
+      if (throwOnError) {
+        throw err;
+      }
+      return [];
     }
-    return results;
   }
 
   /**

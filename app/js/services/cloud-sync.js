@@ -277,6 +277,11 @@ export function createCloudSyncService({
       return true;
     } catch (err) {
       console.error('Failed to reset cloud data:', err);
+      updateSyncStatus(
+        isBrowserOffline() || err?.code === 'unavailable' ? 'offline' : 'error',
+        'cloud-sync/reset-error'
+      );
+      toast?.showToast('הסטטיסטיקה אופסה מקומית, אך הסנכרון לענן נכשל.');
       return false;
     }
   }
@@ -443,6 +448,10 @@ export function createCloudSyncService({
           }
         } catch (redirectErr) {
           console.warn('Redirect sign-in result notice:', redirectErr);
+          reportError(
+            'שגיאה בהשלמת ההתחברות: ' +
+              (redirectErr?.message || redirectErr?.code || 'Unknown error')
+          );
         }
       }
 
@@ -525,6 +534,7 @@ export function createCloudSyncService({
       return true;
     } catch (err) {
       console.error('Firebase Sign-out error:', err);
+      reportError('שגיאה בהתנתקות מחשבון הענן. אנא נסה שנית.');
       return false;
     }
   }

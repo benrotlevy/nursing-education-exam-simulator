@@ -102,7 +102,9 @@ export function mountApplication({
 
     const headerEl = document?.getElementById('totalQuestionsHeader');
     if (headerEl) {
-      if (
+      if (totalCount === 0) {
+        headerEl.textContent = '⚠️ שגיאה בטעינת מאגר השאלות — בדוק חיבור לאינטרנט';
+      } else if (
         !hasFullCatalog &&
         !preloadedQuestions &&
         totalCount > 0 &&
@@ -298,6 +300,7 @@ export function mountApplication({
       bootstrapWithQuestions(demoQuestions, { preserveActiveTab: true });
     } catch (err) {
       console.warn('Could not reload demo catalog on sign-out:', err);
+      toast?.showToast('שגיאה בטעינת שאלות ההדגמה. בדוק את החיבור לאינטרנט.');
     }
   }
 
@@ -341,9 +344,17 @@ export function mountApplication({
             await unlockFullCatalogWithKey(decision.keyBase64, catalogEpoch);
           } catch (decryptErr) {
             console.warn('Failed to decrypt full catalog:', decryptErr);
+            toast?.showToast(
+              'שגיאה בטעינת או פענוח המאגר המלא. בדוק את החיבור לאינטרנט או את מפתח הפענוח.'
+            );
           }
         }
       } else {
+        const navRef = window?.navigator ?? navigator;
+        const isOfflineNow = Boolean(navRef && navRef.onLine === false);
+        if (decision.lookupFailed && !isOfflineNow) {
+          toast?.showToast('לא ניתן היה לאמת הרשאות מול הענן. בדוק את החיבור לאינטרנט.');
+        }
         await revertToDemoCatalogIfNeeded();
       }
 
@@ -475,8 +486,9 @@ export function mountApplication({
     authController,
     onCatalogKeyUpdated: async (keyBase64) => {
       if (keyBase64 && !hasFullCatalog && !preloadedQuestions) {
-        await unlockFullCatalogWithKey(keyBase64);
+        return unlockFullCatalogWithKey(keyBase64);
       }
+      return true;
     },
     onContactConfigUpdated: (telegramUrl) => {
       latestAccessDecision = { ...latestAccessDecision, telegramUrl };
@@ -875,6 +887,7 @@ export function mountApplication({
         } catch (demoErr) {
           console.error('Failed to load demo catalog:', demoErr);
           bootstrapWithQuestions([]);
+          toast?.showToast('שגיאה בטעינת מאגר השאלות. בדוק את החיבור לאינטרנט ורענן את הדף.');
         }
       });
     } else {
@@ -887,6 +900,7 @@ export function mountApplication({
         .catch((err) => {
           console.error('Failed to load ./data/questions-demo.json:', err);
           bootstrapWithQuestions([]);
+          toast?.showToast('שגיאה בטעינת מאגר השאלות. בדוק את החיבור לאינטרנט ורענן את הדף.');
         });
     }
   }

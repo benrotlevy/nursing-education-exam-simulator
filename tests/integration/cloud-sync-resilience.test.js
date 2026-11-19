@@ -826,5 +826,57 @@ describe('app/js/services/cloud-sync.js — Cloud Sync Resilience, Debouncing & 
         'Expected Laptop localStorage to store remote release tombstone'
       );
     });
+
+    it('shows user error indications when resetCloudData, signOut, or getRedirectResult fails', async () => {
+      const localStorage = createMemoryStorage();
+      const sessionStorage = createMemoryStorage();
+      const store = createStore(createInitialState());
+      const storage = createStorageAdapter({ localStorage, sessionStorage });
+      const toastMessages = [];
+      const reportedErrors = [];
+
+      const fakeSdk = createFakeFirebaseSdk();
+      fakeSdk.getRedirectResult = async () => {
+        throw new Error('Redirect token expired');
+      };
+      fakeSdk.signOut = async () => {
+        throw new Error('Sign-out network failure');
+      };
+
+      const cloudSync = createCloudSyncService({
+        firebaseSdk: fakeSdk,
+        store,
+        storage,
+        toast: { showToast: (msg) => toastMessages.push(msg) },
+        notifyError: (msg) => reportedErrors.push(msg),
+        debounceMs: 5,
+      });
+
+      await cloudSync.init();
+      assert.equal(
+        reportedErrors.some((msg) => msg.includes('שגיאה בהשלמת ההתחברות')),
+        true
+      );
+
+      await cloudSync.signIn();
+
+      fakeSdk.setSetDocError(
+        Object.assign(new Error('Offline reset error'), { code: 'unavailable' })
+      );
+      const resetOk = await cloudSync.resetCloudData();
+      assert.equal(resetOk, false);
+      assert.equal(store.getState().auth.syncStatus, 'offline');
+      assert.equal(
+        toastMessages.some((msg) => msg.includes('הסנכרון לענן נכשל')),
+        true
+      );
+
+      const signOutOk = await cloudSync.signOut();
+      assert.equal(signOutOk, false);
+      assert.equal(
+        reportedErrors.some((msg) => msg.includes('שגיאה בהתנתקות מחשבון הענן')),
+        true
+      );
+    });
   });
 });
